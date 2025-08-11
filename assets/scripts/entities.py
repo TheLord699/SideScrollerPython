@@ -137,10 +137,18 @@ class Entities:
             "value": template.get("value", 0),
             "health": template.get("health", 100 if entity_type in ("npc", "enemy", "actor") else 0),
             "max_health": template.get("health", 100 if entity_type in ("npc", "enemy", "actor") else 0),
-            "states": template.get("states"),
-            "current_state": "idle" if "states" in template else None
+            "states": template.get("states", {}),
+            "current_state": "idle",
+            "animation_frame": 0,
+            "animation_timer": 0,
+            "animation_speed": template.get("animation_speed", 0.2),
+            "flip_x": False,
+            "flip_y": False
         }
 
+        if entity["states"]:
+            self.setup_entity_animations(entity)
+            
         if entity_type == "item":
             entity.update({"quantity": template.get("quantity", 1)})
             
@@ -171,7 +179,34 @@ class Entities:
             entity["message"] = template["message"]
 
         self.entities.append(entity)
+        
         return entity
+
+    def setup_entity_animations(self, entity):
+        entity["animation_frames"] = {}
+        
+        for state, state_data in entity["states"].items():
+            frames = []
+            start_row = state_data.get("start_row", 0)
+            start_col = state_data.get("start_col", 0)
+            frame_count = state_data.get("frames", 1)
+            
+            animation_speed = state_data.get("speed", entity.get("animation_speed", 0.2))
+            
+            for i in range(frame_count):
+                row = start_row + (i // state_data.get("cols", frame_count))
+                col = start_col + (i % state_data.get("cols", frame_count))
+                key = f"item_{row}_{col}"
+                if key in self.item_sprites:
+                    frames.append(self.item_sprites[key])
+                else:
+                    print(f"Warning: Missing animation frame {key} for state {state}")
+                    frames.append(entity["image"])
+            
+            entity["animation_frames"][state] = {
+                "frames": frames,
+                "speed": animation_speed
+            }
 
     def update_entity(self, entity):
         for sound_group in self.sounds.values():
@@ -191,27 +226,54 @@ class Entities:
             if entity["health"] <= 0:
                 self.entities.remove(entity)
     
-    def load_frames(self):
-        sprite_sheets = {} 
-        
-        for state, num_frames in self.state_frames.items():
-            if state not in sprite_sheets:  
-                sprite_sheets[state] = pg.image.load(f"assets/sprites/player/{state}_animation.png").convert_alpha()
-                
-            sheet = sprite_sheets[state]
-            for frame in range(num_frames["frames"]):
-                image = self.get_image(sheet, frame, self.sheet_width, self.sheet_height, self.sheet_width * self.scale_factor, self.sheet_height * self.scale_factor, (0, 0, 0))
-                self.frames[state].append(image)
+    def update_animation(self, entity):
+        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        screen_width, screen_height = self.game.screen_width, self.game.screen_height
 
-    def get_image(self, sheet, frame, width, height, new_w, new_h, color):
-        image = pg.Surface((width, height), pg.SRCALPHA).convert_alpha()
-        image.blit(sheet, (0, 0), ((frame * width), 0, width, height))
-        image = pg.transform.scale(image, (new_w, new_h))
-        image.set_colorkey(color)
-        return image
-    
-    def animate(self):
-        pass
+        sprite_x = entity["x"] - cam_x - entity["width"] // 2
+        sprite_y = entity["y"] - cam_y - entity["height"] // 2
+
+        if sprite_x + entity["width"] >= 0 and sprite_x <= screen_width and sprite_y + entity["height"] >= 0 and sprite_y <= screen_height:
+            if not entity.get("states"):
+                return
+                
+            new_state = entity["current_state"]
+            
+            if entity["entity_type"] in ("npc", "enemy"):
+                if abs(entity["vel_x"]) > 0.1:
+                    new_state = "walk"
+                    
+                elif entity.get("damage_effect", 0) > 0:
+                    new_state = "hurt"
+                    
+                else:
+                    new_state = "idle"
+                    
+            if new_state != entity["current_state"] and new_state in entity["states"]:
+                entity["current_state"] = new_state
+                entity["animation_frame"] = 0
+                entity["animation_timer"] = 0
+                
+            if entity["current_state"] in entity.get("animation_frames", {}):
+                animation_data = entity["animation_frames"][entity["current_state"]]
+                frames = animation_data["frames"]
+                speed = animation_data["speed"]
+                
+                entity["animation_timer"] += 1
+                
+                frame_duration = 1 / speed
+                if entity["animation_timer"] >= frame_duration:
+                    entity["animation_timer"] = 0
+                    entity["animation_frame"] = (entity["animation_frame"] + 1) % len(frames)
+                    
+                entity["image"] = frames[entity["animation_frame"]]
+                
+                if entity["entity_type"] in ("npc", "enemy"):
+                    if entity.get("ai_direction", 0) < 0:
+                        entity["flip_x"] = True
+                        
+                    elif entity.get("ai_direction", 0) > 0:
+                        entity["flip_x"] = False
 
     def spawn_hit_particles(self, entity, amount=5):
         for particles in range(amount):
@@ -541,6 +603,7 @@ class Entities:
             self.update_collision(entity)
             self.apply_gravity(entity)
             self.apply_horizontal_movement(entity)
+            self.update_animation(entity)
             self.update_entity(entity)
             self.render(entity)
             self.mouse_interact(entity)

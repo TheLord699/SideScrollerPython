@@ -63,17 +63,20 @@
         32,
         32
       ],
+      "states": {
+          "idle": {
+              "start_row": 0,
+              "start_col": 0,
+              "frames": 5,
+              "cols": 5,
+              "speed": 0.15
+          }
+      },
       "message": [
         "hi",
         "my name is Bob",
         "how are you?"
-      ],
-      "states": {
-        "idle": {
-          "frames": 2,
-          "speed": 0.2
-        }
-      }
+      ]
     },
     "Bab": {
       "name": "Bab",
@@ -89,19 +92,22 @@
         32,
         32
       ],
+      "states": {
+          "idle": {
+              "start_row": 0,
+              "start_col": 0,
+              "frames": 5,
+              "cols": 5,
+              "speed": 0.15
+          }
+      },
       "index": "item_0_0",
       "message": [
         "please stay away from me",
         "you smell...",
         "bad...",
         "like really bad..."
-      ],
-      "states": {
-        "idle": {
-          "frames": 2,
-          "speed": 0.2
-        }
-      }
+      ]
     },
     "Jimmy": {
       "name": "Jimmy",
@@ -120,13 +126,7 @@
       "message": [
         "you've taken so long \nto update this game!",
         "how can someone \nbe so lazy?"
-      ],
-      "states": {
-        "idle": {
-          "frames": 2,
-          "speed": 0.2
-        }
-      }
+      ]
     }
   },
   "enemies": {
@@ -158,10 +158,27 @@
         "like really bad..."
       ],
       "states": {
-        "idle": {
-          "frames": 2,
-          "speed": 0.2
-        }
+          "idle": {
+              "start_row": 0,
+              "start_col": 0,
+              "frames": 5,
+              "cols": 5,
+              "speed": 0.15
+          },
+          "walk": {
+              "start_row": 2,
+              "start_col": 0,
+              "frames": 8,
+              "cols": 8,
+              "speed": 0.25
+          },
+          "attack": {
+              "start_row": 3,
+              "start_col": 0,
+              "frames": 11,
+              "cols": 11,
+              "speed": 0.1
+          }
       },
       "entity_abilities": [
         "pushable"
