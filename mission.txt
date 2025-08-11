@@ -1,0 +1,72 @@
+-implement weapon system, create weapon json for storing stats
+
+-load level info from json, so entities and locations, death barrier pos, player spawn and other shit
+
+-define temporary values(friction value in entity and attack damage(will be able to do once weapon stats json created))
+
+-fix button mask(only for clicking)
+
+-rework all attacks to be projectile based
+
+-player hitbox needs complete re-write
+
+-maybe change but purposely kept sliding even after jump
+
+-somethings are loaded into memory more than once
+
+-specific issue where ui doesnt load missing texture if loading non existant sheet
+
+-want to completley re-write certain systyems like entities and entities.json format
+
+-need to add entity animations
+
+-Note: using self.game.screen_width and height for rendering bounds for now but can change to, self.game.screen.get_size()
+
+-Note: entity hitboxes arent saved into their list so you arent able to refrence in other classes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+basically the entire project doesnt use inheritance instead just using Composition/aggregatio and it doesnt use decorators
+
+# if everything is updated under 2ms then the game should run at solid 60(8 updates)
+
+# Stationary light with default flicker (like a torch)
+light_source.add_stationary_light(
+    x=100, y=200, 
+    radius=80, 
+    intensity=1.0,
+    colour=(255, 180, 100),
+    flicker=True
+)
+
+# Moving light with custom flicker (like a flashlight)
+light_source.add_moving_light(
+    x=player.x, y=player.y,
+    radius=60,
+    intensity=0.8,
+    flicker=True,
+    intensity=0.15,  # Less intense flicker
+    speed=0.08,      # Slower flicker
+    movement_radius=1  # Minimal movement
+)
+
+# Non-flickering light (like a lamp)
+light_source.add_stationary_light(
+    x=300, y=150,
+    radius=100,
+    intensity=1.2,
+    colour=(255, 255, 255)
+)

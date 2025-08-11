@@ -1,0 +1,246 @@
+{
+  "items": {
+    "Potion": {
+      "name": "Potion",
+      "type": "consumable",
+      "effect": "restore_health",
+      "health": 3,
+      "value": 10,
+      "amount": 50,
+      "weight": 1,
+      "width": 30,
+      "height": 30,
+      "index": "item_11_2",
+      "tile_sheet": [
+        "assets/sprites/gui/items/Sheet.png",
+        16,
+        16
+      ]
+    },
+    "Red Gem": {
+      "name": "Red Gem",
+      "type": "valuable",
+      "value": 60,
+      "weight": 1,
+      "width": 32,
+      "height": 32,
+      "index": "item_12_11",
+      "tile_sheet": [
+        "assets/sprites/gui/items/Sheet.png",
+        16,
+        16
+      ]
+    },
+    "Gold": {
+      "name": "Gold",
+      "type": "valuable",
+      "value": 45,
+      "amount": 50,
+      "weight": 1,
+      "width": 30,
+      "height": 30,
+      "index": "item_11_0",
+      "tile_sheet": [
+        "assets/sprites/gui/items/Sheet.png",
+        16,
+        16
+      ]
+    }
+  },
+  "npcs": {
+    "Bob": {
+      "name": "Bob",
+      "health": 100,
+      "hitbox_offset_y": 20,
+      "hitbox_width": 48,
+      "hitbox_height": 48,
+      "weight": 2,
+      "width": 90,
+      "height": 90,
+      "index": "item_0_0",
+      "tile_sheet": [
+        "assets/sprites/npc/fox.png",
+        32,
+        32
+      ],
+      "message": [
+        "hi",
+        "my name is Bob",
+        "how are you?"
+      ],
+      "states": {
+        "idle": {
+          "frames": 2,
+          "speed": 0.2
+        }
+      }
+    },
+    "Bab": {
+      "name": "Bab",
+      "health": 100,
+      "hitbox_offset_y": 20,
+      "hitbox_width": 48,
+      "hitbox_height": 48,
+      "weight": 2,
+      "width": 90,
+      "height": 90,
+      "tile_sheet": [
+        "assets/sprites/npc/fox.png",
+        32,
+        32
+      ],
+      "index": "item_0_0",
+      "message": [
+        "please stay away from me",
+        "you smell...",
+        "bad...",
+        "like really bad..."
+      ],
+      "states": {
+        "idle": {
+          "frames": 2,
+          "speed": 0.2
+        }
+      }
+    },
+    "Jimmy": {
+      "name": "Jimmy",
+      "health": 100,
+      "amount": 0,
+      "hitbox_width": 40,
+      "weight": 2,
+      "width": 90,
+      "height": 90,
+      "tile_sheet": [
+        "assets/sprites/npc/pack2/guy.png",
+        29,
+        27
+      ],
+      "index": "item_0_9",
+      "message": [
+        "you've taken so long \nto update this game!",
+        "how can someone \nbe so lazy?"
+      ],
+      "states": {
+        "idle": {
+          "frames": 2,
+          "speed": 0.2
+        }
+      }
+    }
+  },
+  "enemies": {
+    "Bab": {
+      "name": "Bab",
+      "health": 100,
+      "amount": 0,
+      "hitbox_offset_y": 20,
+      "hitbox_width": 48,
+      "hitbox_height": 48,
+      "weight": 2,
+      "width": 90,
+      "height": 90,
+      "tile_sheet": [
+        "assets/sprites/npc/fox.png",
+        32,
+        32
+      ],
+      "index": "item_0_0",
+      "behavior": "aggressive",
+      "move_speed": 1.2,
+      "jump_force": 8,
+      "aggro_range": 150,
+      "attack_damage": 0.1,
+      "message": [
+        "please stay away from me",
+        "you smell...",
+        "bad...",
+        "like really bad..."
+      ],
+      "states": {
+        "idle": {
+          "frames": 2,
+          "speed": 0.2
+        }
+      },
+      "entity_abilities": [
+        "pushable"
+      ],
+      "push_force": 70
+    }
+  },
+  "actors": {
+    "Rock": {
+      "name": "Rock",
+      "health": 100,
+      "amount": 0,
+      "weight": 2,
+      "width": 50,
+      "height": 50,
+      "tile_sheet": [
+        "assets/sprites/gui/items/Sheet.png",
+        16,
+        16
+      ],
+      "index": "item_5_5",
+      "entity_abilities": [
+        "pushable"
+      ]
+    },
+    "Potion": {
+      "name": "Potion",
+      "type": "consumable",
+      "effect": "restore_health",
+      "health": 5,
+      "value": 10,
+      "amount": 50,
+      "weight": 1,
+      "width": 30,
+      "height": 30,
+      "index": "item_11_2",
+      "entity_abilities": [
+        "pushable"
+      ],
+      "tile_sheet": [
+        "assets/sprites/gui/items/Sheet.png",
+        16,
+        16
+      ]
+    },
+    "Red Gem": {
+      "name": "Red Gem",
+      "type": "valuable",
+      "value": 60,
+      "weight": 1,
+      "width": 32,
+      "height": 32,
+      "index": "item_12_11",
+      "entity_abilities": [
+        "pushable"
+      ],
+      "tile_sheet": [
+        "assets/sprites/gui/items/Sheet.png",
+        16,
+        16
+      ]
+    },
+    "Gold": {
+      "name": "Gold",
+      "type": "valuable",
+      "value": 45,
+      "amount": 50,
+      "weight": 1,
+      "width": 30,
+      "height": 30,
+      "index": "item_11_0",
+      "entity_abilities": [
+        "pushable"
+      ],
+      "tile_sheet": [
+        "assets/sprites/gui/items/Sheet.png",
+        16,
+        16
+      ]
+    }
+  }
+}
