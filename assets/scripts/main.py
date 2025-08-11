@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Finnian Ainslie
+# Licensed under the MIT License
+
 import pygame as pg
 import os
 
