@@ -63,6 +63,9 @@ light_source.add_moving_light(
     movement_radius=1  # Minimal movement
 )
 
+# Copyright (c) 2025 Finnian Ainslie
+# Licensed under the MIT License
+
 # Non-flickering light (like a lamp)
 light_source.add_stationary_light(
     x=300, y=150,
@@ -70,3 +73,5 @@ light_source.add_stationary_light(
     intensity=1.2,
     colour=(255, 255, 255)
 )
+
+
