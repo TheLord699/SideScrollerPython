@@ -205,15 +205,19 @@ class MemoryDebugger:
         max_scroll = 0
         if self.menu_state == "main":
             max_scroll = max(0, len(self.memory_info) - self.visible_lines())
+            
         elif self.menu_state == "size_group":
             max_scroll = max(0, len(self.get_current_group_surfaces()) // self.thumbs_per_row() - self.visible_rows())
+            
         elif self.menu_state == "storage_location":
             max_scroll = max(0, len(self.get_current_storage_surfaces()) - self.visible_lines())
+            
         elif self.menu_state == "object_info":
             max_scroll = max(0, len(self.get_object_info()) - self.visible_lines())
 
         if direction == "up":
             self.scroll_offsets[self.menu_state] = max(0, self.scroll_offsets[self.menu_state] - 1)
+            
         elif direction == "down":
             self.scroll_offsets[self.menu_state] = min(max_scroll, self.scroll_offsets[self.menu_state] + 1)
 
@@ -237,6 +241,7 @@ class MemoryDebugger:
 
         if len(self.memory_info) <= visible_lines:
             scrollbar_height = panel_height
+            
         else:
             scrollbar_height = max(20, visible_lines / max(1, len(self.memory_info)) * panel_height)
 
@@ -246,6 +251,7 @@ class MemoryDebugger:
                 if self.menu_state == "main":
                     scroll_ratio = self.scroll_offsets[self.menu_state] / max(1, len(self.memory_info) - visible_lines)
                     scrollbar_y = panel_y + scroll_ratio * (panel_height - scrollbar_height)
+                    
                     if scrollbar_x <= mx <= scrollbar_x + 8 and scrollbar_y <= my <= scrollbar_y + scrollbar_height:
                         self.dragging_scrollbar = True
                         self.drag_offset_y = my - scrollbar_y
@@ -311,6 +317,7 @@ class MemoryDebugger:
                 my = event.pos[1]
                 relative_y = my - panel_y - self.drag_offset_y
                 relative_y = max(0, min(relative_y, panel_height - scrollbar_height))
+                
                 if self.menu_state == "main":
                     max_scroll = max(0, len(self.memory_info) - visible_lines)
                     scroll_ratio = relative_y / (panel_height - scrollbar_height)
@@ -588,12 +595,15 @@ class MemoryDebugger:
 
                     if line_idx in {objects_start, size_dist_start, storage_start}:
                         color = (255, 255, 255)
+                        
                     elif (objects_start is not None and size_dist_start is not None
                         and objects_start + 1 <= line_idx < size_dist_start):
                         color = (255, 200, 150)
+                        
                     elif (size_dist_start is not None and storage_start is not None
                         and size_dist_start + 1 <= line_idx < storage_start):
                         color = (150, 255, 150)
+                        
                     elif storage_start is not None and storage_start + 1 <= line_idx < len(self.memory_info):
                         color = (150, 200, 255)
 
@@ -631,6 +641,7 @@ class MemoryDebugger:
                 if surf not in self.preview_cache:
                     try:
                         self.preview_cache[surf] = pg.transform.scale(surf, (thumb_size, thumb_size))
+                        
                     except Exception:
                         self.preview_cache[surf] = pg.Surface((thumb_size, thumb_size))
                         self.preview_cache[surf].fill((100, 0, 0))
@@ -682,6 +693,7 @@ class MemoryDebugger:
                 idx = start_line + i
                 if idx >= len(info):
                     break
+                
                 text_surf = self.font.render(info[idx], True, (200, 255, 200))
                 panel.blit(text_surf, (10, 30 + i * 18))
 

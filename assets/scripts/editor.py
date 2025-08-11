@@ -844,6 +844,7 @@ while running:
                         
                 elif show_entity_panel and mx >= screen.get_width() - current_entity_panel_width:
                     entity_scroll_y -= event.y * scroll_speed
+                    
                 elif mx >= screen.get_width() - current_panel_width:
                     scroll_y -= event.y * scroll_speed
                     if all_tile_surfaces and selected_tile_info["tilesheet"] < len(all_tile_surfaces):
@@ -853,7 +854,7 @@ while running:
                         scroll_y = max(0, min(scroll_y, max_scroll))
 
             elif event.type == pg.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Only left click for placement
+                if event.button == 1:
                     mouse_held = True
                     if show_version_menu:
                         menu_x = (screen.get_width() - 600) // 2
@@ -861,6 +862,7 @@ while running:
                         item_index = version_scroll_offset + ((my - menu_y - 60) // 40)
                         if 0 <= item_index < len(versions):
                             selected_version_index = item_index
+                            
                     elif inspecting_entity:
                         save_rect, cancel_rect = draw_entity_inspector(inspecting_entity, entity_data, current_entity_panel_width)
                         
@@ -869,14 +871,18 @@ while running:
                                 try:
                                     if isinstance(entity_data[inspecting_entity["entity_type"]][inspecting_entity["entity_name"]][editing_attribute], bool):
                                         value = current_attribute_value.lower() in ["true", "1", "yes"]
+                                        
                                     elif isinstance(entity_data[inspecting_entity["entity_type"]][inspecting_entity["entity_name"]][editing_attribute], int):
                                         value = int(current_attribute_value)
+                                        
                                     elif isinstance(entity_data[inspecting_entity["entity_type"]][inspecting_entity["entity_name"]][editing_attribute], float):
                                         value = float(current_attribute_value)
+                                        
                                     else:
                                         value = current_attribute_value
                                         
                                     entity_data[inspecting_entity["entity_type"]][inspecting_entity["entity_name"]][editing_attribute] = value
+                                    
                                 except ValueError:
                                     print("Invalid value for attribute")
                             
@@ -886,6 +892,7 @@ while running:
                             try:
                                 with open(ENTITIES_FILE, 'w') as f:
                                     json.dump(entity_data, f, indent=2)
+                                    
                             except Exception as e:
                                 print(f"Failed to save entity data: {e}")
                                 
@@ -917,10 +924,12 @@ while running:
                         if (resize_handle_left <= mx <= resize_handle_left + 10 and 
                             0 <= my <= screen.get_height()):
                             resizing_entity_panel = True
+                            
                         elif mx >= screen.get_width() - current_entity_panel_width:
                             clicked_type, clicked_entity = entity_selector_click(mx, my, entity_scroll_y, current_entity_panel_width, entity_data, selected_entity_type)
                             if clicked_type:
                                 selected_entity_type = clicked_type
+                                
                             if clicked_entity:
                                 selected_entity = clicked_entity
                                 placing_entity = True
@@ -929,6 +938,7 @@ while running:
                                 if precision_mode:
                                     gx = round((mx + camera_x * zoom_level) / visual_size * 2) / 2
                                     gy = round((my + camera_y * zoom_level) / visual_size * 2) / 2
+                                    
                                 else:
                                     gx = (mx + camera_x * zoom_level) // visual_size
                                     gy = (my + camera_y * zoom_level) // visual_size
@@ -947,14 +957,17 @@ while running:
                         if (resize_handle_left <= mx <= resize_handle_left + 10 and 
                             0 <= my <= screen.get_height()):
                             resizing_panel = True
+                            
                         elif mx >= screen.get_width() - current_panel_width:
                             clicked_tile = tile_selector_click(mx, my, scroll_y, current_panel_width, all_tile_surfaces)
                             if clicked_tile is not None:
                                 selected_tile_info = clicked_tile
+                                
                         else:
                             if precision_mode:
                                 gx = round((mx + camera_x * zoom_level) / visual_size * 2) / 2
                                 gy = round((my + camera_y * zoom_level) / visual_size * 2) / 2
+                                
                             else:
                                 gx = (mx + camera_x * zoom_level) // visual_size
                                 gy = (my + camera_y * zoom_level) // visual_size
@@ -963,6 +976,7 @@ while running:
                                       if abs(t["x"] - gx) < 0.01 and 
                                          abs(t["y"] - gy) < 0.01 and 
                                          t["layer"] == current_layer]
+                            
                             for t in existing:
                                 tiles.remove(t)
 
@@ -980,6 +994,7 @@ while running:
                             
                             if pg.key.get_pressed()[pg.K_LSHIFT]:
                                 highlighted_tiles.append(new_tile)
+                                
                             else:
                                 highlighted_tiles = [new_tile]
 
@@ -991,8 +1006,10 @@ while running:
                             if pg.key.get_pressed()[pg.K_LSHIFT]:
                                 if tile in highlighted_tiles:
                                     highlighted_tiles.remove(tile)
+                                    
                                 else:
                                     highlighted_tiles.append(tile)
+                                    
                             else:
                                 tiles.remove(tile)
                                 if tile in highlighted_tiles:
@@ -1011,6 +1028,7 @@ while running:
                     if precision_mode:
                         gx = round((mx + camera_x * zoom_level) / visual_size * 2) / 2
                         gy = round((my + camera_y * zoom_level) / visual_size * 2) / 2
+                        
                     else:
                         gx = (mx + camera_x * zoom_level) // visual_size
                         gy = (my + camera_y * zoom_level) // visual_size
@@ -1037,6 +1055,7 @@ while running:
                         
                         if pg.key.get_pressed()[pg.K_LSHIFT]:
                             highlighted_tiles.append(new_tile)
+                            
                         else:
                             highlighted_tiles = [new_tile]
 
@@ -1048,6 +1067,7 @@ while running:
                         rows_needed = (len(all_tile_surfaces[selected_tile_info["tilesheet"]]["surfaces"]) + tiles_per_row - 1) // tiles_per_row
                         max_scroll = max(0, (rows_needed + 1) * all_tile_surfaces[0]["visual_size"] - screen.get_height() + 10)
                         scroll_y = max(0, min(scroll_y, max_scroll))
+                        
                 elif resizing_entity_panel:
                     new_width = screen.get_width() - mx
                     current_entity_panel_width = max(MIN_ENTITY_PANEL_WIDTH, min(new_width, screen.get_width() - 200))
@@ -1058,10 +1078,13 @@ while running:
                         try:
                             if isinstance(entity_data[inspecting_entity["entity_type"]][inspecting_entity["entity_name"]][editing_attribute], bool):
                                 value = current_attribute_value.lower() in ["true", "1", "yes"]
+                                
                             elif isinstance(entity_data[inspecting_entity["entity_type"]][inspecting_entity["entity_name"]][editing_attribute], int):
                                 value = int(current_attribute_value)
+                                
                             elif isinstance(entity_data[inspecting_entity["entity_type"]][inspecting_entity["entity_name"]][editing_attribute], float):
                                 value = float(current_attribute_value)
+                                
                             else:
                                 value = current_attribute_value
                                 
@@ -1072,6 +1095,7 @@ while running:
                             try:
                                 with open(ENTITIES_FILE, 'w') as f:
                                     json.dump(entity_data, f, indent=2)
+                                    
                             except Exception as e:
                                 print(f"Failed to save entity data: {e}")
                                 
@@ -1084,6 +1108,7 @@ while running:
                         
                     elif event.key == pg.K_BACKSPACE:
                         current_attribute_value = current_attribute_value[:-1]
+                        
                     else:
                         current_attribute_value += event.unicode
                         
@@ -1099,6 +1124,7 @@ while running:
                     tilesheets = version.data['tilesheets']
                     all_tile_surfaces = load_tilesheets(tilesheets)
                     show_version_menu = False
+                    
                 elif event.key == pg.K_x and show_version_menu and selected_version_index >= 0:
                     version = versions[selected_version_index]
                     print("Deleting version:", version.timestamp)
@@ -1109,6 +1135,7 @@ while running:
                     if os.path.exists(version_filepath):
                         os.remove(version_filepath)
                         print("Deleted:", version_filepath)
+                        
                     else:
                         print("File not found:", version_filepath)
 
@@ -1118,57 +1145,76 @@ while running:
                     show_entity_panel = not show_entity_panel
                     if show_entity_panel:
                         entity_data = load_entity_data()
+                        
                     else:
                         inspecting_entity = None
 
                 elif event.key == pg.K_q:
                     save_map(map_folder, tiles, tilesheets)
+                    
                 elif event.key == pg.K_e:
                     comment = ask_input("Enter save comment (optional)")
                     save_version(map_folder, tiles, tilesheets, comment)
                     versions = load_versions(map_folder)
+                    
                 elif event.key == pg.K_ESCAPE:
                     show_version_menu = False
                     inspecting_entity = None
                     editing_attribute = None
                     highlighted_tiles = []
+                    
                 elif not show_version_menu:
                     if event.key == pg.K_LSHIFT:
                         shift_selecting = True
                     elif event.key == pg.K_p:
                         precision_mode = not precision_mode
+                        
                     elif event.key == pg.K_RIGHT:
                         if all_tile_surfaces and selected_tile_info["tilesheet"] < len(all_tile_surfaces):
                             selected_tile_info["tile"] = (selected_tile_info["tile"] + 1) % len(all_tile_surfaces[selected_tile_info["tilesheet"]]["surfaces"])
+                            
                     elif event.key == pg.K_LEFT:
                         if all_tile_surfaces and selected_tile_info["tilesheet"] < len(all_tile_surfaces):
                             selected_tile_info["tile"] = (selected_tile_info["tile"] - 1) % len(all_tile_surfaces[selected_tile_info["tilesheet"]]["surfaces"])
+                            
                     elif event.key == pg.K_r:
                         rotation = (rotation + 90) % 360
+                        
                     elif event.key == pg.K_h:
                         placing_hitbox = not placing_hitbox
+                        
                     elif event.key == pg.K_k:
                         current_layer -= 1
+                        
                     elif event.key == pg.K_l:
                         current_layer += 1
+                        
                     elif event.key == pg.K_w:
                         camera_y -= visual_size * 2
+                        
                     elif event.key == pg.K_a:
                         camera_x -= visual_size * 2
+                        
                     elif event.key == pg.K_d:
                         camera_x += visual_size * 2
+                        
                     elif event.key == pg.K_s:
                         camera_y += visual_size * 2
+                        
                     elif event.key == pg.K_z:
                         show_layers = not show_layers
+                        
                     elif event.key == pg.K_x:
                         layer_mode = not layer_mode
+                        
                     elif event.key == pg.K_g:
                         display_hitboxes = not display_hitboxes
+                        
                     elif event.key == pg.K_c and copied_tiles:
                         if precision_mode:
                             gx = round((mx + camera_x * zoom_level) / visual_size * 2) / 2
                             gy = round((my + camera_y * zoom_level) / visual_size * 2) / 2
+                            
                         else:
                             gx = (mx + camera_x * zoom_level) // visual_size
                             gy = (my + camera_y * zoom_level) // visual_size
@@ -1179,6 +1225,7 @@ while running:
                             new_tile["y"] = gy + (tile["y"] - copied_tiles[0]["y"])
                             new_tile["layer"] = current_layer
                             tiles.append(new_tile)
+                            
                     elif event.key == pg.K_m:
                         tile = get_tile_at(mx, my, tiles, all_tile_surfaces, camera_x, camera_y, 
                                         current_layer if layer_mode else None, current_panel_width)
@@ -1186,8 +1233,10 @@ while running:
                             mirrored_tile = tile.copy()
                             mirrored_tile["direction"] = (tile.get("direction", 0) + 180) % 360
                             tiles.append(mirrored_tile)
+                            
                     elif event.key == pg.K_0 and highlighted_tiles:
                         copied_tiles = highlighted_tiles.copy()
+                        
                     elif event.key == pg.K_c:
                         for tile in reversed(tiles):
                             if tile.get("type") == "entity":
@@ -1209,6 +1258,7 @@ while running:
                                     "tile_dimension": tile_dim
                                 })
                                 loaded = load_tilesheets([{"path": new_path, "tile_dimension": tile_dim}])
+                                
                                 if loaded:
                                     all_tile_surfaces.extend(loaded)
                                     tilesheets = new_sheets
@@ -1225,14 +1275,15 @@ while running:
                                 current_animated_tile = tile
                                 selected_tile_info["selected_frame"] = 0
                                 selected_tile_info["pause_preview"] = False
+                                
                             else:
                                 tile["animation"] = {
                                     "frames": [tile["id"]],
                                     "speed": ANIMATION_SPEED
                                 }
                     elif event.key == pg.K_f:
-                        tile = get_tile_at(mx, my, tiles, all_tile_surfaces, camera_x, camera_y, 
-                                        current_layer if layer_mode else None, current_panel_width)
+                        tile = get_tile_at(mx, my, tiles, all_tile_surfaces, camera_x, camera_y, current_layer if layer_mode else None, current_panel_width)
+                        
                         if tile and "animation" in tile and len(tile["animation"]["frames"]) < MAX_ANIMATION_FRAMES:
                             if mx >= screen.get_width() - current_panel_width:
                                 clicked_tile = tile_selector_click(mx, my, scroll_y, current_panel_width, all_tile_surfaces)
@@ -1284,6 +1335,7 @@ while running:
                 if precision_mode:
                     px = round((mx + camera_x * zoom_level) / visual_size * 2) / 2 * visual_size - camera_x * zoom_level
                     py = round((my + camera_y * zoom_level) / visual_size * 2) / 2 * visual_size - camera_y * zoom_level
+                    
                 else:
                     px = ((mx + camera_x * zoom_level) // visual_size) * visual_size - camera_x * zoom_level
                     py = ((my + camera_y * zoom_level) // visual_size) * visual_size - camera_y * zoom_level
@@ -1293,12 +1345,16 @@ while running:
         mode_info = []
         if show_layers:
             mode_info.append("SHOWING LAYERS")
+            
         if display_hitboxes:
             mode_info.append("SHOWING HITBOXES")
+            
         if layer_mode:
             mode_info.append("LAYER MODE")
+            
         if precision_mode:
             mode_info.append("PRECISION MODE")
+            
         if show_entity_panel:
             mode_info.append("ENTITY MODE")
 
@@ -1320,6 +1376,7 @@ while running:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
+                
             elif event.type == pg.KEYDOWN:
                 if handle_animation_editor_events(event, current_animated_tile, selected_tile_info, all_tile_surfaces):
                     editing_animation = False
@@ -1328,13 +1385,16 @@ while running:
     if (show_entity_panel and 
         screen.get_width() - current_entity_panel_width - 5 <= mx <= screen.get_width() - current_entity_panel_width + 5 and 
         0 <= my <= screen.get_height()):
+        
         pg.mouse.set_cursor(pg.SYSTEM_CURSOR_SIZEWE)
     elif (not show_entity_panel and 
           screen.get_width() - current_panel_width - 5 <= mx <= screen.get_width() - current_panel_width + 5 and 
           0 <= my <= screen.get_height()):
         pg.mouse.set_cursor(pg.SYSTEM_CURSOR_SIZEWE)
+        
     elif precision_mode:
         pg.mouse.set_cursor(pg.SYSTEM_CURSOR_CROSSHAIR)
+        
     else:
         pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 
