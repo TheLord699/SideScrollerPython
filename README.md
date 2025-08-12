@@ -8,4 +8,4 @@ I did do some tests with switching to rendering using ModernGl though I've decid
 I'll probably just use Pygame as I'll have to rewrite rendering
 
 There are some weird quirks with my code, one immediately noticeable one would be that I don't have a separate 
-render func in the main.py file.
+render func in the main.py file and main.py isnt in project root but in the script folder with everything else... -gulp
