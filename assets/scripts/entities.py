@@ -157,7 +157,7 @@ class Entities:
                 "behavior": template.get("behavior", "idle"),
                 "move_speed": template.get("move_speed", 1),
                 "jump_force": template.get("jump_force", 10),
-                "aggro_range": template.get("aggro_range", 300),
+                "aggro_range": template.get("aggro_range", 0),
                 "attack_damage": template.get("attack_damage", 10),
                 "ai_timer": 0,
                 "ai_direction": 0,
@@ -594,6 +594,35 @@ class Entities:
             original_center = (entity["x"] - cam_x, entity["y"] - cam_y)
             offset_center = (center_x, center_y)
             pg.draw.line(self.game.screen, (255, 255, 0), original_center, offset_center, 2)
+        
+        if entity["entity_type"] in ["enemy", "npc"]:
+            aggro_range = entity.get("aggro_range", 300)
+            
+            detection_surface = pg.Surface((aggro_range*2, aggro_range*2), pg.SRCALPHA)
+            pg.draw.circle(
+                detection_surface, 
+                (255, 165, 0, 30),
+                (aggro_range, aggro_range), 
+                aggro_range
+            )
+            
+            self.game.screen.blit(
+                detection_surface,
+                (entity["x"] - aggro_range - cam_x, entity["y"] - aggro_range - cam_y)
+            )
+            
+            player_center = (self.game.player.x - cam_x, self.game.player.y - cam_y)
+            entity_center = (entity["x"] - cam_x, entity["y"] - cam_y)
+            distance = math.sqrt((player_center[0]-entity_center[0])**2 + (player_center[1]-entity_center[1])**2)
+            
+            if distance <= aggro_range:
+                pg.draw.line(
+                    self.game.screen, 
+                    (255, 0, 255),
+                    entity_center, 
+                    player_center, 
+                    2
+                )
                             
     def update(self):
         for entity in self.entities[:]:

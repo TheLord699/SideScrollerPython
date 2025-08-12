@@ -66,6 +66,7 @@ class AISystem:
 
     def ai_aggressive(self, entity):
         player = self.game.player
+        
         dx = player.x - entity["x"]
         dy = player.y - entity["y"]
         
@@ -73,7 +74,7 @@ class AISystem:
         
         aggro_range = entity.get("aggro_range", 300)
         
-        if distance_sq < aggro_range*aggro_range:
+        if distance_sq < aggro_range * aggro_range:
             new_dir = 1 if dx > 0 else -1
             
             if ("ai_direction" not in entity or 
@@ -132,15 +133,6 @@ class AISystem:
                 hitbox_width,
                 hitbox_height
             )
-
-            if hasattr(self.game, "debug") and self.game.debug:
-                pg.draw.rect(self.game.screen, (255, 0, 255), attack_rect, 1)
-                pg.draw.line(
-                    self.game.screen, (255, 0, 255),
-                    (entity["x"] - self.game.player.cam_x, entity["y"] - self.game.player.cam_y),
-                    (attack_x - self.game.player.cam_x, attack_y - self.game.player.cam_y),
-                    1
-                )
 
             if attack_rect.colliderect(self.game.player.hitbox):
                 self.game.player.take_damage(entity.get("attack_damage", 10))
