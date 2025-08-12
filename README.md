@@ -4,5 +4,5 @@ There are a few concepts I didn’t utilize in this project, I basically opted f
 What I’ve learned from this project:
 Just because you can code, doesn’t mean you should.
 
-The project is 100% python using Pygame for rendering, I did do some tests with switching to rendering using ModernGl though I've decided that 
+I did do some tests with switching to rendering using ModernGl though I've decided that 
 I'll probably just use Pygame as I'll have to rewrite rendering
