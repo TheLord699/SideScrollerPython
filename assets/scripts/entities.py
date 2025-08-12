@@ -328,19 +328,19 @@ class Entities:
                 
                 if overlap_x < overlap_y and not swimmable:
                     if entity_hitbox.centerx > tile_hitbox.centerx:
-                        entity["x"] = tile_hitbox.right + hitbox_w/2 - offset_x
+                        entity["x"] = tile_hitbox.right + hitbox_w / 2 - offset_x
                         
                     else:
-                        entity["x"] = tile_hitbox.left - hitbox_w/2 - offset_x
+                        entity["x"] = tile_hitbox.left - hitbox_w / 2 - offset_x
                     
                 elif not swimmable:
                     if entity_hitbox.centery < tile_hitbox.centery:
-                        entity["y"] = tile_hitbox.top - hitbox_h/2 - offset_y
+                        entity["y"] = tile_hitbox.top - hitbox_h / 2 - offset_y
                         entity["vel_y"] = 0
                         entity["on_ground"] = True
                         
                     else:
-                        entity["y"] = tile_hitbox.bottom + hitbox_h/2 - offset_y
+                        entity["y"] = tile_hitbox.bottom + hitbox_h / 2 - offset_y
                         entity["vel_y"] = 0
                     
                     if damage > 0:
