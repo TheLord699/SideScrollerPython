@@ -83,48 +83,6 @@ class Particles:
 
             self.particles = [p for j, p in enumerate(self.particles) if j not in set(oldest_indices[:excess])]
 
-    def update(self):
-        if not self.particles:
-            return
-
-        self.enforce_max()
-
-        n = len(self.particles)
-        positions = np.array([p["pos"] for p in self.particles], dtype=np.float32)
-        velocities = np.array([p["vel"] for p in self.particles], dtype=np.float32)
-        gravities = np.array([p["gravity"] for p in self.particles], dtype=np.float32)
-        ages = np.array([p["age"] for p in self.particles], dtype=np.int32)
-        lifespans = np.array([p["lifespan"] for p in self.particles], dtype=np.int32)
-
-        velocities[:, 1] += gravities
-        positions += velocities
-        ages += 1
-
-        for i, p in enumerate(self.particles):
-            p["pos"].x, p["pos"].y = positions[i]
-            p["vel"].x, p["vel"].y = velocities[i]
-            p["age"] = int(ages[i])
-
-            if p["floor_behavior"]:
-                self.handle_floor_collision(p)
-
-            if p["image"]:
-                p["rect"].center = p["pos"]
-                
-            else:
-                p["rect"].topleft = (p["pos"].x - p["radius"], p["pos"].y - p["radius"])
-
-        alive_particles = []
-        for p in self.particles:
-            if p["age"] >= p["lifespan"]:
-                self.recycle_particle(p)
-                
-            else:
-                alive_particles.append(p)
-                self.render_particle(self.game.screen, p)
-                
-        self.particles = alive_particles
-
     def handle_floor_collision(self, p):
         tile_size = self.game.map.tile_dimension * self.game.map.map_scale
 
@@ -194,3 +152,45 @@ class Particles:
                 
             else:
                 pg.draw.rect(surface, p["color"], pg.Rect(screen_pos[0], screen_pos[1], p["radius"] * 2, p["radius"] * 2))
+
+    def update(self):
+        if not self.particles:
+            return
+
+        self.enforce_max()
+
+        n = len(self.particles)
+        positions = np.array([p["pos"] for p in self.particles], dtype=np.float32)
+        velocities = np.array([p["vel"] for p in self.particles], dtype=np.float32)
+        gravities = np.array([p["gravity"] for p in self.particles], dtype=np.float32)
+        ages = np.array([p["age"] for p in self.particles], dtype=np.int32)
+        lifespans = np.array([p["lifespan"] for p in self.particles], dtype=np.int32)
+
+        velocities[:, 1] += gravities
+        positions += velocities
+        ages += 1
+
+        for i, p in enumerate(self.particles):
+            p["pos"].x, p["pos"].y = positions[i]
+            p["vel"].x, p["vel"].y = velocities[i]
+            p["age"] = int(ages[i])
+
+            if p["floor_behavior"]:
+                self.handle_floor_collision(p)
+
+            if p["image"]:
+                p["rect"].center = p["pos"]
+                
+            else:
+                p["rect"].topleft = (p["pos"].x - p["radius"], p["pos"].y - p["radius"])
+
+        alive_particles = []
+        for p in self.particles:
+            if p["age"] >= p["lifespan"]:
+                self.recycle_particle(p)
+                
+            else:
+                alive_particles.append(p)
+                self.render_particle(self.game.screen, p)
+                
+        self.particles = alive_particles

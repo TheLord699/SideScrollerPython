@@ -17,7 +17,7 @@ class Environment:
     self.max_darkness = 50 # 50, greater is lighter
     self.lighting = False
     self.bloom = False
-    self.bloom_tint = (0, 0, 255) # blue hue
+    self.bloom_tint = (0, 0, 255)
     
     self.menu = "main"
     self.last_menu = None

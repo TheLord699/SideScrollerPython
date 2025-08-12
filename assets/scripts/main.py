@@ -4,7 +4,7 @@
 import pygame as pg
 import os
 
-from background import Background
+from background import Background 
 from game import Environment
 from player import Player
 from entities import Entities
