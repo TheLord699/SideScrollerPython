@@ -7,5 +7,5 @@ Just because you can code, doesn’t mean you should.
 I did do some tests with switching to rendering using ModernGl though I've decided that 
 I'll probably just use Pygame as I'll have to rewrite rendering
 
-There are some weird quirks with my code, one immediatley noticable one would be that I dont have a seperate
+There are some weird quirks with my code, one immediately noticeable one would be that I don't have a separate 
 render func in the main.py file.
