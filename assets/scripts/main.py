@@ -36,8 +36,8 @@ class Game:
 
   def init_game_objects(self):
     self.ui = UI(self)
-    self.ai = AISystem(self)
     self.environment = Environment(self)
+    self.ai = AISystem(self)
     self.map = Map(self)
     self.player = Player(self)
     self.entities = Entities(self)
