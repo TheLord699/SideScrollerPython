@@ -114,6 +114,7 @@
       "health": 100,
       "amount": 0,
       "hitbox_width": 40,
+      "hitbox_height": 88,
       "weight": 2,
       "width": 90,
       "height": 90,
@@ -122,6 +123,15 @@
         29,
         27
       ],
+      "states": {
+          "idle": {
+              "start_row": 0,
+              "start_col": 0,
+              "frames": 6,
+              "cols": 6,
+              "speed": 0.08
+          }
+      },
       "index": "item_0_9",
       "message": [
         "you've taken so long \nto update this game!",
