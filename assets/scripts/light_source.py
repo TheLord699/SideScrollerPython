@@ -29,7 +29,7 @@ class LightSource:
         size = (self.game.screen_width, self.game.screen_height)
         self.light_surface = pg.Surface(size, pg.SRCALPHA)
         self.temp_surface = pg.Surface(size).convert()
-        self.tint_surface = None  # reset in case of size change
+        self.tint_surface = None # reset in case of size change
 
     def add_stationary_light(self, x, y, radius, intensity, colour=(255, 255, 255)):
         self.stationary_lights.append({

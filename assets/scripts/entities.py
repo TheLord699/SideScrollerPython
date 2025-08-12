@@ -239,7 +239,7 @@ class Entities:
                 
             new_state = entity["current_state"]
             
-            if entity["entity_type"] in ("npc", "enemy"):
+            if entity["entity_type"] in {"npc", "enemy"}:
                 if abs(entity["vel_x"]) > 0.1:
                     new_state = "walk"
                     
@@ -248,32 +248,31 @@ class Entities:
                     
                 else:
                     new_state = "idle"
-                    
+                
             if new_state != entity["current_state"] and new_state in entity["states"]:
                 entity["current_state"] = new_state
                 entity["animation_frame"] = 0
                 entity["animation_timer"] = 0
-                
-            if entity["current_state"] in entity.get("animation_frames", {}):
-                animation_data = entity["animation_frames"][entity["current_state"]]
+
+            animation_data = entity.get("animation_frames", {}).get(entity["current_state"])
+            if animation_data:
                 frames = animation_data["frames"]
                 speed = animation_data["speed"]
-                
+
                 entity["animation_timer"] += 1
-                
-                frame_duration = 1 / speed
-                if entity["animation_timer"] >= frame_duration:
+
+                if "frame_duration" not in animation_data:
+                    animation_data["frame_duration"] = (1 / speed) + random.uniform(0, 0.2)
+
+                if entity["animation_timer"] >= animation_data["frame_duration"]:
                     entity["animation_timer"] = 0
                     entity["animation_frame"] = (entity["animation_frame"] + 1) % len(frames)
-                    
+
                 entity["image"] = frames[entity["animation_frame"]]
-                
+
                 if entity["entity_type"] in ("npc", "enemy"):
-                    if entity.get("ai_direction", 0) < 0:
-                        entity["flip_x"] = True
-                        
-                    elif entity.get("ai_direction", 0) > 0:
-                        entity["flip_x"] = False
+                    ai_dir = entity.get("ai_direction", 0)
+                    entity["flip_x"] = ai_dir < 0
 
     def spawn_hit_particles(self, entity, amount=5):
         for particles in range(amount):
