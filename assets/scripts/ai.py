@@ -12,6 +12,8 @@ class AISystem:
             "friendly": self.ai_friendly
         }
         
+        random.seed(self.game.environment.seed)
+        
     def update_ai(self, entity):
         screen_width = self.game.screen.get_width()
         screen_height = self.game.screen.get_height()
