@@ -39,6 +39,28 @@ class AISystem:
             
         return False
     
+    def check_floor_ahead(self, entity):
+        hitbox_w = entity.get("hitbox_width", entity["width"])
+        offset_x = entity.get("hitbox_offset_x", 0)
+        direction = entity.get("ai_direction", 0)
+        
+        if direction == 0:
+            return True
+
+        check_x = entity["x"] + (hitbox_w/2 + 16) * direction
+        check_y = entity["y"] + entity["height"] // 2 + 16
+        
+        sensor_rect = pg.Rect(check_x - 2, check_y - 2, 4, 4)
+        
+        nearby_tiles = self.game.map.get_nearby_tiles(sensor_rect, padding=0)
+        
+        for tile_rect, tile_id in nearby_tiles:
+            tile_attrs = self.game.map.tile_attributes.get(tile_id, {})
+            if not tile_attrs.get("swimmable", False):
+                return True
+                
+        return False
+    
     def ai_idle(self, entity):
         entity["vel_x"] = 0
     
@@ -46,10 +68,13 @@ class AISystem:
         if "ai_timer" not in entity:
             self.reset_wander_timer(entity)
         
-        if entity["ai_direction"] != 0:
-            if self.check_wall_collision(entity):
-                entity["ai_direction"] *= -1
-                self.reset_wander_timer(entity)
+        if entity["ai_direction"] != 0 and not self.check_floor_ahead(entity):
+            entity["ai_direction"] *= -1
+            self.reset_wander_timer(entity)
+        
+        if entity["ai_direction"] != 0 and self.check_wall_collision(entity):
+            entity["ai_direction"] *= -1
+            self.reset_wander_timer(entity)
         
         entity["ai_timer"] -= 1
         if entity["ai_timer"] <= 0:
@@ -70,7 +95,7 @@ class AISystem:
         dx = player.x - entity["x"]
         dy = player.y - entity["y"]
         
-        distance_sq = dx*dx + dy*dy
+        distance_sq = dx * dx + dy * dy
         
         aggro_range = entity.get("aggro_range", 300)
         
@@ -79,16 +104,21 @@ class AISystem:
             
             if ("ai_direction" not in entity or 
                 new_dir != entity["ai_direction"] or 
-                self.check_wall_collision(entity)):
+                self.check_wall_collision(entity) or
+                not self.check_floor_ahead(entity)):
                 entity["ai_direction"] = new_dir
             
-            move_speed = entity.get("move_speed", 1) * 1.5
-            entity["vel_x"] = entity["ai_direction"] * move_speed
+            if self.check_floor_ahead(entity):
+                move_speed = entity.get("move_speed", 1) * 1.5
+                entity["vel_x"] = entity["ai_direction"] * move_speed
+                
+            else:
+                entity["vel_x"] = 0
             
             if dy < -50 and entity.get("on_ground", False):
                 entity["vel_y"] = -entity.get("jump_force", 10)
                 
-            if distance_sq < 50*50:
+            if distance_sq < 50 * 50:
                 self.ai_attack(entity)
                 
         else:
@@ -104,10 +134,15 @@ class AISystem:
             
             if ("ai_direction" not in entity or 
                 new_dir != entity["ai_direction"] or 
-                self.check_wall_collision(entity)):
+                self.check_wall_collision(entity) or
+                not self.check_floor_ahead(entity)):
                 entity["ai_direction"] = new_dir
             
-            entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1)
+            if self.check_floor_ahead(entity):
+                entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1)
+                
+            else:
+                entity["vel_x"] = 0
             
         else:
             entity["vel_x"] = 0
