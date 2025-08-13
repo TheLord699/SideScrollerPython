@@ -80,7 +80,8 @@ class Game:
       for event in self.events:
         if event.type == pg.QUIT:
           running = False
-
+          
+      # will remove for release
         if self.memory_debugger.show_memory_info:
           self.memory_debugger.handle_mouse_event(event)
           self.memory_debugger.handle_terminal_input(event)
@@ -112,9 +113,6 @@ class Game:
 
             elif event.key == pg.K_m:
               self.memory_debugger.toggle()
-              
-            elif event.key == pg.K_RIGHT:
-              print(len(self.lighting.stationary_lights))
 
             elif event.key == pg.K_n:
               new_light = (
@@ -126,6 +124,7 @@ class Game:
                 "stationary"
               )
               self.lighting.active_lights.append(new_light)
+      # will remove for release
 
       self.screen.fill((0, 0, 0))
 
