@@ -1058,7 +1058,7 @@ class Player:
         self.cam_y += (target_cam_y - self.cam_y) * self.camera_smoothing_factor
         
         self.cam_x = max(min(self.cam_x, target_cam_x + self.game.screen_width / 4), target_cam_x - self.game.screen_width / 4)
-        self.cam_y = max(min(self.cam_y, target_cam_y + self.game.screen_height / 4), target_cam_y - self.game.screen_height / 4)
+        self.cam_y = max(min(self.cam_y, target_cam_y + self.game.screen_height / 4), target_cam_y - self.game.screen_height / 7)
 
     def render_hitboxes(self):
         if self.attacking:
