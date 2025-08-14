@@ -325,7 +325,7 @@ class Entities:
             damage = tile_attrs.get("damage", 0)
             
             if entity_hitbox.colliderect(tile_hitbox) or ground_check.colliderect(tile_hitbox):
-                if damage > 0:
+                if damage and entity["entity_type"] != "actor":
                     entity["health"] -= damage
                     entity["damage_effect"] = 1
                 
@@ -341,6 +341,7 @@ class Entities:
                         
                     else:
                         entity["x"] = tile_hitbox.left - hitbox_w / 2 - offset_x
+                        
                 else:
                     if entity_hitbox.centery < tile_hitbox.centery:
                         entity["y"] = tile_hitbox.top - hitbox_h / 2 - offset_y
