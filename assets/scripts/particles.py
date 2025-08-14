@@ -78,13 +78,17 @@ class Particles:
     
     def enforce_max(self):
         excess = len(self.particles) - self.max_particles
-        if excess > 0:
-            oldest_indices = sorted(range(len(self.particles)), key=lambda i: self.particles[i]["age"], reverse=True)
+        
+        if excess <= 0:
+            return
 
-            for i in oldest_indices[:excess]:
-                self.recycle_particle(self.particles[i])
+        oldest_indices = sorted(range(len(self.particles)), key=lambda i: self.particles[i]["age"], reverse=True)[:excess]
 
-            self.particles = [particle for j, particle in enumerate(self.particles) if j not in set(oldest_indices[:excess])]
+        for i in oldest_indices:
+            self.recycle_particle(self.particles[i])
+
+        oldest_set = set(oldest_indices)
+        self.particles = [p for j, p in enumerate(self.particles) if j not in oldest_set]
 
     def handle_floor_collision(self, particle):
         tile_size = self.game.map.tile_dimension * self.game.map.map_scale
@@ -190,6 +194,7 @@ class Particles:
                 particle["rect"].topleft = (particle["pos"].x - particle["radius"], particle["pos"].y - particle["radius"])
 
         alive_particles = []
+        
         for particle in self.particles:
             if particle["age"] >= particle["lifespan"]:
                 self.recycle_particle(particle)

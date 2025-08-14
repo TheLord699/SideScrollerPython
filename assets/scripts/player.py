@@ -165,7 +165,7 @@ class Player:
         image.set_colorkey(color)
         return image
 
-    def checks(self):     
+    def update_state(self):     
         for sound_group in self.sounds.values():
             if isinstance(sound_group, list):
                 for sound_dict in sound_group:
@@ -242,25 +242,27 @@ class Player:
                     )
 
     def take_damage(self, damage):
-        if self.current_state != "death":
-            if self.game.environment.current_time - self.last_damage_time >= self.invinsibility_duration:
-                self.current_health -= damage
-                self.last_damage_time = self.game.environment.current_time
+        if self.current_state == "death":
+            return
+        
+        if self.game.environment.current_time - self.last_damage_time >= self.invinsibility_duration:
+            self.current_health -= damage
+            self.last_damage_time = self.game.environment.current_time
+            
+            if self.current_health < 0.5:
+                self.death()
+                hurt_sound = random.choice(self.sounds["hit"])
+                hurt_sound["sound"].play()
                 
-                if self.current_health < 0.5:
-                    self.death()
-                    hurt_sound = random.choice(self.sounds["hit"])
-                    hurt_sound["sound"].play()
-                    
-                else:
-                    self.current_state = "hurt"
-                    self.current_frame = 0
-                    self.animation_timer = 0
-                    self.attacking = False
-                    self.attack_sequence = (self.attack_sequence % 2) + 1
-                    self.active_melee_attack_ids.clear()
-                    hurt_sound = random.choice(self.sounds["hit"])
-                    hurt_sound["sound"].play()
+            else:
+                self.current_state = "hurt"
+                self.current_frame = 0
+                self.animation_timer = 0
+                self.attacking = False
+                self.attack_sequence = (self.attack_sequence % 2) + 1
+                self.active_melee_attack_ids.clear()
+                hurt_sound = random.choice(self.sounds["hit"])
+                hurt_sound["sound"].play()
                     
     def death(self):
         self.current_state = "death"
@@ -551,43 +553,47 @@ class Player:
                         talk_sound["sound"].play()
     
     def drop_item(self):
-        if self.selected_slot is not None and self.selected_slot in self.inventory:
-            item_to_drop = self.inventory[self.selected_slot]
+        if self.selected_slot is None or self.selected_slot not in self.inventory: 
+            return
             
-            if item_to_drop["quantity"] > 1:
-                item_to_drop["quantity"] -= 1
-            
-            else:
-                del self.inventory[self.selected_slot]
-            
-            self.game.entities.create_entity("item", item_to_drop["name"], self.x, self.y)
-            
-            self.refresh_inventory()
-            self.selected_slot = None
-            self.inventory_changed = True
-            
-            drop_sound = random.choice(self.sounds["pickup"])
-            drop_sound["sound"].play()
+        item_to_drop = self.inventory[self.selected_slot]
+        
+        if item_to_drop["quantity"] > 1:
+            item_to_drop["quantity"] -= 1
+        
+        else:
+            del self.inventory[self.selected_slot]
+        
+        self.game.entities.create_entity("item", item_to_drop["name"], self.x, self.y)
+        
+        self.refresh_inventory()
+        self.selected_slot = None
+        self.inventory_changed = True
+        
+        drop_sound = random.choice(self.sounds["pickup"])
+        drop_sound["sound"].play()
     
     def consume_item(self):
-        if self.selected_slot is not None and self.selected_slot in self.inventory and self.inventory[self.selected_slot]["type"] == "consumable":
-            item_to_consume = self.inventory[self.selected_slot]
-            
-            if item_to_consume["quantity"] > 1:
-                self.current_health += item_to_consume["health"]
-                item_to_consume["quantity"] -= 1
-            
-            else:
-                self.current_health += item_to_consume["health"]
-                del self.inventory[self.selected_slot]
-            
-            self.refresh_inventory()
-            self.selected_slot = None
-            self.inventory_changed = True
-            
-            consume_sound = random.choice(self.sounds["consume"])
-            consume_sound["sound"].play()
+        if self.selected_slot is None or self.selected_slot not in self.inventory or self.inventory[self.selected_slot]["type"] != "consumable":
+            return
     
+        item_to_consume = self.inventory[self.selected_slot]
+        
+        if item_to_consume["quantity"] > 1:
+            self.current_health += item_to_consume["health"]
+            item_to_consume["quantity"] -= 1
+        
+        else:
+            self.current_health += item_to_consume["health"]
+            del self.inventory[self.selected_slot]
+        
+        self.refresh_inventory()
+        self.selected_slot = None
+        self.inventory_changed = True
+        
+        consume_sound = random.choice(self.sounds["consume"])
+        consume_sound["sound"].play()
+
     def jump(self):
         self.vel_y = -self.jump_strength
         jump_sound = random.choice(self.sounds["jump"])
@@ -763,19 +769,23 @@ class Player:
         frame_delay = int(1 / self.state_frames[self.current_state]["speed"])
         self.animation_timer += 1
 
-        if self.animation_timer >= frame_delay:
-            self.animation_timer = 0
-            self.current_frame = (self.current_frame + 1) % len(self.frames[self.current_state])
+        if self.animation_timer < frame_delay:
+            return
 
-            if self.current_state.startswith("attacking") and self.current_frame == len(self.frames[self.current_state]) - 1:
-                self.attacking = False
-                self.attack_sequence = (self.attack_sequence % 2) + 1
-                self.active_melee_attack_ids.clear()
+        self.animation_timer = 0
+        self.current_frame = (self.current_frame + 1) % len(self.frames[self.current_state])
+
+        if self.current_state.startswith("attacking") and self.current_frame == len(self.frames[self.current_state]) - 1:
+            self.attacking = False
+            self.attack_sequence = (self.attack_sequence % 2) + 1
+            self.active_melee_attack_ids.clear()
 
     def hold_last_frame(self):
-        if self.current_frame >= len(self.frames[self.current_state]):
-            self.current_frame = len(self.frames[self.current_state]) - 1
-            self.animation_timer = 0
+        if self.current_frame < len(self.frames[self.current_state]):
+            return
+
+        self.current_frame = len(self.frames[self.current_state]) - 1
+        self.animation_timer = 0
 
     def handle_controls(self):
         keys = pg.key.get_pressed()
@@ -1001,30 +1011,34 @@ class Player:
             dash_sound["sound"].play()
 
     def start_attack(self): # will make all attacks projectile based using projectile func
-        if not self.attacking:
-            self.attacking = True
-            self.current_frame = 0
-            self.attack_timer = 0
+        if self.attacking:
+            return
+            
+        self.attacking = True
+        self.current_frame = 0
+        self.attack_timer = 0
 
-            new_attack_id = self.current_attack_id
-            self.active_melee_attack_ids.append(new_attack_id)
-            self.current_attack_id += 1
+        new_attack_id = self.current_attack_id
+        self.active_melee_attack_ids.append(new_attack_id)
+        self.current_attack_id += 1
 
-            attack_sound = random.choice(self.sounds["attack"])
-            attack_sound["sound"].play()
+        attack_sound = random.choice(self.sounds["attack"])
+        attack_sound["sound"].play()
             
     def update_projectiles(self):
         self.active_projectile_attack_ids = [id for id in self.active_projectile_attack_ids if not self.is_projectile_done(id)]
 
     def update_attack_hitbox(self):
-        if self.attacking:
-            if self.direction == "right":
-                self.attack_hitbox.centerx = self.hitbox.right + self.attack_hitbox_width // 2
-                
-            else:
-                self.attack_hitbox.centerx = self.hitbox.left - self.attack_hitbox_width // 2
-                
-            self.attack_hitbox.centery = self.hitbox.centery
+        if not self.attacking:
+            return
+        
+        if self.direction == "right":
+            self.attack_hitbox.centerx = self.hitbox.right + self.attack_hitbox_width // 2
+            
+        else:
+            self.attack_hitbox.centerx = self.hitbox.left - self.attack_hitbox_width // 2
+            
+        self.attack_hitbox.centery = self.hitbox.centery
 
     def render(self):
         if self.current_state not in self.frames or len(self.frames[self.current_state]) == 0:
@@ -1082,7 +1096,7 @@ class Player:
             if not self.game.memory_debugger.show_memory_info:
                 self.handle_controls()
                 
-            self.checks()
+            self.update_state()
             self.handle_gravity()
             self.update_collision()
             #self.update_projectiles()

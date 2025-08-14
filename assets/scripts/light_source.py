@@ -141,6 +141,7 @@ class LightSource:
         screen_x = int(light["x"] - self.game.player.cam_x)
         screen_y = int(light["y"] - self.game.player.cam_y)
         radius = light["radius"]
+        
         sw, sh = self.game.screen_width, self.game.screen_height
 
         left, right = screen_x - radius, screen_x + radius

@@ -75,10 +75,12 @@ class Environment:
     print(f"Controller connected: {self.joystick.get_name()}")
 
   def handle_music(self, new_track):
-    if self.current_track != new_track:
-      self.music_channel.stop()
-      self.music_channel.play(self.music[new_track], loops=-1)
-      self.current_track = new_track
+    if self.current_track == new_track:
+      return
+    
+    self.music_channel.stop()
+    self.music_channel.play(self.music[new_track], loops=-1)
+    self.current_track = new_track
 
   def update_slider_value(self, element_id, value):
     if element_id == "volume_slider":
@@ -170,7 +172,7 @@ class Environment:
       self.game.entities.create_entity("npc", "Bab", 600, 500)
       self.game.entities.create_entity("npc", "Jimmy", 1500, 500)
       self.game.entities.create_entity("actor", "Rock", 350, 500)
-      self.game.entities.create_entity("enemy", "Bab", 400, 500)
+      self.game.entities.create_entity("enemy", "Bab", 380, 500)
       self.game.entities.create_entity("enemy", "Bab", 2300, 500)
         
   def run_menu(self):

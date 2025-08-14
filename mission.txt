@@ -18,11 +18,11 @@
 
 -want to completley re-write certain systyems like entities and entities.json format
 
--need to add entity animations
-
 -Note: using self.game.screen_width and height for rendering bounds for now but can change to, self.game.screen.get_size()
 
 -Note: entity hitboxes arent saved into their list so you arent able to refrence in other classes
+
+-need to make it so I can set can_walk_off_edge or something like that in entitiy for each entities, same with height check for edge
 
 
 

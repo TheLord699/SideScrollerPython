@@ -92,6 +92,10 @@ class AISystem:
     def ai_aggressive(self, entity):
         player = self.game.player
         
+        if player.current_health <= 0:
+            self.ai_wander(entity)
+            return
+        
         dx = player.x - entity["x"]
         dy = player.y - entity["y"]
         
