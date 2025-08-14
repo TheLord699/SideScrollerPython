@@ -484,25 +484,38 @@ class Player:
                 message_text = messages[self.dialougue_index]
 
                 self.game.ui.create_ui(
-                    sprite_sheet_path="ui_sheet", image_id="item_33_0",
-                    x=self.game.screen_width / 2, y=self.game.screen_height / 1.15,
-                    sprite_width=95, sprite_height=32,
-                    centered=True, width=300, height=150,
-                    alpha=True, is_button=False,
+                    sprite_sheet_path="ui_sheet", 
+                    image_id="item_33_0",
+                    x=self.game.screen_width / 2, 
+                    y=self.game.screen_height / 1.15,
+                    sprite_width=95, 
+                    sprite_height=32,
+                    centered=True, 
+                    width=300, 
+                    height=150,
+                    alpha=True, 
+                    is_button=False,
                     element_id="dialogue_boarder",
                     scale_multiplier=1,
                     label=message_text,
                     font_size=20,
                     font=self.game.environment.fonts["fantasy"],
-                    render_order=0
+                    render_order=0,
+                    is_dialogue=True,
+                    typing_speed=30
                 )
 
                 self.game.ui.create_ui(
                     sprite_sheet_path="ui_sheet",
-                    x=self.game.screen_width / 5, y=self.game.screen_height / 1.5,
-                    sprite_width=95, sprite_height=32,
-                    centered=True, width=300, height=150,
-                    alpha=True, is_button=False,
+                    x=self.game.screen_width / 5, 
+                    y=self.game.screen_height / 1.5,
+                    sprite_width=95, 
+                    sprite_height=32,
+                    centered=True, 
+                    width=300, 
+                    height=150,
+                    alpha=True, 
+                    is_button=False,
                     element_id="dialogue_name",
                     font_size=15,
                     scale_multiplier=1,
