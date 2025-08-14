@@ -4,18 +4,18 @@ import pygame as pg
 # one instance of this class is created in the game class, and it handles all UI in the game
 # and should be refactored to have seperate instances for each entity
 # will make more OOP friendly and more conventional
+
 class UI:
     def __init__(self, game):
         self.game = game
         
         self.ui_elements = []
-        
         self.loaded_sheets = {}
         self.loaded_images = {}
         
     def load_sheet(self, sheet_name, path):
         if sheet_name in self.loaded_sheets:
-            return
+            return 
         
         try:
             self.loaded_sheets[sheet_name] = pg.image.load(path).convert_alpha()
@@ -51,8 +51,9 @@ class UI:
                     image_path=None, sprite_sheet_path=None, sprite_width=16, sprite_height=16,
                     image_id=None, element_id=None, centered=False, callback=None, is_hold=False,
                     label=None, font=None, font_size=24, text_color=(255, 255, 255), render_order=0,
-                    is_slider=False, min_value=0, max_value=100, initial_value=50, step_size=1, variable=None):
-
+                    is_slider=False, min_value=0, max_value=100, initial_value=50, step_size=1, variable=None,
+                    is_dialogue=False, typing_speed=30, auto_advance=False, advance_speed=2000):
+        
         try:
             if any(el["id"] == element_id for el in self.ui_elements):
                 return  
@@ -99,6 +100,22 @@ class UI:
                 original_image = self.game.environment.missing_texture.copy()
                 original_image = pg.transform.scale(original_image, (width, height))
 
+            if is_dialogue and label:
+                full_text = label
+                current_text = ""
+                typing_index = 0
+                last_typing_time = pg.time.get_ticks()
+                typing_complete = False
+                advance_timer = pg.time.get_ticks()
+                
+            else:
+                full_text = None
+                current_text = label
+                typing_index = 0
+                last_typing_time = 0
+                typing_complete = True
+                advance_timer = 0
+
             ui_element = {
                 "original_image": original_image,
                 "alpha": alpha,
@@ -109,7 +126,8 @@ class UI:
                 "callback": callback,
                 "is_hold": is_hold,
                 "holding": False,
-                "label": label,
+                "label": current_text if not is_dialogue else "",
+                "full_text": full_text,
                 "font": self.load_font(font, font_size),
                 "text_color": text_color,
                 "text_surface": None,
@@ -122,7 +140,15 @@ class UI:
                 "slider_rect": pg.Rect(x, y, width, height),
                 "slider_knob": pg.Rect(x + (initial_value - min_value) / (max_value - min_value) * width, y, 20, height),
                 "variable": variable,
-                "grabbed": False
+                "grabbed": False,
+                "is_dialogue": is_dialogue,
+                "typing_speed": typing_speed,
+                "typing_index": typing_index,
+                "last_typing_time": last_typing_time,
+                "typing_complete": typing_complete,
+                "auto_advance": auto_advance,
+                "advance_speed": advance_speed,
+                "advance_timer": advance_timer
             }
 
             if centered:
@@ -132,7 +158,7 @@ class UI:
                 ui_element["rect"] = pg.Rect(x, y, width, height)
 
             if label:
-                ui_element["text_surface"] = ui_element["font"].render(label, False, text_color)
+                ui_element["text_surface"] = ui_element["font"].render(ui_element["label"], False, text_color)
                 ui_element["text_rect"] = ui_element["text_surface"].get_rect(center=ui_element["rect"].center)
 
             if original_image:
@@ -147,6 +173,59 @@ class UI:
     def remove_ui_element(self, element_id):
         self.ui_elements = [el for el in self.ui_elements if el["id"] != element_id]
 
+    def update_dialogue_text(self, element):
+        if not element["is_dialogue"] or element["typing_complete"]:
+            return
+
+        current_time = pg.time.get_ticks()
+        
+        time_since_last = current_time - element["last_typing_time"]
+        time_per_char = 1000 / element["typing_speed"]
+        
+        if time_since_last >= time_per_char:
+            chars_to_add = int(time_since_last / time_per_char)
+            element["typing_index"] = min(element["typing_index"] + chars_to_add, len(element["full_text"]))
+            element["label"] = element["full_text"][:element["typing_index"]]
+            element["last_typing_time"] = current_time
+            
+            element["text_surface"] = element["font"].render(element["label"], False, element["text_color"])
+            element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
+            
+            if element["typing_index"] >= len(element["full_text"]):
+                element["typing_complete"] = True
+                element["advance_timer"] = current_time
+
+        if element["auto_advance"] and element["typing_complete"]:
+            if current_time - element["advance_timer"] >= element["advance_speed"]:
+                if element["callback"]:
+                    element["callback"]()
+                element["advance_timer"] = current_time
+
+# not using yet
+    def skip_dialogue(self, element_id):
+        for element in self.ui_elements:
+            if element["id"] == element_id and element["is_dialogue"] and not element["typing_complete"]:
+                element["typing_index"] = len(element["full_text"])
+                element["label"] = element["full_text"]
+                element["typing_complete"] = True
+                element["text_surface"] = element["font"].render(element["label"], False, element["text_color"])
+                element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
+                break
+
+    def update_dialogue_text_immediate(self, element_id, new_text):
+        for element in self.ui_elements:
+            if element["id"] == element_id and element["is_dialogue"]:
+                element["full_text"] = new_text
+                element["label"] = ""
+                element["typing_index"] = 0
+                element["typing_complete"] = False
+                element["last_typing_time"] = pg.time.get_ticks()
+                element["advance_timer"] = pg.time.get_ticks()
+                element["text_surface"] = element["font"].render(element["label"], False, element["text_color"])
+                element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
+                break
+# not using yet
+
     def update(self):
         mouse_pos = pg.mouse.get_pos()
         mouse_pressed = pg.mouse.get_pressed()
@@ -154,6 +233,9 @@ class UI:
         self.ui_elements.sort(key=lambda x: x.get("render_order", 0))
 
         for element in self.ui_elements:
+            if element["is_dialogue"]:
+                self.update_dialogue_text(element)
+
             if element["is_button"]:
                 if element["original_image"] and element["alpha"] and "mask" not in element:
                     element["mask"] = pg.mask.from_surface(element["original_image"])
@@ -206,11 +288,11 @@ class UI:
                         elif not element["holding"]:
                             if element["callback"]:
                                 element["callback"]()
+                                
                             element["holding"] = True
                             
                     else:
-                        element["holding"] = False
-                        
+                        element["holding"] = False 
                         
                 else:
                     element["holding"] = False
@@ -253,4 +335,3 @@ class UI:
 
             if element["label"] and element["text_surface"]:
                 self.game.screen.blit(element["text_surface"], element["text_rect"])
-                
