@@ -9,3 +9,47 @@ I'll probably just use Pygame as I'll have to rewrite rendering
 
 There are some weird quirks with my code, one immediately noticeable one would be that I don't have a separate 
 render func in the main.py file and main.py isnt in project root but in the script folder with everything else... -gulp
+
+TODO:
+
+-implement weapon system, create weapon json for storing stats
+
+-load level info from json, so entities and locations, death barrier pos, player spawn and other shit
+
+-define temporary values(friction value in entity and attack damage(will be able to do once weapon stats json created))
+
+-fix button mask(only for clicking)
+
+-rework all attacks to be projectile based
+
+-player hitbox needs complete re-write
+
+-maybe change but purposely kept sliding even after jump
+
+-somethings are loaded into memory more than once
+
+-specific issue where ui doesnt load missing texture if loading non existant sheet
+
+-want to completley re-write certain systyems like entities and entities.json format
+
+-Note: using self.game.screen_width and height for rendering bounds for now but can change to, self.game.screen.get_size()
+
+-Note: entity hitboxes arent saved into their list so you arent able to refrence in other classes
+
+-need to make it so I can set can_walk_off_edge or something like that in entitiy for each entities, same with height check for edge
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
