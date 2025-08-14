@@ -303,37 +303,45 @@ class Entities:
         offset_y = entity.get("hitbox_offset_y", 0)
         
         entity_hitbox = pg.Rect(
-            entity["x"] - hitbox_w/2 + offset_x,
-            entity["y"] - hitbox_h/2 + offset_y,
+            entity["x"] - hitbox_w / 2 + offset_x,
+            entity["y"] - hitbox_h / 2 + offset_y,
             hitbox_w,
             hitbox_h
         )
         
-        nearby_tiles = self.game.map.get_nearby_tiles(entity_hitbox, padding=10)
+        ground_check = pg.Rect(
+            entity_hitbox.left + 2,
+            entity_hitbox.bottom - 2,
+            entity_hitbox.width - 4,
+            4
+        )
+        
+        nearby_tiles = self.game.map.get_nearby_tiles(entity_hitbox, padding=5)
+        entity["on_ground"] = False
         
         for tile_hitbox, tile_id in nearby_tiles:
             tile_attrs = self.game.map.tile_attributes.get(tile_id, {})
             swimmable = tile_attrs.get("swimmable", False)
             damage = tile_attrs.get("damage", 0)
             
-            if entity_hitbox.colliderect(tile_hitbox):
-                overlap_x = min(
-                    entity_hitbox.right - tile_hitbox.left,
-                    tile_hitbox.right - entity_hitbox.left
-                )
-                overlap_y = min(
-                    entity_hitbox.bottom - tile_hitbox.top,
-                    tile_hitbox.bottom - entity_hitbox.top
-                )
+            if entity_hitbox.colliderect(tile_hitbox) or ground_check.colliderect(tile_hitbox):
+                if damage > 0:
+                    entity["health"] -= damage
+                    entity["damage_effect"] = 1
                 
-                if overlap_x < overlap_y and not swimmable:
+                if swimmable:
+                    continue
+                    
+                overlap_x = min(entity_hitbox.right - tile_hitbox.left, tile_hitbox.right - entity_hitbox.left)
+                overlap_y = min(entity_hitbox.bottom - tile_hitbox.top, tile_hitbox.bottom - entity_hitbox.top)
+                
+                if overlap_x < overlap_y:
                     if entity_hitbox.centerx > tile_hitbox.centerx:
                         entity["x"] = tile_hitbox.right + hitbox_w / 2 - offset_x
                         
                     else:
                         entity["x"] = tile_hitbox.left - hitbox_w / 2 - offset_x
-                    
-                elif not swimmable:
+                else:
                     if entity_hitbox.centery < tile_hitbox.centery:
                         entity["y"] = tile_hitbox.top - hitbox_h / 2 - offset_y
                         entity["vel_y"] = 0
@@ -342,10 +350,6 @@ class Entities:
                     else:
                         entity["y"] = tile_hitbox.bottom + hitbox_h / 2 - offset_y
                         entity["vel_y"] = 0
-                    
-                    if damage > 0:
-                        entity["health"] -= damage
-                        entity["damage_effect"] = 1
         
         if entity["entity_type"] in {"enemy", "npc", "actor"}:
             if entity_hitbox.colliderect(self.game.player.attack_hitbox):

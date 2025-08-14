@@ -535,6 +535,7 @@ class Player:
                     if entity["message"]:
                         if self.just_closed_dialogue:
                             return
+                        
                         self.in_dialogue = True
                         self.dialogue_with = entity
                         self.dialougue_index = -1
