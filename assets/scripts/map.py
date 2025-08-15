@@ -206,6 +206,7 @@ class Map:
             for col in range(min_col, max_col + 1):
                 if (row, col) not in self.non_empty_cells:
                     continue
+                
                 for tile_idx in self.grid[row * self.grid_width + col]:
                     tile_hitbox = self.tile_hitboxes[tile_idx]
                     if search_area.colliderect(tile_hitbox):
