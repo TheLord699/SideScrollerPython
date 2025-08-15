@@ -556,6 +556,9 @@ class Entities:
                 del self.dragged_entity 
     
     def show_hitboxes(self, entity):
+        if not self.game.debugging:
+            return
+        
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
         hitbox_w = entity.get("hitbox_width", entity["width"])
         hitbox_h = entity.get("hitbox_height", entity["height"])
@@ -640,4 +643,4 @@ class Entities:
             self.update_entity(entity)
             self.render(entity)
             self.mouse_interact(entity)
-            #self.show_hitboxes(entity)
+            self.show_hitboxes(entity)

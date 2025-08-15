@@ -1089,16 +1089,36 @@ class Player:
         self.cam_y = max(min(self.cam_y, target_cam_y + self.game.screen_height / 4), target_cam_y - self.game.screen_height / 7)
 
     def render_hitboxes(self):
+        if not self.game.debugging:
+            return
+
+        interact_color = (0, 0, 255, 50)
+        interact_surface = pg.Surface((self.interact_radius.width, self.interact_radius.height), pg.SRCALPHA)
+        interact_surface.fill(interact_color)
+        self.game.screen.blit(
+            interact_surface,
+            (
+                self.interact_radius.centerx - self.cam_x - self.interact_radius.width // 2,
+                self.interact_radius.centery - self.cam_y - self.interact_radius.height // 2
+            )
+        )
+
         if self.attacking:
-            hitbox_color = (255, 0, 0, 100)  
+            hitbox_color = (255, 0, 0, 100)
             hitbox_surface = pg.Surface((self.attack_hitbox_width, self.attack_hitbox_height), pg.SRCALPHA)
             hitbox_surface.fill(hitbox_color)
-            self.game.screen.blit(hitbox_surface, (self.attack_hitbox.x - self.cam_x, self.attack_hitbox.y - self.cam_y))
-        
+            self.game.screen.blit(
+                hitbox_surface,
+                (self.attack_hitbox.x - self.cam_x, self.attack_hitbox.y - self.cam_y)
+            )
+
         hitbox_color = (0, 255, 0, 100)
         hitbox_surface = pg.Surface((self.hitbox_width, self.hitbox_height), pg.SRCALPHA)
         hitbox_surface.fill(hitbox_color)
-        self.game.screen.blit(hitbox_surface, (self.hitbox.x - self.cam_x, self.hitbox.y - self.cam_y))
+        self.game.screen.blit(
+            hitbox_surface,
+            (self.hitbox.x - self.cam_x, self.hitbox.y - self.cam_y)
+        )
 
     def update(self):
         if self.game.environment.menu in {"play", "death", "pause"}:
@@ -1121,7 +1141,7 @@ class Player:
             self.render_health()
             self.render_dialogue()
             self.render()
-            #self.render_hitboxes()
+            self.render_hitboxes()
             
         else:
             if hasattr(self, "settings_loaded"):
