@@ -10,6 +10,8 @@ I'll probably just use Pygame as I'll have to rewrite rendering
 There are some weird quirks with my code, one immediately noticeable one would be that I don't have a separate 
 render func in the main.py file and main.py isnt in project root but in the script folder with everything else... -gulp
 
+![image alt](https://github.com/TheLord699/SideScrollerPython/blob/a9c685ae1db8d070a10e447c9e7f7f11895733ff/Title.png?raw=true)
+
 TODO:
 
 -implement weapon system, create weapon json for storing stats
@@ -37,19 +39,3 @@ TODO:
 -Note: entity hitboxes arent saved into their list so you arent able to refrence in other classes
 
 -need to make it so I can set can_walk_off_edge or something like that in entitiy for each entities, same with height check for edge
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

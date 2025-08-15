@@ -273,6 +273,9 @@ class Map:
                     self.game.screen.blit(surface, pos)
 
     def render_debug(self, hitbox=None, padding=15):
+        if not self.game.debugging:
+            return
+        
         screen_rect = self.game.screen.get_rect()
 
         font_small = pg.font.SysFont('Arial', 10)
@@ -354,4 +357,4 @@ class Map:
                 self.handle_camera_movement()
                 
             self.render()
-            #self.render_debug(self.game.player.hitbox)
+            self.render_debug(self.game.player.hitbox)
