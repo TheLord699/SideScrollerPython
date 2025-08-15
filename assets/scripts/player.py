@@ -73,7 +73,7 @@ class Player:
         self.in_dialogue = False
         self.dialougue_index = 0
         self.dialogue_with = None
-        
+            
         self.current_state = "idle"
         self.direction = "right"
         self.current_frame = 0
@@ -143,21 +143,41 @@ class Player:
         self.load_frames()
 
     def load_frames(self):
+        self.frames = {}
+        self.flipped_frames = {}
+        
         for state, settings in self.state_frames.items():
-            sheet = pg.image.load(f"assets/sprites/player/{state}_animation.png").convert_alpha()
+            self.frames[state] = []
+            self.flipped_frames[state] = []
+            
+            sheet_path = f"assets/sprites/player/{state}_animation.png"
+            try:
+                sheet = pg.image.load(sheet_path).convert_alpha()
+                
+            except:
+                print(f"Failed to load sprite sheet: {sheet_path}")
+                continue
+                
+            scaled_width = self.sheet_width * self.scale_factor
+            scaled_height = self.sheet_height * self.scale_factor
             
             for frame_index in range(settings["frames"]):
-                image = self.get_image(
-                    sheet,
-                    frame_index,
+                frame_rect = pg.Rect(
+                    frame_index * self.sheet_width,
+                    0,
                     self.sheet_width,
-                    self.sheet_height,
-                    self.sheet_width * self.scale_factor,
-                    self.sheet_height * self.scale_factor,
-                    (0, 0, 0)
+                    self.sheet_height
                 )
-                self.frames[state].append(image)
-
+                
+                frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
+                frame_image.blit(sheet, (0, 0), frame_rect)
+                frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
+                
+                flipped_image = pg.transform.flip(frame_image, True, False)
+                
+                self.frames[state].append(frame_image)
+                self.flipped_frames[state].append(flipped_image)
+            
     def get_image(self, sheet, frame, width, height, new_w, new_h, color):
         image = pg.Surface((width, height), pg.SRCALPHA).convert_alpha()
         image.blit(sheet, (0, 0), ((frame * width), 0, width, height))
@@ -1055,25 +1075,32 @@ class Player:
         self.attack_hitbox.centery = self.hitbox.centery
 
     def render(self):
-        if self.current_state not in self.frames or len(self.frames[self.current_state]) == 0:
+        self.flip_offset = {'left': 1, 'right': 0}
+        self.foot_alignment = 3
+        
+        if (self.current_state not in self.frames or 
+            not self.frames[self.current_state] or
+            (self.game.environment.current_time - self.last_damage_time < self.invinsibility_duration and 
+            not self.current_state == "death" and (pg.time.get_ticks() // 100) % 2 == 0)):
             return
 
-        if self.current_frame >= len(self.frames[self.current_state]):
-            self.current_frame = len(self.frames[self.current_state]) - 1
+        frame_idx = min(self.current_frame, len(self.frames[self.current_state]) - 1)
+        
+        if hasattr(self, "flipped_frames"):
+            image = (self.flipped_frames[self.current_state][frame_idx] if self.direction == "left"
+                    else self.frames[self.current_state][frame_idx])
+            
+        else:
+            image = self.frames[self.current_state][frame_idx]
+            if self.direction == "left":
+                image = pg.transform.flip(image, True, False)
 
-        if self.game.environment.current_time - self.last_damage_time < self.invinsibility_duration and not self.current_state == "death":
-            if (pg.time.get_ticks() // 100) % 2 == 0:
-                return
-
-        image = self.frames[self.current_state][self.current_frame]
-
-        if self.direction == "left":
-            image = pg.transform.flip(image, True, False)
-
-        flip_offset = 1 if self.direction == "left" else 0
-
-        sprite_x = self.hitbox.centerx - self.cam_x - image.get_width() // 2 + flip_offset
-        sprite_y = self.hitbox.centery - self.cam_y + 3 - image.get_height() // 2  # 3 = visual foot alignment
+        img_w, img_h = image.get_size()
+        cam_x, cam_y = self.cam_x, self.cam_y
+        hb_cx, hb_cy = self.hitbox.centerx, self.hitbox.centery
+        
+        sprite_x = hb_cx - cam_x - img_w // 2 + self.flip_offset[self.direction]
+        sprite_y = hb_cy - cam_y + self.foot_alignment - img_h // 2
 
         self.game.screen.blit(image, (sprite_x, sprite_y))
 
