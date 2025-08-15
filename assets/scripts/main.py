@@ -17,6 +17,7 @@ from ai import AISystem
 class Game:
   def __init__(self):
     pg.init()
+    
     self.clock = pg.time.Clock()
 
     os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
