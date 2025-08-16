@@ -6,15 +6,15 @@ import os
 class Background:
 	def __init__(self, game):
 		self.game = game
-  
+
 		self.load_settings()
 
 	def load_settings(self):
 		self.cam_x = 0
 		self.cam_y = 0
-  
+
 		self.menu_time = 0
-  
+
 		self.bg_settings = {}
 		self.layers = []
 
@@ -142,13 +142,13 @@ class Background:
 				start_x = render_x % bg_width
 				if start_x != 0:
 					start_x -= bg_width
-     
+		
 				start_x = math.floor(start_x)
 				
 				start_y = render_y % bg_height
 				if start_y != 0:
 					start_y -= bg_height
-     
+		
 				start_y = math.floor(start_y)
 
 				for x in range(start_x, self.game.screen_width, bg_width):
@@ -159,7 +159,7 @@ class Background:
 				start_x = render_x % bg_width
 				if start_x != 0:
 					start_x -= bg_width
-     
+		
 				start_x = math.floor(start_x)
 				
 				for x in range(start_x, self.game.screen_width, bg_width):
@@ -169,7 +169,7 @@ class Background:
 				start_y = render_y % bg_height
 				if start_y != 0:
 					start_y -= bg_height
-     
+		
 				start_y = math.floor(start_y)
 				
 				for y in range(start_y, self.game.screen_height, bg_height):

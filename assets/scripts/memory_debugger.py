@@ -47,10 +47,13 @@ class MemoryDebugger:
 
     def toggle_terminal(self):
         self.terminal_active = not self.terminal_active
-        if self.terminal_active:
-            self.terminal_input = ""
-            self.cursor_visible = True
-            self.last_cursor_toggle = pg.time.get_ticks()
+        
+        if not self.terminal_active:
+            return
+
+        self.terminal_input = ""
+        self.cursor_visible = True
+        self.last_cursor_toggle = pg.time.get_ticks()
 
     def handle_terminal_input(self, event):
         if not self.terminal_active:
