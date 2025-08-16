@@ -1075,7 +1075,7 @@ class Player:
         self.attack_hitbox.centery = self.hitbox.centery
 
     def render(self):
-        self.flip_offset = {'left': 1, 'right': 0}
+        self.flip_offset = {'left': 1.4, 'right': 0} # weird temp fix
         self.foot_alignment = 3
         
         if (self.current_state not in self.frames or 
