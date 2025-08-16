@@ -1212,23 +1212,36 @@ while running:
                         
                     elif event.key == pg.K_c and copied_tiles:
                         if precision_mode:
+                            min_x = min(t["x"] for t in copied_tiles)
+                            min_y = min(t["y"] for t in copied_tiles)
+                            
                             gx = round((mx + camera_x * zoom_level) / visual_size * 2) / 2
                             gy = round((my + camera_y * zoom_level) / visual_size * 2) / 2
                             
+                            for tile in copied_tiles:
+                                new_tile = tile.copy()
+                                new_tile["x"] = gx + (tile["x"] - min_x)
+                                new_tile["y"] = gy + (tile["y"] - min_y)
+                                new_tile["layer"] = current_layer
+                                
+                                tiles.append(new_tile)
                         else:
+                            min_x = min(t["x"] for t in copied_tiles)
+                            min_y = min(t["y"] for t in copied_tiles)
+                            
                             gx = (mx + camera_x * zoom_level) // visual_size
                             gy = (my + camera_y * zoom_level) // visual_size
-
-                        for tile in copied_tiles:
-                            new_tile = tile.copy()
-                            new_tile["x"] = gx + (tile["x"] - copied_tiles[0]["x"])
-                            new_tile["y"] = gy + (tile["y"] - copied_tiles[0]["y"])
-                            new_tile["layer"] = current_layer
-                            tiles.append(new_tile)
+                            
+                            for tile in copied_tiles:
+                                new_tile = tile.copy()
+                                new_tile["x"] = gx + (tile["x"] - min_x)
+                                new_tile["y"] = gy + (tile["y"] - min_y)
+                                new_tile["layer"] = current_layer
+                                
+                                tiles.append(new_tile)
                             
                     elif event.key == pg.K_m:
-                        tile = get_tile_at(mx, my, tiles, all_tile_surfaces, camera_x, camera_y, 
-                                        current_layer if layer_mode else None, current_panel_width)
+                        tile = get_tile_at(mx, my, tiles, all_tile_surfaces, camera_x, camera_y, current_layer if layer_mode else None, current_panel_width)
                         if tile:
                             mirrored_tile = tile.copy()
                             mirrored_tile["direction"] = (tile.get("direction", 0) + 180) % 360
