@@ -569,10 +569,10 @@ class Player:
                         if self.just_closed_dialogue:
                             return
                         
-                        self.in_dialogue = True
                         self.dialogue_with = entity
-                        self.dialougue_index = -1
+                        self.dialougue_index = 0
                         self.dialogue_just_opened = True
+                        self.in_dialogue = True
 
                         if entity["x"] < self.x:
                             self.direction = "left"
@@ -841,7 +841,6 @@ class Player:
             controller["back"] = self.joystick.get_button(6)
             controller["start"] = self.joystick.get_button(7)
 
-
             if self.joystick.get_numhats() > 0:
                 controller["dpad"] = self.joystick.get_hat(0)
                 
@@ -853,17 +852,17 @@ class Player:
                 if not getattr(self, "sliding", False):
                     self.vel_x = 0
                     
-                if keys[pg.K_q] or (hasattr(self, "joystick") and controller.get("X")):
+                if keys[pg.K_q] or hasattr(self, "joystick") and controller.get("X"):
                     self.drop_item()
                 
-                if keys[pg.K_e] or (hasattr(self, "joystick") and controller.get("A")):
+                if keys[pg.K_e] or hasattr(self, "joystick") and controller.get("A"):
                     self.consume_item()
 
             else:
                 if not self.in_dialogue:
                     if getattr(self, "sliding", False):
-                        left_input = keys[pg.K_a] or (self.joystick and controller.get("left_x") < -0.5)
-                        right_input = keys[pg.K_d] or (self.joystick and controller.get("left_x") > 0.5)
+                        left_input = keys[pg.K_a] or self.joystick and controller.get("left_x") < -0.5
+                        right_input = keys[pg.K_d] or self.joystick and controller.get("left_x") > 0.5
                         
                         if left_input and not right_input:
                             if not self.blocked_horizontally:
@@ -876,8 +875,8 @@ class Player:
                                 self.direction = "right"
                     
                     else:
-                        left_input = keys[pg.K_a] or (self.joystick and controller.get("left_x") < -0.5)
-                        right_input = keys[pg.K_d] or (self.joystick and controller.get("left_x") > 0.5)
+                        left_input = keys[pg.K_a] or self.joystick and controller.get("left_x") < -0.5
+                        right_input = keys[pg.K_d] or self.joystick and controller.get("left_x") > 0.5
                         
                         if left_input and right_input:
                             self.vel_x = 0  
@@ -895,19 +894,19 @@ class Player:
                         else:
                             self.vel_x = 0
 
-                    jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
+                    jump_input = keys[pg.K_w] or self.joystick and controller.get("A")
                     if jump_input and self.on_ground:
                         self.jump()
                         
-                    interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
+                    interact_input = keys[pg.K_e] or self.joystick and controller.get("Y")
                     if interact_input:
                         self.interact_with_entity()
 
-                    attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
+                    attack_input = keys[pg.K_SPACE] or self.joystick and controller.get("B")
                     if attack_input and self.current_state != "hurt":
                         self.start_attack()
                     
-                    pause_input = keys[pg.K_ESCAPE] or (self.joystick and controller.get("start"))
+                    pause_input = keys[pg.K_ESCAPE] or self.joystick and controller.get("start")
                     if pause_input:
                         pass
                 
@@ -915,7 +914,7 @@ class Player:
                     self.vel_x = 0
 
             for event in self.game.events:
-                if event.type == pg.KEYDOWN or (hasattr(self, "joystick") and event.type == pg.JOYBUTTONDOWN):
+                if event.type == pg.KEYDOWN or hasattr(self, "joystick") and event.type == pg.JOYBUTTONDOWN:
                     button_pressed = False
                     button = None
                     
@@ -924,7 +923,7 @@ class Player:
                         button = event.button
                     
                     if not self.in_dialogue:
-                        if (event.type == pg.KEYDOWN and event.key == pg.K_i) or (button_pressed and button == 6):
+                        if event.type == pg.KEYDOWN and event.key == pg.K_i or button_pressed and button == 6:
                             self.in_inventory = not self.in_inventory
                             
                             if self.in_inventory:
@@ -935,22 +934,26 @@ class Player:
                                 inventory_close_sound = self.sounds["inventory"]["close"]
                                 inventory_close_sound["sound"].play()
                         
-                        if (event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT) or (button_pressed and button == 4):
+                        if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT or button_pressed and button == 4:
                             if not self.in_inventory:
                                 self.dash()
                     
                     else:
-                        if (event.type == pg.KEYDOWN and event.key == pg.K_e) or (button_pressed and button == 3):
-                            self.game.ui.remove_ui_element("dialogue_boarder")
-                            self.dialougue_index += 1 
+                        if event.type == pg.KEYDOWN and event.key == pg.K_e or button_pressed and button == 3:
+                            if not self.dialogue_just_opened:
+                                self.game.ui.remove_ui_element("dialogue_boarder")
+                                self.dialougue_index += 1 
 
-                            for sound in self.sounds["talking"]:
-                                sound["sound"].stop()
+                                for sound in self.sounds["talking"]:
+                                    sound["sound"].stop()
 
-                            talk_sound = random.choice(self.sounds["talking"])
-                            talk_sound["sound"].play()
-                
-                elif event.type == pg.KEYUP or (hasattr(self, "joystick") and event.type == pg.JOYBUTTONUP):
+                                talk_sound = random.choice(self.sounds["talking"])
+                                talk_sound["sound"].play()
+                                
+                            else:
+                                self.dialogue_just_opened = False
+
+                elif event.type == pg.KEYUP or hasattr(self, "joystick") and event.type == pg.JOYBUTTONUP:
                     if (event.type == pg.KEYUP and event.key == pg.K_e) or (event.type == pg.JOYBUTTONUP and event.button == 3):
                         if self.just_closed_dialogue:
                             self.just_closed_dialogue = False
