@@ -85,7 +85,7 @@ class Player:
             "attacking1": {"frames": 6, "speed": 0.2},
             "attacking2": {"frames": 6, "speed": 0.2},
             "hurt": {"frames": 4, "speed": 0.10}, # 0.10
-            "death": {"frames": 4, "speed": 0.2},
+            "death": {"frames": 4, "speed": 0.15},
         }
         self.frames = {state: [] for state in self.state_frames}
         
@@ -177,13 +177,6 @@ class Player:
                 
                 self.frames[state].append(frame_image)
                 self.flipped_frames[state].append(flipped_image)
-            
-    def get_image(self, sheet, frame, width, height, new_w, new_h, color):
-        image = pg.Surface((width, height), pg.SRCALPHA).convert_alpha()
-        image.blit(sheet, (0, 0), ((frame * width), 0, width, height))
-        image = pg.transform.scale(image, (new_w, new_h))
-        image.set_colorkey(color)
-        return image
 
     def update_state(self):     
         for sound_group in self.sounds.values():
@@ -468,7 +461,7 @@ class Player:
             self.inventory_changed = True
             self.inventory_cooldown = self.game.environment.current_time
     
-    # probably shit way of handling hitboxes
+    # probably shit way of handling hitboxes/updates
     def hitbox_set(self):
         self.hitbox = pg.Rect(
             self.x - self.hitbox_width / 2,
@@ -612,13 +605,12 @@ class Player:
             return
     
         item_to_consume = self.inventory[self.selected_slot]
+        self.current_health += item_to_consume["health"]
         
         if item_to_consume["quantity"] > 1:
-            self.current_health += item_to_consume["health"]
             item_to_consume["quantity"] -= 1
         
         else:
-            self.current_health += item_to_consume["health"]
             del self.inventory[self.selected_slot]
         
         self.refresh_inventory()
@@ -659,6 +651,7 @@ class Player:
             
     def update_collision(self):
         self.hitbox_set()
+        
         horizontal_collisions = []
         vertical_collisions = []
 
@@ -813,13 +806,6 @@ class Player:
             self.attacking = False
             self.attack_sequence = (self.attack_sequence % 2) + 1
             self.active_melee_attack_ids.clear()
-
-    def hold_last_frame(self):
-        if self.current_frame < len(self.frames[self.current_state]):
-            return
-
-        self.current_frame = len(self.frames[self.current_state]) - 1
-        self.animation_timer = 0
 
     def handle_controls(self):
         keys = pg.key.get_pressed()
@@ -1062,7 +1048,7 @@ class Player:
         attack_sound = random.choice(self.sounds["attack"])
         attack_sound["sound"].play()
             
-    def update_projectiles(self):
+    def update_projectiles(self): # not in use currently
         self.active_projectile_attack_ids = [id for id in self.active_projectile_attack_ids if not self.is_projectile_done(id)]
 
     def update_attack_hitbox(self):
@@ -1090,8 +1076,7 @@ class Player:
         frame_idx = min(self.current_frame, len(self.frames[self.current_state]) - 1)
         
         if hasattr(self, "flipped_frames"):
-            image = (self.flipped_frames[self.current_state][frame_idx] if self.direction == "left"
-                    else self.frames[self.current_state][frame_idx])
+            image = (self.flipped_frames[self.current_state][frame_idx] if self.direction == "left" else self.frames[self.current_state][frame_idx])
             
         else:
             image = self.frames[self.current_state][frame_idx]

@@ -1,10 +1,5 @@
 import pygame as pg
 
-# poor implementation of a class that handles all UI in the game 
-# one instance of this class is created in the game class, and it handles all UI in the game
-# and should be refactored to have seperate instances for each entity
-# will make more OOP friendly and more conventional
-
 class UI:
     def __init__(self, game):
         self.game = game

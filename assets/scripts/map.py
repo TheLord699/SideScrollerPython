@@ -156,10 +156,10 @@ class Map:
             self.grid_height = 0
             return
 
-        min_x = min(h.left for h in self.tile_hitboxes)
-        min_y = min(h.top for h in self.tile_hitboxes)
-        max_x = max(h.right for h in self.tile_hitboxes)
-        max_y = max(h.bottom for h in self.tile_hitboxes)
+        min_x = min(hitbox.left for hitbox in self.tile_hitboxes)
+        min_y = min(hitbox.top for hitbox in self.tile_hitboxes)
+        max_x = max(hitbox.right for hitbox in self.tile_hitboxes)
+        max_y = max(hitbox.bottom for hitbox in self.tile_hitboxes)
 
         self.grid_cell_size = self.visual_tile_size * 4
         self.grid_width = int((max_x - min_x) // self.grid_cell_size) + 1
