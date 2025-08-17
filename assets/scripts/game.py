@@ -55,6 +55,7 @@ class Environment:
     }
     self.maps = {
       "TestMap": "assets/maps/LayerTest/",
+      "Test2": "assets/maps/LayerTest2/"
     }
     self.music = {
       "main": pg.mixer.Sound("assets/sounds/music/Alone_In_The_Town.wav"),

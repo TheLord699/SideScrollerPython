@@ -41,3 +41,5 @@ TODO:
 -Note: entity hitboxes arent saved into their list so you arent able to refrence in other classes
 
 -need to make it so I can set can_walk_off_edge or something like that in entitiy for each entities, same with height check for edge
+
+-Note: spacial grid partitioning is currently only used with tile collisions, also do so with entities and player
