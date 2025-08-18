@@ -341,7 +341,43 @@ class Player:
             if index not in self.inventory:
                 self.inventory[index] = item
                 return
-    
+            
+    def render_item_mouse(self):
+        if not self.in_inventory or self.selected_slot is None or self.selected_slot not in self.inventory:
+            if hasattr(self, "mouse_item") and self.mouse_item:
+                self.game.ui.remove_ui_element(self.mouse_item)
+                
+            return
+        
+        item = self.inventory[self.selected_slot]
+        item_name = item["name"]
+        item_index = self.item_info["items"][item_name]["index"]
+        
+        parts = item_index.split("_")
+        if len(parts) < 3:
+            return
+
+        item_element_id = f"item:{item_name}"
+        if item_element_id in self.rendered_inventory_ui_elements:
+            self.game.ui.remove_ui_element(item_element_id)
+            self.rendered_inventory_ui_elements.remove(item_element_id)
+
+        if hasattr(self, "mouse_item") and self.mouse_item:
+            self.game.ui.remove_ui_element(self.mouse_item)
+
+        mouse_x, mouse_y = pg.mouse.get_pos()
+        self.mouse_item = f"mouse_{item_name}"
+        
+        self.game.ui.create_ui(
+            sprite_sheet_path="item_sheet", image_id=item_index,
+            x=mouse_x, y=mouse_y,
+            sprite_width=16, sprite_height=16,
+            centered=True, width=30, height=30,
+            alpha=True,
+            element_id=self.mouse_item,
+            render_order=1
+        )
+        
     def render_item_info(self, id): # doesnt update amount in real time
         if hasattr(self, "last_rendered_item") and self.last_rendered_item:
             self.game.ui.remove_ui_element(self.last_rendered_item)
@@ -1153,6 +1189,7 @@ class Player:
             self.animate()
             self.update_attack_hitbox()
             self.render_inventory()
+            self.render_item_mouse()
             self.render_health()
             self.render_dialogue()
             self.render()
