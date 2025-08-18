@@ -19,6 +19,8 @@ Controls:
 movement: WASD
 dash: Shift
 inventory: I
+consume item: E
+drop item: Q
 attack: Spacebar
 item pickup/talk to npcs: E
 back to menu: B
