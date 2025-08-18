@@ -482,6 +482,9 @@ class Player:
             self.render_inventory() 
             self.inventory_cooldown = self.game.environment.current_time  
             
+            drop_sound = random.choice(self.sounds["pickup"])
+            drop_sound["sound"].play()
+            
         elif self.selected_slot is not None and slot != self.selected_slot and (self.game.environment.current_time - self.inventory_cooldown >= 150):
             if slot in self.inventory:
                 self.inventory[self.selected_slot], self.inventory[slot] = self.inventory[slot], self.inventory[self.selected_slot]
@@ -1007,8 +1010,8 @@ class Player:
             white_image.fill((255, 255, 255, opacity), special_flags=pg.BLEND_RGBA_MULT)
 
             flip_offset = 14 if self.direction == "right" else 0
-            screen_x = ghost_x + self.hitbox_width / 2 - flip_offset - self.cam_x
-            screen_y = ghost_y + self.hitbox_height / 8 - self.cam_y
+            #screen_x = ghost_x + self.hitbox_width / 2 - flip_offset - self.cam_x
+            #screen_y = ghost_y + self.hitbox_height / 8 - self.cam_y
 
             lifespan = 15 + (num_ghosts - i - 1) * 2
 

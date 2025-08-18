@@ -17,15 +17,25 @@ Dependencies: Pygame-ce, numpy
 Controls:
 
 movement: WASD
+
 dash: Shift
+
 inventory: I
+
 consume item: E
+
 drop item: Q
+
 attack: Spacebar
+
 item pickup/talk to npcs: E
+
 back to menu: B
+
 Open memory_debugger: M
+
 Close memory_debugger: ESC
+
 Open terminal(do this in memory_debugger): Tab
 
 If you want to test lighting go into terminal, write environment.lighting = True
