@@ -12,6 +12,8 @@ render func in the main.py file and main.py isnt in project root but in the scri
 
 ALL ASSETS ARE FROM itch.io 
 
+Dependencies: Pygame-ce, numpy
+
 Controls:
 
 movement: WASD
