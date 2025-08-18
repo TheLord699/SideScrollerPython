@@ -5,14 +5,6 @@ import math
 import time
 import os
 
-# poor implementation of a class that handles all entities in the game 
-# one instance of this class is created in the game class, and it handles all entities in the game
-# and should be refactored to have seperate instances for each entity
-# will make more OOP friendly and more conventional
-# use of ABC and abstract methods would be better
-# but for now this is a quick and dirty implementation 
-# also was created prior to having this knowledge
-
 class Entities:
     def __init__(self, game):
         self.game = game
