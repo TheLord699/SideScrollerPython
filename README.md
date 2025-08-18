@@ -15,6 +15,7 @@ Controls:
 movement: WASD
 dash: Shift
 inventory: I
+item pickup: E
 back to menu: B
 Open memory_debugger: M
 Close memory_debugger: ESC
