@@ -314,12 +314,12 @@ class Entities:
         for tile_hitbox, tile_id in nearby_tiles:
             tile_attrs = self.game.map.tile_attributes.get(tile_id, {})
             swimmable = tile_attrs.get("swimmable", False)
-            damage = tile_attrs.get("damage", 0)
+            #damage = tile_attrs.get("damage", 0)
             
             if entity_hitbox.colliderect(tile_hitbox) or ground_check.colliderect(tile_hitbox):
-                if damage and entity["entity_type"] != "actor":
-                    entity["health"] -= damage
-                    entity["damage_effect"] = 1
+                #if damage and entity["entity_type"] != "actor":
+                    #entity["health"] -= damage
+                    #entity["damage_effect"] = 1
                 
                 if swimmable:
                     continue
