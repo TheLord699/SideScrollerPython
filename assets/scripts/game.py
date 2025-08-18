@@ -193,6 +193,7 @@ class Environment:
 
     if self.menu in {"play"} or self.menu in "main" and not self.last_menu == "settings":
       self.menu_background_loaded = False
+      pg.mixer.stop()
 
     self.clear_ui()
     self.game.entities.reset()

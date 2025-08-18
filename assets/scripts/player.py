@@ -575,6 +575,7 @@ class Player:
                     font=self.game.environment.fonts["fantasy"],
                     render_order=1
                 )
+                self.dialogue_just_opened = False
 
     def interact_with_entity(self):
         for entity in self.game.entities.entities:
