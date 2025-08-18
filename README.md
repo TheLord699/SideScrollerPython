@@ -20,6 +20,11 @@ Open memory_debugger: M
 Close memory_debugger: ESC
 Open terminal(do this in memory_debugger): Tab
 
+If you want to test lighting go into terminal, write environment.lighting = True
+and press N to place stationary lights
+
+If you want to see hitboxes and other debug stuff write into terminal debugging = True
+
 This project is more of a showcase of different systems
 
 ![image alt](https://github.com/TheLord699/SideScrollerPython/blob/a9c685ae1db8d070a10e447c9e7f7f11895733ff/Title.png?raw=true)
