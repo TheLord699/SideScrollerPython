@@ -18,7 +18,7 @@ movement: WASD
 dash: Shift
 inventory: I
 attack: Spacebar
-item pickup: E
+item pickup/talk to npcs: E
 back to menu: B
 Open memory_debugger: M
 Close memory_debugger: ESC
