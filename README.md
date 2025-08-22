@@ -84,3 +84,5 @@ TODO:
 -Note: spacial grid partitioning is currently only used with tile collisions, also do so with entities and player
 
 -need to centralize asset loading and perhaps rendering
+
+-want to add a shop

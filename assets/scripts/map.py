@@ -33,7 +33,6 @@ class Map:
         self.tile_sheets = []
         self.all_tile_surfaces = []
         self.tile_attributes = {}
-        
         self.non_empty_cells = set()
 
     def load(self, map_path):
@@ -96,8 +95,8 @@ class Map:
 
                 scale_factor = self.visual_tile_size / tile_size
                 
-                for y in range(0, sheet_height - tile_size + 1, tile_size):
-                    for x in range(0, sheet_width - tile_size + 1, tile_size):
+                for y in range(0, sheet_height, tile_size):
+                    for x in range(0, sheet_width, tile_size):
                         tile = tilesheet_img.subsurface((x, y, tile_size, tile_size))
                         tile = pg.transform.scale(tile, 
                             (int(tile_size * scale_factor), int(tile_size * scale_factor)))

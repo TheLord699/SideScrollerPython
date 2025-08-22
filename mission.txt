@@ -24,7 +24,7 @@
 
 -need to centralize asset loading and perhaps rendering
 
-
+-want to add a shop
 
 
 
