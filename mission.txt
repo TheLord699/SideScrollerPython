@@ -24,6 +24,9 @@
 
 -need to make it so I can set can_walk_off_edge or something like that in entitiy for each entities, same with height check for edge
 
+-need to centralize asset loading and perhaps rendering
+
+
 
 
 
