@@ -272,8 +272,8 @@ class Entities:
             vel_y = random.uniform(-6.0, -6.5) 
             radius = random.randint(2, 4)
 
-            image_path = "assets/sprites/particles/blood.png"
-            particle_img = pg.image.load(image_path).convert_alpha()
+            #image_path = "assets/sprites/particles/blood.png"
+            #particle_img = pg.image.load(image_path).convert_alpha()
 
             self.game.particles.generate(
                 pos=(entity["x"], entity["y"]),
