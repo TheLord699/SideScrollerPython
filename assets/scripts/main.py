@@ -18,11 +18,11 @@ class Game:
   def __init__(self):
     pg.init()
     
+    os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) # dont think will work for builds/executables
+        
     self.clock = pg.time.Clock()
-
-    os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
   
-    version = "0.0.0"
+    self.version = "0.4.0-dev"
     icon = pg.image.load("assets/sprites/enemy/bug.png")
 
     self.screen_width, self.screen_height = 800, 600
@@ -30,7 +30,7 @@ class Game:
     
     self.debugging = False # will remove later
 
-    pg.display.set_caption(f"SideScroller {version}")
+    pg.display.set_caption(f"SideScroller {self.version}")
     pg.display.set_icon(icon)
 
     self.init_game_objects()

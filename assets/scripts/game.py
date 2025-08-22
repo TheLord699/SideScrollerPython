@@ -93,6 +93,28 @@ class Environment:
     self.load_background("assets/maps/LayerTest")
     
     self.game.ui.create_ui(
+      x=-40, y=-30, sprite_width=95, sprite_height=32, 
+      width=200, height=100,
+      alpha=True,
+      scale_multiplier=1,
+      label=f"ver: {self.game.version}",
+      font=self.game.environment.fonts["fantasy"],
+      element_id="version",
+      font_size=16,
+      render_order=0
+    )
+    self.game.ui.create_ui(
+      x=self.game.screen_width / 2.6, y=100, sprite_width=95, sprite_height=32, 
+      centered=True, width=200, height=100,
+      alpha=True,
+      scale_multiplier=1,
+      label="Generic Side Scroller",
+      font=self.game.environment.fonts["fantasy"],
+      element_id="title",
+      font_size=28,
+      render_order=0
+    )
+    self.game.ui.create_ui(
       sprite_sheet_path="ui_sheet", image_id="item_33_0",
       x=self.game.screen_width / 2, y=250, sprite_width=95, sprite_height=32, 
       centered=True, width=200, height=100,

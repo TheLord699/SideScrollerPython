@@ -16,6 +16,8 @@ Dependencies: Pygame-ce, numpy
 
 Controls:
 
+____________________________________
+
 movement: WASD
 
 dash: Shift
@@ -44,6 +46,8 @@ and press N to place stationary lights
 If you want to see hitboxes and other debug stuff write into terminal debugging = True
 
 You can drag entities with mouse but dont pickup item you are dragging
+
+____________________________________
 
 This project is more of a showcase of different systems
 
@@ -80,3 +84,5 @@ TODO:
 -need to make it so I can set can_walk_off_edge or something like that in entitiy for each entities, same with height check for edge
 
 -Note: spacial grid partitioning is currently only used with tile collisions, also do so with entities and player
+
+-need to centralize asset loading and perhaps rendering
