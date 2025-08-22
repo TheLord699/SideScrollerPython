@@ -73,8 +73,6 @@ TODO:
 
 -somethings are loaded into memory more than once
 
--specific issue where ui doesnt load missing texture if loading non existant sheet
-
 -want to completley re-write certain systyems like entities and entities.json format
 
 -Note: using self.game.screen_width and height for rendering bounds for now but can change to, self.game.screen.get_size()
