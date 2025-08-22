@@ -8,7 +8,7 @@ class Environment:
     
     self.fps = 60
     
-    self.volume = 1 # multiplier
+    self.volume = 0.5 # multiplier
     self.gravity = 0.5 # 0.5
     self.max_fall_speed = 20 # terminal vel for all entities + player
     self.scale = 3 # 3

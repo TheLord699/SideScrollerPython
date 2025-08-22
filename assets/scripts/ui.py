@@ -101,6 +101,7 @@ class UI:
                         
                 else:
                     missing_texture = True
+                    print(f"Sprite sheet {sprite_sheet_path} not found, using missing texture")
 
             show_missing_texture = (missing_texture or original_image is None) and not is_slider and not (label and not is_button)
             
