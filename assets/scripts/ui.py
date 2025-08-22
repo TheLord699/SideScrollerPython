@@ -7,6 +7,7 @@ class UI:
         self.ui_elements = []
         self.loaded_sheets = {}
         self.loaded_images = {}
+        self.loaded_fonts = {}
         
     def load_sheet(self, sheet_name, path):
         if sheet_name in self.loaded_sheets:
@@ -31,23 +32,35 @@ class UI:
             print(f"Error loading image from {image_path}: {e}")
             return self.game.environment.missing_texture.copy()
     
-    def load_font(self, font, size=24):
-        if isinstance(font, pg.font.Font):
-            return font
+    def load_font(self, font_path, size=24):
+        font_key = f"{font_path}_{size}"
+        
+        if font_key in self.loaded_fonts:
+            return self.loaded_fonts[font_key]
         
         try:
-            return pg.font.Font(font, size) if font else pg.font.Font(None, size)
+            if font_path:
+                font = pg.font.Font(font_path, size)
+                
+            else:
+                font = pg.font.Font(None, size)
+                
+            self.loaded_fonts[font_key] = font
+            return font
         
         except Exception as e:
             print(f"Error loading font: {e}")
-            return pg.font.Font(None, size)
+            font = pg.font.Font(None, size)
+            self.loaded_fonts[font_key] = font
+            return font
 
     def create_ui(self, x, y, width, height, alpha=None, is_button=False, scale_multiplier=1.1,
                     image_path=None, sprite_sheet_path=None, sprite_width=16, sprite_height=16,
                     image_id=None, element_id=None, centered=False, callback=None, is_hold=False,
                     label=None, font=None, font_size=24, text_color=(255, 255, 255), render_order=0,
                     is_slider=False, min_value=0, max_value=100, initial_value=50, step_size=1, variable=None,
-                    is_dialogue=False, typing_speed=30, auto_advance=False, advance_speed=2000):
+                    is_dialogue=False, typing_speed=30, auto_advance=False, advance_speed=2000,
+                    parallax_factor=None, follow_factor=None, hover_range=None):
         
         try:
             if any(el["id"] == element_id for el in self.ui_elements):
@@ -111,6 +124,11 @@ class UI:
                 typing_complete = True
                 advance_timer = 0
 
+            ui_font = self.load_font(font, font_size)
+            text_surface = None
+            if current_text:
+                text_surface = ui_font.render(current_text, True, text_color)
+
             ui_element = {
                 "original_image": original_image,
                 "alpha": alpha,
@@ -123,9 +141,10 @@ class UI:
                 "holding": False,
                 "label": current_text if not is_dialogue else "",
                 "full_text": full_text,
-                "font": self.load_font(font, font_size),
+                "font_path": font,
+                "font_size": font_size,
                 "text_color": text_color,
-                "text_surface": None,
+                "text_surface": text_surface,
                 "render_order": render_order,
                 "is_slider": is_slider,
                 "min_value": min_value,
@@ -143,7 +162,15 @@ class UI:
                 "typing_complete": typing_complete,
                 "auto_advance": auto_advance,
                 "advance_speed": advance_speed,
-                "advance_timer": advance_timer
+                "advance_timer": advance_timer,
+                "parallax_factor": parallax_factor,
+                "follow_factor": follow_factor,
+                "hover_range": hover_range,
+                "base_position": (x, y),
+                "current_offset": (0, 0),
+                "width": width,
+                "height": height,
+                "centered": centered
             }
 
             if centered:
@@ -152,9 +179,8 @@ class UI:
             else:
                 ui_element["rect"] = pg.Rect(x, y, width, height)
 
-            if label:
-                ui_element["text_surface"] = ui_element["font"].render(ui_element["label"], False, text_color)
-                ui_element["text_rect"] = ui_element["text_surface"].get_rect(center=ui_element["rect"].center)
+            if text_surface:
+                ui_element["text_rect"] = text_surface.get_rect(center=ui_element["rect"].center)
 
             if original_image:
                 ui_element["image"] = ui_element["original_image"].copy()
@@ -183,7 +209,7 @@ class UI:
             element["label"] = element["full_text"][:element["typing_index"]]
             element["last_typing_time"] = current_time
             
-            element["text_surface"] = element["font"].render(element["label"], False, element["text_color"])
+            element["text_surface"] = self.load_font(element["font_path"], element["font_size"]).render(element["label"], True, element["text_color"])
             element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
             
             if element["typing_index"] >= len(element["full_text"]):
@@ -194,32 +220,251 @@ class UI:
             if current_time - element["advance_timer"] >= element["advance_speed"]:
                 if element["callback"]:
                     element["callback"]()
+                    
                 element["advance_timer"] = current_time
 
-# not using yet
-    def skip_dialogue(self, element_id):
-        for element in self.ui_elements:
-            if element["id"] == element_id and element["is_dialogue"] and not element["typing_complete"]:
-                element["typing_index"] = len(element["full_text"])
-                element["label"] = element["full_text"]
-                element["typing_complete"] = True
-                element["text_surface"] = element["font"].render(element["label"], False, element["text_color"])
+    def update_ui_movement(self, element, mouse_pos):
+        screen_center_x = self.game.screen_width / 2
+        screen_center_y = self.game.screen_height / 2
+        
+        norm_mouse_x = (mouse_pos[0] - screen_center_x) / screen_center_x
+        norm_mouse_y = (mouse_pos[1] - screen_center_y) / screen_center_y
+        
+        offset_x, offset_y = 0, 0
+        
+        if element["parallax_factor"]:
+            offset_x += -norm_mouse_x * element["parallax_factor"] * element["rect"].width
+            offset_y += -norm_mouse_y * element["parallax_factor"] * element["rect"].height
+        
+        if element["follow_factor"]:
+            element_center_x = element["rect"].centerx
+            element_center_y = element["rect"].centery
+            
+            direction_x = mouse_pos[0] - element_center_x
+            direction_y = mouse_pos[1] - element_center_y
+            
+            distance = max(1, (direction_x ** 2 + direction_y ** 2) ** 0.5)
+            
+            offset_x += direction_x * element["follow_factor"]
+            offset_y += direction_y * element["follow_factor"]
+        
+        if element["hover_range"] and element["is_button"]:
+            element_center = (element["rect"].centerx, element["rect"].centery)
+            
+            distance_x = mouse_pos[0] - element_center[0]
+            distance_y = mouse_pos[1] - element_center[1]
+            
+            distance = (distance_x ** 2 + distance_y ** 2) ** 0.5
+            
+            if distance < element["hover_range"] * 20:
+                strength = 1 - (distance / (element["hover_range"] * 20))
+                offset_x += (distance_x / max(1, distance)) * element["hover_range"] * strength
+                offset_y += (distance_y / max(1, distance)) * element["hover_range"] * strength
+        
+        current_offset_x, current_offset_y = element["current_offset"]
+        smooth_factor = 0.2
+        
+        new_offset_x = current_offset_x * (1 - smooth_factor) + offset_x * smooth_factor
+        new_offset_y = current_offset_y * (1 - smooth_factor) + offset_y * smooth_factor
+        
+        element["current_offset"] = (new_offset_x, new_offset_y)
+        
+        if element["centered"]:
+            element["rect"] = element["image"].get_rect(
+                center=(element["base_position"][0] + new_offset_x, element["base_position"][1] + new_offset_y)
+            ) if element["original_image"] else pg.Rect(
+                element["base_position"][0] + new_offset_x - element["width"]/2,
+                element["base_position"][1] + new_offset_y - element["height"]/2,
+                element["width"], element["height"]
+            )
+            
+        else:
+            element["rect"] = pg.Rect(
+                element["base_position"][0] + new_offset_x,
+                element["base_position"][1] + new_offset_y,
+                element["width"], element["height"]
+            )
+        
+        if element.get("text_surface"):
+            if element["scaled"] and "scaled_text_rect" in element:
+                element["scaled_text_rect"] = element["scaled_text_surface"].get_rect(center=element["rect"].center)
+                
+            elif "text_rect" in element:
                 element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
+
+    def update_button_interaction(self, element, mouse_pos, mouse_pressed):
+        if element["original_image"] and element["alpha"] and "mask" not in element:
+            element["mask"] = pg.mask.from_surface(element["original_image"])
+        
+        if element["rect"].collidepoint(mouse_pos):
+            if element["alpha"] and "mask" in element:
+                offset_x = mouse_pos[0] - element["rect"].x
+                offset_y = mouse_pos[1] - element["rect"].y
+                
+                if (0 <= offset_x < element["mask"].get_size()[0] and 0 <= offset_y < element["mask"].get_size()[1] and element["mask"].get_at((offset_x, offset_y))):
+                    if not element["scaled"]:
+                        old_center = element["rect"].center
+                        
+                        new_width = int(element["rect"].width * element["scale_multiplier"])
+                        new_height = int(element["rect"].height * element["scale_multiplier"])
+                        element["image"] = pg.transform.scale(element["original_image"], (new_width, new_height))
+                        
+                        element["rect"] = element["image"].get_rect(center=old_center)
+                        element["scaled"] = True
+                        
+                        element["mask"] = pg.mask.from_surface(element["image"])
+                        
+                        if element.get("text_surface"):
+                            text_scale = element["scale_multiplier"]
+                            scaled_text_surface = pg.transform.scale(
+                                element["text_surface"], 
+                                (int(element["text_surface"].get_width() * text_scale), 
+                                 int(element["text_surface"].get_height() * text_scale))
+                            )
+                            element["scaled_text_surface"] = scaled_text_surface
+                            element["scaled_text_rect"] = scaled_text_surface.get_rect(center=element["rect"].center)
+                        
+                else:
+                    if element["scaled"]:
+                        old_center = element["rect"].center
+                        
+                        element["image"] = element["original_image"].copy()
+                        element["rect"] = element["image"].get_rect(center=old_center)
+                        element["scaled"] = False
+                        element.pop("mask", None)
+                        
+                        if "scaled_text_surface" in element:
+                            element.pop("scaled_text_surface", None)
+                            element.pop("scaled_text_rect", None)
+                            
+            else:
+                if not element["scaled"]:
+                    old_center = element["rect"].center
+                    
+                    new_width = int(element["rect"].width * element["scale_multiplier"])
+                    new_height = int(element["rect"].height * element["scale_multiplier"])
+                    element["image"] = pg.transform.scale(element["original_image"], (new_width, new_height))
+                    
+                    element["rect"] = element["image"].get_rect(center=old_center)
+                    element["scaled"] = True
+                    element["mask"] = pg.mask.from_surface(element["image"])
+                    
+                    if element.get("text_surface"):
+                        text_scale = element["scale_multiplier"]
+                        scaled_text_surface = pg.transform.scale(
+                            element["text_surface"], 
+                            (int(element["text_surface"].get_width() * text_scale), 
+                             int(element["text_surface"].get_height() * text_scale))
+                        )
+                        element["scaled_text_surface"] = scaled_text_surface
+                        element["scaled_text_rect"] = scaled_text_surface.get_rect(center=element["rect"].center)
+                        
+        else:
+            if element["scaled"]:
+                old_center = element["rect"].center
+                
+                element["image"] = element["original_image"].copy()
+                element["rect"] = element["image"].get_rect(center=old_center)
+                element["scaled"] = False
+                element.pop("mask", None)
+                
+                if "scaled_text_surface" in element:
+                    element.pop("scaled_text_surface", None)
+                    element.pop("scaled_text_rect", None)
+
+        if element["rect"].collidepoint(mouse_pos):
+            if element["alpha"] and "mask" in element:
+                offset_x = mouse_pos[0] - element["rect"].x
+                offset_y = mouse_pos[1] - element["rect"].y
+                
+                if not (0 <= offset_x < element["mask"].get_size()[0] and 0 <= offset_y < element["mask"].get_size()[1] and element["mask"].get_at((offset_x, offset_y))):
+                    element["holding"] = False
+                    return
+            
+            if mouse_pressed[0]:
+                if element["is_hold"]:
+                    if element["callback"]:
+                        element["callback"]()
+                        
+                elif not element["holding"]:
+                    if element["callback"]:
+                        element["callback"]()
+                        
+                    element["holding"] = True
+                    
+            else:
+                element["holding"] = False 
+                
+        else:
+            element["holding"] = False
+
+    def update_slider_interaction(self, element, mouse_pos, mouse_pressed): # working on
+        track_rect = element["slider_rect"]
+        knob_rect = element["slider_knob"]
+
+        pg.draw.rect(self.game.screen, (200, 200, 200), track_rect)
+        pg.draw.rect(self.game.screen, (0, 0, 255), knob_rect)
+
+        if pg.mouse.get_pressed()[0]:
+            if knob_rect.collidepoint(mouse_pos):
+                element["grabbed"] = True
+        
+        else:
+            element["grabbed"] = False
+            
+        if element["grabbed"]:
+            knob_rect.x = max(track_rect.x, min(mouse_pos[0] - knob_rect.width // 2, track_rect.right - knob_rect.width))
+            
+        relative_position = (knob_rect.x - track_rect.x) / track_rect.width
+        new_value = element["min_value"] + relative_position * (element["max_value"] - element["min_value"])
+
+        if element["step_size"] > 0:
+            new_value = round(new_value / element["step_size"]) * element["step_size"]
+            new_value = max(min(new_value, element["max_value"]), element["min_value"])
+            
+        element["current_value"] = new_value
+        
+        if element["variable"]:
+            element["variable"](new_value)
+            
+        element["slider_knob"] = knob_rect
+    
+    def reset_ui_position(self, element_id):
+        for element in self.ui_elements:
+            if element["id"] == element_id:
+                element["current_offset"] = (0, 0)
+                
+                if element["centered"]:
+                    element["rect"] = element["original_image"].get_rect(
+                        center=element["base_position"]
+                    ) if element["original_image"] else pg.Rect(
+                        element["base_position"][0] - element["width"]/2,
+                        element["base_position"][1] - element["height"]/2,
+                        element["width"], element["height"]
+                    )
+                    
+                else:
+                    element["rect"] = pg.Rect(
+                        element["base_position"][0],
+                        element["base_position"][1],
+                        element["width"], element["height"]
+                    )
+    
+                if "text_rect" in element:
+                    element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
+                    
                 break
 
-    def update_dialogue_text_immediate(self, element_id, new_text):
-        for element in self.ui_elements:
-            if element["id"] == element_id and element["is_dialogue"]:
-                element["full_text"] = new_text
-                element["label"] = ""
-                element["typing_index"] = 0
-                element["typing_complete"] = False
-                element["last_typing_time"] = pg.time.get_ticks()
-                element["advance_timer"] = pg.time.get_ticks()
-                element["text_surface"] = element["font"].render(element["label"], False, element["text_color"])
-                element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
-                break
-# not using yet
+    def render_ui_element(self, element):
+        if element["original_image"]:
+            self.game.screen.blit(element["image"], element["rect"])
+
+        if element.get("text_surface"):
+            if element["scaled"] and "scaled_text_surface" in element:
+                self.game.screen.blit(element["scaled_text_surface"], element["scaled_text_rect"])
+                
+            elif "text_surface" in element:
+                self.game.screen.blit(element["text_surface"], element["text_rect"])
 
     def update(self):
         mouse_pos = pg.mouse.get_pos()
@@ -228,105 +473,16 @@ class UI:
         self.ui_elements.sort(key=lambda x: x.get("render_order", 0))
 
         for element in self.ui_elements:
-            if element["is_dialogue"]:
+            if any([element.get("parallax_factor"), element.get("follow_factor"), element.get("hover_range")]):
+                self.update_ui_movement(element, mouse_pos)
+            
+            if element.get("is_dialogue"):
                 self.update_dialogue_text(element)
 
-            if element["is_button"]:
-                if element["original_image"] and element["alpha"] and "mask" not in element:
-                    element["mask"] = pg.mask.from_surface(element["original_image"])
+            if element.get("is_button"):
+                self.update_button_interaction(element, mouse_pos, mouse_pressed)
 
-                offset_x = mouse_pos[0] - element["rect"].x
-                offset_y = mouse_pos[1] - element["rect"].y
+            if element.get("is_slider"):
+                self.update_slider_interaction(element, mouse_pos, mouse_pressed)
 
-                if element["rect"].collidepoint(mouse_pos):
-                    if element["alpha"]:
-                        if (0 <= offset_x < element["mask"].get_size()[0]) and (0 <= offset_y < element["mask"].get_size()[1]):
-                            if element["mask"].get_at((offset_x, offset_y)):
-                                if not element["scaled"]:
-                                    new_width = int(element["rect"].width * element["scale_multiplier"])
-                                    new_height = int(element["rect"].height * element["scale_multiplier"])
-                                    element["image"] = pg.transform.scale(element["original_image"], (new_width, new_height))
-                                    element["rect"] = element["image"].get_rect(center=element["center"])
-                                    element["scaled"] = True
-                                    element["mask"] = pg.mask.from_surface(element["image"])
-
-                            else:
-                                if element["scaled"]:
-                                    element["image"] = element["original_image"].copy()
-                                    element["rect"] = element["image"].get_rect(center=element["center"])
-                                    element["scaled"] = False
-                                    element.pop("mask", None)
-
-                        else:
-                            if element["scaled"]:
-                                element["image"] = element["original_image"].copy()
-                                element["rect"] = element["image"].get_rect(center=element["center"])
-                                element["scaled"] = False
-                                element.pop("mask", None)
-
-                    else:
-                        if not element["scaled"]:
-                            new_width = int(element["rect"].width * element["scale_multiplier"])
-                            new_height = int(element["rect"].height * element["scale_multiplier"])
-                            element["image"] = pg.transform.scale(element["original_image"], (new_width, new_height))
-                            element["rect"] = element["image"].get_rect(center=element["center"])
-                            element["scaled"] = True
-                            element["mask"] = pg.mask.from_surface(element["image"])
-
-            if element["is_button"]:
-                if element["rect"].collidepoint(mouse_pos):
-                    if mouse_pressed[0]:
-                        if element["is_hold"]:
-                            if element["callback"]:
-                                element["callback"]()
-                                
-                        elif not element["holding"]:
-                            if element["callback"]:
-                                element["callback"]()
-                                
-                            element["holding"] = True
-                            
-                    else:
-                        element["holding"] = False 
-                        
-                else:
-                    element["holding"] = False
-
-            if element["is_slider"]:
-                track_rect = element["slider_rect"]
-                knob_rect = element["slider_knob"]
-
-                pg.draw.rect(self.game.screen, (200, 200, 200), track_rect)
-                pg.draw.rect(self.game.screen, (0, 0, 255), knob_rect)
-
-                if pg.mouse.get_pressed()[0]:
-                    if knob_rect.collidepoint(mouse_pos):
-                        element["grabbed"] = True
-                
-                else:
-                    element["grabbed"] = False
-                        
-                if element["grabbed"]:
-                    knob_rect.x = max(track_rect.x, min(mouse_pos[0] - knob_rect.width // 2, track_rect.right - knob_rect.width))
-
-                relative_position = (knob_rect.x - track_rect.x) / track_rect.width
-
-                new_value = element["min_value"] + relative_position * (element["max_value"] - element["min_value"])
-
-                if element["step_size"] > 0:
-                    new_value = round(new_value / element["step_size"]) * element["step_size"]
-
-                    new_value = max(min(new_value, element["max_value"]), element["min_value"])
-
-                element["current_value"] = new_value
-                
-                if element["variable"]:
-                    element["variable"](new_value)
-
-                element["slider_knob"] = knob_rect
-
-            if element["original_image"]:
-                self.game.screen.blit(element["image"], element["rect"])
-
-            if element["label"] and element["text_surface"]:
-                self.game.screen.blit(element["text_surface"], element["text_rect"])
+            self.render_ui_element(element)

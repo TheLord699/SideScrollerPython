@@ -105,7 +105,7 @@ class Environment:
     )
     self.game.ui.create_ui(
       x=self.game.screen_width / 2.6, y=100, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
+      centered=False, width=200, height=100,
       alpha=True,
       scale_multiplier=1,
       label="Generic Side Scroller",
@@ -119,11 +119,12 @@ class Environment:
       x=self.game.screen_width / 2, y=250, sprite_width=95, sprite_height=32, 
       centered=True, width=200, height=100,
       alpha=True, is_button=True,
-      scale_multiplier=1,
+      scale_multiplier=1.1,
       label="Play",
       font=self.game.environment.fonts["fantasy"],
       element_id="play_button",
       callback=self.change_menu("play"),
+      hover_range=3.5,
       render_order=0
     )
     self.game.ui.create_ui(
@@ -131,11 +132,12 @@ class Environment:
       x=self.game.screen_width / 2, y=400, sprite_width=95, sprite_height=32, 
       centered=True, width=200, height=100,
       alpha=True, is_button=True,
-      scale_multiplier=1,
+      scale_multiplier=1.1,
       label="Settings",
       font=self.game.environment.fonts["fantasy"],
       element_id="settings_button",
       callback=self.change_menu("settings"),
+      hover_range=3.5,
       render_order=0
     )
   
@@ -145,16 +147,17 @@ class Environment:
       x=self.game.screen_width / 7, y=500, sprite_width=32, sprite_height=32, 
       centered=True, width=100, height=100,
       alpha=True, is_button=True,
-      scale_multiplier=1,
+      scale_multiplier=1.1,
       element_id="back_button",
       callback=self.change_menu("main"),
+      hover_range=3.5,
       render_order=0
     )
     self.game.ui.create_ui(
       x=self.game.screen_width / 2.5, y=self.game.screen_height / 2, width=200, height=20, is_slider=True,
       min_value=0.0, max_value=1.1, initial_value=self.volume,
       step_size=0.01, element_id="volume_slider", 
-      variable=lambda value: self.update_slider_value("volume_slider", value)
+      variable=lambda value: self.update_slider_value("volume_slider", value),
     )
     
     self.game.ui.create_ui(
