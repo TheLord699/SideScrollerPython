@@ -1,4 +1,5 @@
 import pygame as pg
+import numpy as np
 import random
 import json
 import math
@@ -849,6 +850,7 @@ class Player:
 
     def handle_controls(self):
         keys = pg.key.get_pressed()
+        mouse_buttons = pg.mouse.get_pressed()
         self.joystick = self.game.environment.joystick
 
         controller = {}
@@ -931,7 +933,12 @@ class Player:
                     attack_input = keys[pg.K_SPACE] or self.joystick and controller.get("B")
                     if attack_input and self.current_state != "hurt":
                         self.start_attack()
-                    
+
+                    attack_input = mouse_buttons[0] 
+                    if attack_input and self.current_state != "hurt":
+                        #self.shoot_ray((self.x - self.cam_x, self.y - self.cam_y), pg.mouse.get_pos())
+                        pass
+                                        
                     pause_input = keys[pg.K_ESCAPE] or self.joystick and controller.get("start")
                     if pause_input:
                         pass
@@ -989,7 +996,7 @@ class Player:
             return
 
         dash_dir = 1 if self.direction == "right" else -1
-        num_ghosts = 8
+        num_ghosts = 4 # 8
         step_size = distance / num_ghosts
 
         for i in range(num_ghosts):
@@ -1174,6 +1181,22 @@ class Player:
             hitbox_surface,
             (self.hitbox.x - self.cam_x, self.hitbox.y - self.cam_y)
         )
+    
+    def shoot_ray(self, origin, destination, color=(255, 255, 0), thickness=2):
+        origin = np.array(origin, dtype=float)
+        destination = np.array(destination, dtype=float)
+
+        direction = destination - origin
+        length = np.linalg.norm(direction)
+        if length == 0:
+            return
+
+        direction /= length
+
+        ray_length = 1000
+        end_point = origin + direction * ray_length
+
+        pg.draw.line(self.game.screen, color, origin, end_point, thickness)
 
     def update(self):
         if self.game.environment.menu in {"play", "death", "pause"}:
