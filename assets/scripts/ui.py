@@ -233,10 +233,12 @@ class UI:
         
         offset_x, offset_y = 0, 0
         
+        # --- Parallax ---
         if element["parallax_factor"]:
             offset_x += -norm_mouse_x * element["parallax_factor"] * element["rect"].width
             offset_y += -norm_mouse_y * element["parallax_factor"] * element["rect"].height
         
+        # --- Follow factor ---
         if element["follow_factor"]:
             element_center_x = element["rect"].centerx
             element_center_y = element["rect"].centery
@@ -249,19 +251,30 @@ class UI:
             offset_x += direction_x * element["follow_factor"]
             offset_y += direction_y * element["follow_factor"]
         
+        # --- Hover range (radius based on button size; capped, non-locking displacement) ---
         if element["hover_range"] and element["is_button"]:
-            element_center = (element["rect"].centerx, element["rect"].centery)
-            
-            distance_x = mouse_pos[0] - element_center[0]
-            distance_y = mouse_pos[1] - element_center[1]
-            
-            distance = (distance_x ** 2 + distance_y ** 2) ** 0.5
-            
-            if distance < element["hover_range"] * 20:
-                strength = 1 - (distance / (element["hover_range"] * 20))
-                offset_x += (distance_x / max(1, distance)) * element["hover_range"] * strength
-                offset_y += (distance_y / max(1, distance)) * element["hover_range"] * strength
+            cx, cy = element["rect"].center
+            dx = mouse_pos[0] - cx
+            dy = mouse_pos[1] - cy
+            dist = (dx * dx + dy * dy) ** 0.5
+
+            # radius matches button size (circle that roughly fits the hitbox)
+            hover_radius = max(element["rect"].width, element["rect"].height) * 0.5
+
+            if 0 < dist < hover_radius:
+                # 0 at edge, 1 at center
+                strength = 1.0 - (dist / hover_radius)
+
+                # move at most `hover_range` pixels at the center, scaled by strength
+                max_offset = float(element["hover_range"])
+
+                # convert desired magnitude (max_offset * strength) into a vector toward the mouse
+                scale = (max_offset * strength) / dist
+                offset_x += dx * scale
+                offset_y += dy * scale
+
         
+        # --- Smooth interpolation ---
         current_offset_x, current_offset_y = element["current_offset"]
         smooth_factor = 0.2
         
@@ -270,6 +283,7 @@ class UI:
         
         element["current_offset"] = (new_offset_x, new_offset_y)
         
+        # --- Update rect position ---
         if element["centered"]:
             element["rect"] = element["image"].get_rect(
                 center=(element["base_position"][0] + new_offset_x, element["base_position"][1] + new_offset_y)
@@ -278,7 +292,6 @@ class UI:
                 element["base_position"][1] + new_offset_y - element["height"]/2,
                 element["width"], element["height"]
             )
-            
         else:
             element["rect"] = pg.Rect(
                 element["base_position"][0] + new_offset_x,
@@ -286,12 +299,13 @@ class UI:
                 element["width"], element["height"]
             )
         
+        # --- Update text rects ---
         if element.get("text_surface"):
             if element["scaled"] and "scaled_text_rect" in element:
                 element["scaled_text_rect"] = element["scaled_text_surface"].get_rect(center=element["rect"].center)
-                
             elif "text_rect" in element:
                 element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
+
 
     def update_button_interaction(self, element, mouse_pos, mouse_pressed):
         if element["original_image"] and element["alpha"] and "mask" not in element:
