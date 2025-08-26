@@ -9,6 +9,8 @@ class UI:
         self.loaded_images = {}
         self.loaded_fonts = {}
         
+        self.mouse_locked = False
+        
     def load_sheet(self, sheet_name, path):
         if sheet_name in self.loaded_sheets:
             return 
@@ -297,107 +299,60 @@ class UI:
                 element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
 
     def update_button_interaction(self, element, mouse_pos, mouse_pressed):
-        if element["original_image"] and element["alpha"] and "mask" not in element:
-            element["mask"] = pg.mask.from_surface(element["original_image"])
-        
-        if element["rect"].collidepoint(mouse_pos):
-            if element["alpha"] and "mask" in element:
-                offset_x = mouse_pos[0] - element["rect"].x
-                offset_y = mouse_pos[1] - element["rect"].y
-                
-                if (0 <= offset_x < element["mask"].get_size()[0] and 0 <= offset_y < element["mask"].get_size()[1] and element["mask"].get_at((offset_x, offset_y))):
-                    if not element["scaled"]:
-                        old_center = element["rect"].center
-                        
-                        new_width = int(element["rect"].width * element["scale_multiplier"])
-                        new_height = int(element["rect"].height * element["scale_multiplier"])
-                        element["image"] = pg.transform.scale(element["original_image"], (new_width, new_height))
-                        
-                        element["rect"] = element["image"].get_rect(center=old_center)
-                        element["scaled"] = True
-                        
-                        element["mask"] = pg.mask.from_surface(element["image"])
-                        
-                        if element.get("text_surface"):
-                            text_scale = element["scale_multiplier"]
-                            scaled_text_surface = pg.transform.scale(
-                                element["text_surface"], 
-                                (int(element["text_surface"].get_width() * text_scale), 
-                                 int(element["text_surface"].get_height() * text_scale))
-                            )
-                            element["scaled_text_surface"] = scaled_text_surface
-                            element["scaled_text_rect"] = scaled_text_surface.get_rect(center=element["rect"].center)
-                        
-                else:
-                    if element["scaled"]:
-                        old_center = element["rect"].center
-                        
-                        element["image"] = element["original_image"].copy()
-                        element["rect"] = element["image"].get_rect(center=old_center)
-                        element["scaled"] = False
-                        element.pop("mask", None)
-                        
-                        if "scaled_text_surface" in element:
-                            element.pop("scaled_text_surface", None)
-                            element.pop("scaled_text_rect", None)
-                            
-            else:
-                if not element["scaled"]:
-                    old_center = element["rect"].center
-                    
-                    new_width = int(element["rect"].width * element["scale_multiplier"])
-                    new_height = int(element["rect"].height * element["scale_multiplier"])
-                    element["image"] = pg.transform.scale(element["original_image"], (new_width, new_height))
-                    
-                    element["rect"] = element["image"].get_rect(center=old_center)
-                    element["scaled"] = True
-                    element["mask"] = pg.mask.from_surface(element["image"])
-                    
-                    if element.get("text_surface"):
-                        text_scale = element["scale_multiplier"]
-                        scaled_text_surface = pg.transform.scale(
-                            element["text_surface"], 
-                            (int(element["text_surface"].get_width() * text_scale), 
-                             int(element["text_surface"].get_height() * text_scale))
-                        )
-                        element["scaled_text_surface"] = scaled_text_surface
-                        element["scaled_text_rect"] = scaled_text_surface.get_rect(center=element["rect"].center)
-                        
-        else:
-            if element["scaled"]:
-                old_center = element["rect"].center
-                
-                element["image"] = element["original_image"].copy()
-                element["rect"] = element["image"].get_rect(center=old_center)
-                element["scaled"] = False
-                element.pop("mask", None)
-                
-                if "scaled_text_surface" in element:
-                    element.pop("scaled_text_surface", None)
-                    element.pop("scaled_text_rect", None)
+        if getattr(self, "mouse_locked", False):
+            if not mouse_pressed[0]:
+                self.mouse_locked = False
+            return
 
-        if element["rect"].collidepoint(mouse_pos):
-            if element["alpha"] and "mask" in element:
-                offset_x = mouse_pos[0] - element["rect"].x
-                offset_y = mouse_pos[1] - element["rect"].y
-                
-                if not (0 <= offset_x < element["mask"].get_size()[0] and 0 <= offset_y < element["mask"].get_size()[1] and element["mask"].get_at((offset_x, offset_y))):
-                    element["holding"] = False
-                    return
+        if element["original_image"] and element.get("alpha") and "mask" not in element:
+            element["mask"] = pg.mask.from_surface(element["original_image"])
+
+        hovered = element["rect"].collidepoint(mouse_pos)
+
+        if hovered and element.get("alpha") and "mask" in element:
+            offset_x = mouse_pos[0] - element["rect"].x
+            offset_y = mouse_pos[1] - element["rect"].y
+            if not (0 <= offset_x < element["mask"].get_size()[0] and 0 <= offset_y < element["mask"].get_size()[1] and element["mask"].get_at((offset_x, offset_y))):
+                hovered = False
+
+        if hovered and mouse_pressed[0] and not element.get("scaled"):
+            old_center = element["rect"].center
+            new_width = int(element["rect"].width * element["scale_multiplier"])
+            new_height = int(element["rect"].height * element["scale_multiplier"])
             
+            element["image"] = pg.transform.scale(element["original_image"], (new_width, new_height))
+            element["rect"] = element["image"].get_rect(center=old_center)
+            element["scaled"] = True
+            element["mask"] = pg.mask.from_surface(element["image"])
+
+            if element.get("text_surface"):
+                text_scale = element["scale_multiplier"]
+                scaled_text_surface = pg.transform.scale(
+                    element["text_surface"],
+                    (int(element["text_surface"].get_width() * text_scale),
+                    int(element["text_surface"].get_height() * text_scale)))
+                element["scaled_text_surface"] = scaled_text_surface
+                element["scaled_text_rect"] = scaled_text_surface.get_rect(center=element["rect"].center)
+
+        elif element.get("scaled") and (not hovered or not mouse_pressed[0]):
+            old_center = element["rect"].center
+            element["image"] = element["original_image"].copy()
+            element["rect"] = element["image"].get_rect(center=old_center)
+            element["scaled"] = False
+            element.pop("mask", None)
+            element.pop("scaled_text_surface", None)
+            element.pop("scaled_text_rect", None)
+
+        if hovered:
             if mouse_pressed[0]:
-                if element["is_hold"]:
-                    if element["callback"]:
-                        element["callback"]()
-                        
-                elif not element["holding"]:
-                    if element["callback"]:
-                        element["callback"]()
-                        
-                    element["holding"] = True
+                element["holding"] = True
+                
+            elif element["holding"]:
+                if element["callback"]:
+                    element["callback"]()
                     
-            else:
-                element["holding"] = False 
+                element["holding"] = False
+                self.mouse_locked = True
                 
         else:
             element["holding"] = False
