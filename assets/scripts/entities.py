@@ -467,49 +467,79 @@ class Entities:
         
         pg.draw.rect(self.game.screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
         pg.draw.rect(self.game.screen, (0, 255, 0), (bar_x, bar_y, bar_width * health_percentage, bar_height))
-    
+        
     def show_entity_indicators(self, entity):
-        distance = math.sqrt((entity["x"] - self.game.player.x)**2 + (entity["y"] - self.game.player.y)**2)
-        
+        if not hasattr(self, "arrow_surface"):
+            self.arrow_surface = pg.Surface((15, 15), pg.SRCALPHA)
+            pg.draw.polygon(
+                self.arrow_surface,
+                (255, 0, 0),
+                [(5, 10), (0, 0), (10, 0)]
+            )
+
+        if not hasattr(self, "bubble_surface"):
+            bubble_width, bubble_height = 18, 14
+            self.bubble_surface = pg.Surface((bubble_width, bubble_height + 6), pg.SRCALPHA)
+
+            pg.draw.ellipse(
+                self.bubble_surface,
+                (255, 255, 255),
+                (0, 0, bubble_width, bubble_height)
+            )
+            pg.draw.ellipse(
+                self.bubble_surface,
+                (200, 200, 200),
+                (0, 0, bubble_width, bubble_height),
+                1
+            )
+
+            tail_points = [(bubble_width // 2 - 3, bubble_height - 1), (bubble_width // 2 + 3, bubble_height - 1), (bubble_width // 2, bubble_height + 5)]
+            pg.draw.polygon(self.bubble_surface, (255, 255, 255), tail_points)
+            pg.draw.polygon(self.bubble_surface, (200, 200, 200), tail_points, 1)
+
+            pg.draw.circle(self.bubble_surface, (100, 100, 100), (6, 6), 1)
+            pg.draw.circle(self.bubble_surface, (100, 100, 100), (9, 6), 1)
+            pg.draw.circle(self.bubble_surface, (100, 100, 100), (12, 6), 1)
+
+        dx = entity["x"] - self.game.player.x
+        dy = entity["y"] - self.game.player.y
+        distance_sq = dx * dx + dy * dy
+
         indicator_radius = self.game.player.interact_radius.width * 2
-        
-        if distance <= indicator_radius:
+        indicator_radius_sq = indicator_radius * indicator_radius
+
+        if distance_sq <= indicator_radius_sq:
+            distance = math.sqrt(distance_sq)
+
             cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
             screen_x = entity["x"] - cam_x
             screen_y = entity["y"] - cam_y - entity["height"] - 20
-            
+
             max_opacity = 255
             min_opacity = 50
-            opacity = max(min_opacity, max_opacity - (distance / indicator_radius) * (max_opacity - min_opacity))
-                        
+            fade_start = indicator_radius * 0.6
+
+            if distance <= fade_start:
+                opacity = max_opacity
+                
+            elif distance <= indicator_radius:
+                fade_range = indicator_radius - fade_start
+                fade_progress = (distance - fade_start) / fade_range
+                opacity = max_opacity - fade_progress * (max_opacity - min_opacity)
+                
+            else:
+                opacity = min_opacity
+
             if entity["entity_type"] == "enemy":
-                arrow_surface = pg.Surface((15, 15), pg.SRCALPHA)
-
-                # Upside-down arrow (pointing down)
-                pg.draw.polygon(
-                    arrow_surface,
-                    (255, 0, 0, opacity),
-                    [(5, 10), (0, 0), (10, 0)]  # tip at bottom, base at top
-                )
-
-                self.game.screen.blit(arrow_surface, (screen_x - 5, screen_y))
+                arrow = self.arrow_surface.copy()
+                arrow.set_alpha(opacity)
+                self.game.screen.blit(arrow, (screen_x - 5, screen_y))
 
             elif entity["entity_type"] == "npc":
-                bubble_width, bubble_height = 18, 14
-                bubble_surface = pg.Surface((bubble_width, bubble_height + 6), pg.SRCALPHA)
-
-                pg.draw.ellipse(bubble_surface, (255, 255, 255, opacity), (0, 0, bubble_width, bubble_height))
-                pg.draw.ellipse(bubble_surface, (200, 200, 200, opacity), (0, 0, bubble_width, bubble_height), 1)
-
-                tail_points = [(bubble_width//2 - 3, bubble_height - 1), (bubble_width//2 + 3, bubble_height - 1), (bubble_width//2, bubble_height + 5)]
-                pg.draw.polygon(bubble_surface, (255, 255, 255, opacity), tail_points)
-                pg.draw.polygon(bubble_surface, (200, 200, 200, opacity), tail_points, 1)
-
-                pg.draw.circle(bubble_surface, (100, 100, 100, opacity), (6, 6), 1)
-                pg.draw.circle(bubble_surface, (100, 100, 100, opacity), (9, 6), 1)
-                pg.draw.circle(bubble_surface, (100, 100, 100, opacity), (12, 6), 1)
-
-                self.game.screen.blit(bubble_surface, (screen_x - bubble_width//2, screen_y - bubble_height - 6))
+                bubble = self.bubble_surface.copy()
+                bubble.set_alpha(opacity)
+                bubble_width, bubble_height = bubble.get_size()
+                self.game.screen.blit(bubble, (screen_x - bubble_width // 2, screen_y - bubble_height - 6))
 
     def render(self, entity):
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
