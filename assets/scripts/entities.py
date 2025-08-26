@@ -468,7 +468,7 @@ class Entities:
         pg.draw.rect(self.game.screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
         pg.draw.rect(self.game.screen, (0, 255, 0), (bar_x, bar_y, bar_width * health_percentage, bar_height))
             
-    def show_entity_indicators(self, entity):
+    def entity_indicators(self, entity):
         if not hasattr(self, "arrow_surface"):
             self.arrow_surface = pg.Surface((20, 20), pg.SRCALPHA)
             pg.draw.polygon(self.arrow_surface, (255, 0, 0), [(7, 14), (0, 0), (14, 0)])
@@ -704,4 +704,4 @@ class Entities:
             self.render(entity)
             self.mouse_interact(entity)
             self.show_hitboxes(entity)
-            self.show_entity_indicators(entity)
+            self.entity_indicators(entity)
