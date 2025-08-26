@@ -181,14 +181,14 @@ class Environment:
   def start_game(self):
     if getattr(self, "current_map", None) != self.maps["TestMap"]: 
       # will load from json
-      
       self.handle_music("TestMap")
-      
       #self.lighting = True
       self.load_map("TestMap")
       self.load_background("assets/maps/LayerTest")
+      
       self.game.entities.reset()
       self.game.entities.create_entity("item", "Red Gem", 0, 500)
+      self.game.entities.create_entity("enemy", "Bab", 200, 500)
       self.game.entities.create_entity("item", "Potion", 50, 500) 
       self.game.entities.create_entity("item", "Gold", 100, 500)
       self.game.entities.create_entity("item", "Gold", 150, 500)
