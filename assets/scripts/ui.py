@@ -86,16 +86,15 @@ class UI:
                         rows = sheet.get_height() // sprite_height
                         cols = sheet.get_width() // sprite_width
 
-                        if image_id:
-                            parts = image_id.split('_')
-                            if len(parts) == 3:
-                                row, col = int(parts[1]), int(parts[2])
-                                if 0 <= row < rows and 0 <= col < cols:
-                                    original_image = sheet.subsurface(pg.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height))
-                                    original_image = pg.transform.scale(original_image, (width, height))
-                                    
-                                else:
-                                    missing_texture = True
+                        if image_id: 
+                            parts = image_id
+                            row, col = parts[0], parts[1]
+                            if 0 <= row < rows and 0 <= col < cols:
+                                original_image = sheet.subsurface(pg.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height))
+                                original_image = pg.transform.scale(original_image, (width, height))
+                                
+                            else:
+                                missing_texture = True
                                     
                     except Exception as e:
                         print(f"Error loading sprite from preloaded sheet {sprite_sheet_path}: {e}")
@@ -130,7 +129,7 @@ class UI:
             ui_font = self.load_font(font, font_size)
             text_surface = None
             if current_text:
-                text_surface = ui_font.render(current_text, True, text_color)
+                text_surface = ui_font.render(current_text, False, text_color)
 
             ui_element = {
                 "original_image": original_image,
@@ -212,7 +211,7 @@ class UI:
             element["label"] = element["full_text"][:element["typing_index"]]
             element["last_typing_time"] = current_time
             
-            element["text_surface"] = self.load_font(element["font_path"], element["font_size"]).render(element["label"], True, element["text_color"])
+            element["text_surface"] = self.load_font(element["font_path"], element["font_size"]).render(element["label"], False, element["text_color"])
             element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
             
             if element["typing_index"] >= len(element["full_text"]):

@@ -307,13 +307,13 @@ class Player:
             y_position = self.inventory_y_offset + row * self.health_spacing - 220
             
             if heart + 1 <= self.current_health:
-                image_path = "heart_0_0"
+                image_path = [0, 0]
                 
             elif heart + 1 - self.current_health == 0.5:
-                image_path = "heart_0_1"
+                image_path = [0, 1]
                 
             else:
-                image_path = "heart_0_2"
+                image_path = [0, 2]
 
             self.game.ui.create_ui(
                 sprite_sheet_path="hearts", image_id=image_path,
@@ -353,10 +353,6 @@ class Player:
         item = self.inventory[self.selected_slot]
         item_name = item["name"]
         item_index = self.item_info["items"][item_name]["index"]
-        
-        parts = item_index.split("_")
-        if len(parts) < 3:
-            return
 
         item_element_id = f"item:{item_name}"
         if item_element_id in self.rendered_inventory_ui_elements:
@@ -424,7 +420,7 @@ class Player:
             slot_element_id = f"slot:{slot}" 
             
             self.game.ui.create_ui(
-                sprite_sheet_path="ui_sheet", image_id="item_34_3",
+                sprite_sheet_path="ui_sheet", image_id=[34, 3],
                 x=x_position, y=y_position, sprite_width=32, sprite_height=32, 
                 centered=True, width=35, height=35,
                 alpha=True, is_button=True,
@@ -538,7 +534,7 @@ class Player:
 
                 self.game.ui.create_ui(
                     sprite_sheet_path="ui_sheet", 
-                    image_id="item_33_0",
+                    image_id=[33, 0],
                     x=self.game.screen_width / 2, 
                     y=self.game.screen_height / 1.15,
                     sprite_width=95, 

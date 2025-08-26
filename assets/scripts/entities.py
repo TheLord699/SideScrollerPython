@@ -40,7 +40,7 @@ class Entities:
             for col in range(sheet_width // tile_width):
                 rect = pg.Rect(col * tile_width, row * tile_height, tile_width, tile_height)
                 sprite = self.tilesheet.subsurface(rect).copy()
-                key = f"item_{row}_{col}"
+                key = (row, col)
                 self.item_sprites[key] = sprite
 
     def load_settings(self):
@@ -106,7 +106,8 @@ class Entities:
         if template.get("tile_sheet"):
             self.load_tilesheet(template["tile_sheet"][0], template["tile_sheet"][1], template["tile_sheet"][2])
         
-        image = self.item_sprites.get(template.get("index"), self.game.environment.missing_texture.copy())
+        index_key = tuple(template.get("index")) if isinstance(template.get("index"), list) else template.get("index")
+        image = self.item_sprites.get(index_key, self.game.environment.missing_texture.copy())
         
         entity = {
             "entity_type": entity_type,
@@ -188,9 +189,10 @@ class Entities:
             for i in range(frame_count):
                 row = start_row + (i // state_data.get("cols", frame_count))
                 col = start_col + (i % state_data.get("cols", frame_count))
-                key = f"item_{row}_{col}"
+                key = (row, col)
                 if key in self.item_sprites:
                     frames.append(self.item_sprites[key])
+                    
                 else:
                     print(f"Warning: Missing animation frame {key} for state {state}")
                     frames.append(entity["image"])
