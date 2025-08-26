@@ -2,7 +2,6 @@ import pygame as pg
 import json
 import random
 import math
-import time
 import os
 
 class Entities:
