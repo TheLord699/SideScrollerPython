@@ -113,7 +113,7 @@ class Environment:
       render_order=0
     )
     self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id="item_33_0",
+      sprite_sheet_path="ui_sheet", image_id=[33, 0],
       x=self.game.screen_width / 2, y=250, sprite_width=95, sprite_height=32, 
       centered=True, width=200, height=100,
       alpha=True, is_button=True,
@@ -126,7 +126,7 @@ class Environment:
       render_order=0
     )
     self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id="item_33_0",
+      sprite_sheet_path="ui_sheet", image_id=[33, 0],
       x=self.game.screen_width / 2, y=400, sprite_width=95, sprite_height=32, 
       centered=True, width=200, height=100,
       alpha=True, is_button=True,
@@ -141,7 +141,7 @@ class Environment:
   
   def settings_menu(self):   
     self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id="item_0_0",
+      sprite_sheet_path="ui_sheet", image_id=[0, 0],
       x=self.game.screen_width / 7, y=500, sprite_width=32, sprite_height=32, 
       centered=True, width=100, height=100,
       alpha=True, is_button=True,
@@ -164,7 +164,7 @@ class Environment:
       font=self.game.environment.fonts["fantasy"],
     )
     self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id="item_33_0",
+      sprite_sheet_path="ui_sheet", image_id=[33, 0],
       x=self.game.screen_width / 2, y=325, sprite_width=95, sprite_height=32, 
       centered=True, width=200, height=100,
       alpha=True, is_button=True,
@@ -178,7 +178,7 @@ class Environment:
       render_order=0
     )
     self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id="item_33_0",
+      sprite_sheet_path="ui_sheet", image_id=[33, 0],
       x=self.game.screen_width / 2, y=450, sprite_width=95, sprite_height=32, 
       centered=True, width=200, height=100,
       alpha=True, is_button=True,
@@ -194,7 +194,7 @@ class Environment:
 
   def death_menu(self):
     self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id="item_12_0",
+      sprite_sheet_path="ui_sheet", image_id=[12, 0],
       x=self.game.screen_width / 2, y=250, sprite_width=128, sprite_height=32, 
       centered=True, width=250, height=100,
       alpha=True, is_button=True,

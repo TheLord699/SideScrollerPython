@@ -62,8 +62,6 @@ TODO:
 
 -define temporary values(friction value in entity and attack damage(will be able to do once weapon stats json created))
 
--fix button mask(only for clicking)
-
 -rework all attacks to be projectile based
 
 -player hitbox needs complete re-write

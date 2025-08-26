@@ -1,7 +1,7 @@
 import pygame as pg
-from collections import defaultdict
-import re
 import traceback
+
+from collections import defaultdict
 
 class MemoryDebugger:
     def __init__(self, game):
@@ -11,10 +11,11 @@ class MemoryDebugger:
         self.scroll_offset = 0
         self.last_update_time = 0
         self.update_interval = 500
-        self.font = pg.font.SysFont('Consolas', 14)
+        self.font = pg.font.SysFont("Consolas", 14)
 
         self.dragging_scrollbar = False
         self.drag_offset_y = 0
+        self.drag_start_scroll = 0
 
         self.menu_state = "main"
         self.selected_storage = None
@@ -31,7 +32,7 @@ class MemoryDebugger:
         self.cursor_blink = 0
         self.cursor_visible = True
         self.last_cursor_toggle = 0
-        self.terminal_font = pg.font.SysFont('Consolas', 14)
+        self.terminal_font = pg.font.SysFont("Consolas", 14)
         
         self.terminal_event = pg.USEREVENT + 1
 
@@ -106,7 +107,6 @@ class MemoryDebugger:
             if hasattr(self, '_delayed_backspace') and self._delayed_backspace:
                 self.terminal_input = self.terminal_input[:-1]
                 self._delayed_backspace = False
-
 
     def execute_terminal_command(self):
         if not self.terminal_input.strip():
@@ -188,8 +188,7 @@ class MemoryDebugger:
         
         if self.cursor_visible:
             cursor_x = 10 + prompt_surf.get_width() + input_surf.get_width()
-            pg.draw.rect(terminal_panel, (255, 255, 255), 
-                        (cursor_x, input_y + 3, 2, line_height - 4))
+            pg.draw.rect(terminal_panel, (255, 255, 255), (cursor_x, input_y + 3, 2, line_height - 4))
         
         help_text = "ESC: Close | UP: History | ENTER: Execute | TAB: Complete"
         help_surf = self.terminal_font.render(help_text, True, (150, 150, 150))
@@ -205,24 +204,60 @@ class MemoryDebugger:
                 self.last_update_time = current_time
 
     def handle_scroll(self, direction):
-        max_scroll = 0
-        if self.menu_state == "main":
-            max_scroll = max(0, len(self.memory_info) - self.visible_lines())
-            
-        elif self.menu_state == "size_group":
-            max_scroll = max(0, len(self.get_current_group_surfaces()) // self.thumbs_per_row() - self.visible_rows())
-            
-        elif self.menu_state == "storage_location":
-            max_scroll = max(0, len(self.get_current_storage_surfaces()) - self.visible_lines())
-            
-        elif self.menu_state == "object_info":
-            max_scroll = max(0, len(self.get_object_info()) - self.visible_lines())
-
+        max_scroll = self.get_max_scroll()
+        
         if direction == "up":
             self.scroll_offsets[self.menu_state] = max(0, self.scroll_offsets[self.menu_state] - 1)
             
         elif direction == "down":
             self.scroll_offsets[self.menu_state] = min(max_scroll, self.scroll_offsets[self.menu_state] + 1)
+
+    def get_max_scroll(self):
+        if self.menu_state == "main":
+            return max(0, len(self.memory_info) - self.visible_lines())
+            
+        elif self.menu_state == "size_group":
+            group_surfaces = self.get_current_group_surfaces()
+            thumbs_per_row = self.thumbs_per_row()
+            rows = (len(group_surfaces) + thumbs_per_row - 1) // thumbs_per_row
+            return max(0, rows - self.visible_rows())
+            
+        elif self.menu_state == "storage_location":
+            return max(0, len(self.get_current_storage_surfaces()) - self.visible_lines())
+            
+        elif self.menu_state == "object_info":
+            return max(0, len(self.get_object_info()) - self.visible_lines())
+            
+        return 0
+
+    def get_scrollbar_height(self, panel_height):
+        if self.menu_state == "main":
+            total_lines = len(self.memory_info)
+            if total_lines <= 0:
+                return panel_height
+            return max(20, min(1.0, self.visible_lines() / total_lines) * panel_height)
+            
+        elif self.menu_state == "size_group":
+            group_surfaces = self.get_current_group_surfaces()
+            thumbs_per_row = self.thumbs_per_row()
+            total_rows = (len(group_surfaces) + thumbs_per_row - 1) // thumbs_per_row
+            if total_rows <= 0:
+                return panel_height
+            return max(20, min(1.0, self.visible_rows() / total_rows) * panel_height)
+            
+        elif self.menu_state == "storage_location":
+            surfaces = self.get_current_storage_surfaces()
+            if len(surfaces) <= 0:
+                return panel_height
+            return max(20, min(1.0, self.visible_lines() / len(surfaces)) * panel_height)
+            
+        elif self.menu_state == "object_info":
+            info = self.get_object_info()
+            if len(info) <= 0:
+                return panel_height
+            return max(20, min(1.0, self.visible_lines() / len(info)) * panel_height)
+            
+        return panel_height
 
     def handle_mouse_event(self, event):
         if self.terminal_active:
@@ -237,33 +272,29 @@ class MemoryDebugger:
         panel_x = (screen_w - panel_width) // 2
         panel_y = (screen_h - panel_height) // 2
 
-        line_height = 18
-        visible_lines = panel_height // line_height
-
         scrollbar_x = panel_x + panel_width - 10
-
-        if len(self.memory_info) <= visible_lines:
-            scrollbar_height = panel_height
-            
-        else:
-            scrollbar_height = max(20, visible_lines / max(1, len(self.memory_info)) * panel_height)
+        scrollbar_height = self.get_scrollbar_height(panel_height)
+        max_scroll = self.get_max_scroll()
+        
+        scroll_ratio = self.scroll_offsets[self.menu_state] / max(1, max_scroll)
+        scrollbar_y = panel_y + scroll_ratio * (panel_height - scrollbar_height)
 
         if event.type == pg.MOUSEBUTTONDOWN:
             if event.button == 1:
                 mx, my = event.pos
-                if self.menu_state == "main":
-                    scroll_ratio = self.scroll_offsets[self.menu_state] / max(1, len(self.memory_info) - visible_lines)
-                    scrollbar_y = panel_y + scroll_ratio * (panel_height - scrollbar_height)
-                    
-                    if scrollbar_x <= mx <= scrollbar_x + 8 and scrollbar_y <= my <= scrollbar_y + scrollbar_height:
-                        self.dragging_scrollbar = True
-                        self.drag_offset_y = my - scrollbar_y
-                        return
+                
+                if scrollbar_x <= mx <= scrollbar_x + 8 and scrollbar_y <= my <= scrollbar_y + scrollbar_height:
+                    self.dragging_scrollbar = True
+                    self.drag_offset_y = my - scrollbar_y
+                    self.drag_start_scroll = self.scroll_offsets[self.menu_state]
+                    return
 
-                    if panel_x <= mx <= panel_x + panel_width and panel_y <= my <= panel_y + panel_height:
-                        rel_x = mx - panel_x
-                        rel_y = my - panel_y
-                        clicked_line = rel_y // line_height + self.scroll_offsets[self.menu_state]
+                if panel_x <= mx <= panel_x + panel_width and panel_y <= my <= panel_y + panel_height:
+                    rel_x = mx - panel_x
+                    rel_y = my - panel_y
+                    
+                    if self.menu_state == "main":
+                        clicked_line = rel_y // 18 + self.scroll_offsets[self.menu_state]
 
                         objects_start = None
                         for idx, line in enumerate(self.memory_info):
@@ -321,10 +352,24 @@ class MemoryDebugger:
                 relative_y = my - panel_y - self.drag_offset_y
                 relative_y = max(0, min(relative_y, panel_height - scrollbar_height))
                 
-                if self.menu_state == "main":
-                    max_scroll = max(0, len(self.memory_info) - visible_lines)
+                if max_scroll > 0:
                     scroll_ratio = relative_y / (panel_height - scrollbar_height)
                     self.scroll_offsets[self.menu_state] = int(scroll_ratio * max_scroll)
+
+        if event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 4:
+                self.handle_scroll("up")
+                
+            elif event.button == 5:
+                self.handle_scroll("down")
+                
+            elif event.button == 3:
+                if self.menu_state != "main":
+                    self.menu_state = "main"
+                    self.selected_group = None
+                    self.selected_storage = None
+                    self.selected_object = None
+                    self.scroll_offsets[self.menu_state] = 0
 
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
@@ -341,7 +386,7 @@ class MemoryDebugger:
                 else:
                     self.toggle()
                     
-            elif event.key == pg.K_BACKQUOTE or event.key == pg.K_TAB:  # Tilde/tab key
+            elif event.key == pg.K_BACKQUOTE or event.key == pg.K_TAB:
                 self.toggle_terminal()
                 
             elif event.key == pg.K_UP:
@@ -349,15 +394,6 @@ class MemoryDebugger:
                 
             elif event.key == pg.K_DOWN:
                 self.handle_scroll("down")
-
-        if event.type == pg.MOUSEBUTTONDOWN:
-            if event.button == 3:  # Right click
-                if self.menu_state != "main":
-                    self.menu_state = "main"
-                    self.selected_group = None
-                    self.selected_storage = None
-                    self.selected_object = None
-                    self.scroll_offsets[self.menu_state] = 0
 
     def visible_lines(self):
         panel_height = min(400, self.game.screen_height - 40)
@@ -578,19 +614,21 @@ class MemoryDebugger:
         panel.fill((0, 0, 0, 220))
         pg.draw.rect(panel, (100, 100, 100), (0, 0, panel_width, panel_height), 2)
 
-        line_height = 18
-        visible_lines = panel_height // line_height
-
         scrollbar_x = panel_width - 10
+        scrollbar_height = self.get_scrollbar_height(panel_height)
+        max_scroll = self.get_max_scroll()
+        
+        scroll_ratio = self.scroll_offsets[self.menu_state] / max(1, max_scroll)
+        scrollbar_y = scroll_ratio * (panel_height - scrollbar_height)
 
         if self.menu_state == "main":
-            start_line = max(0, min(self.scroll_offsets[self.menu_state], len(self.memory_info) - visible_lines))
+            start_line = max(0, min(self.scroll_offsets[self.menu_state], len(self.memory_info) - self.visible_lines()))
 
             objects_start = self.find_line_index("Game Objects Count:")
             size_dist_start = self.find_line_index("Image Size Distribution:")
             storage_start = self.find_line_index("Storage Locations:")
 
-            for i in range(visible_lines):
+            for i in range(self.visible_lines()):
                 line_idx = start_line + i
                 if line_idx < len(self.memory_info):
                     text = self.memory_info[line_idx]
@@ -611,14 +649,7 @@ class MemoryDebugger:
                         color = (150, 200, 255)
 
                     text_surf = self.font.render(text, True, color)
-                    panel.blit(text_surf, (10, 10 + i * line_height))
-
-            if len(self.memory_info) > visible_lines:
-                scrollbar_height = max(20, visible_lines / len(self.memory_info) * panel_height)
-                scroll_ratio = self.scroll_offsets[self.menu_state] / (len(self.memory_info) - visible_lines)
-                scrollbar_y = scroll_ratio * (panel_height - scrollbar_height)
-                pg.draw.rect(panel, (100, 100, 100), (scrollbar_x, 0, 8, panel_height))
-                pg.draw.rect(panel, (200, 200, 200), (scrollbar_x, scrollbar_y, 8, scrollbar_height))
+                    panel.blit(text_surf, (10, 10 + i * 18))
 
         elif self.menu_state == "size_group":
             group_surfaces = self.get_current_group_surfaces()
@@ -632,34 +663,28 @@ class MemoryDebugger:
             thumbs_per_row = self.thumbs_per_row()
 
             start_row = self.scroll_offsets[self.menu_state]
-            end_index = len(group_surfaces)
-
-            for idx, surf in enumerate(group_surfaces[start_row * thumbs_per_row:]):
-                x = 10 + (idx % thumbs_per_row) * (thumb_size + margin)
-                y = y_offset + (idx // thumbs_per_row) * (thumb_size + margin)
-
-                if y + thumb_size > panel_height:
-                    break
-
-                if surf not in self.preview_cache:
-                    try:
-                        self.preview_cache[surf] = pg.transform.scale(surf, (thumb_size, thumb_size))
-                        
-                    except Exception:
-                        self.preview_cache[surf] = pg.Surface((thumb_size, thumb_size))
-                        self.preview_cache[surf].fill((100, 0, 0))
-
-                panel.blit(self.preview_cache[surf], (x, y))
-                pg.draw.rect(panel, (100, 255, 100), (x, y, thumb_size, thumb_size), 1)
-
             visible_rows = self.visible_rows()
-            max_rows = max(0, (len(group_surfaces) + thumbs_per_row - 1) // thumbs_per_row)
-            if max_rows > visible_rows:
-                scrollbar_height = max(20, visible_rows / max_rows * (panel_height - y_offset))
-                scroll_ratio = self.scroll_offsets[self.menu_state] / (max_rows - visible_rows)
-                scrollbar_y = y_offset + scroll_ratio * ((panel_height - y_offset) - scrollbar_height)
-                pg.draw.rect(panel, (100, 100, 100), (scrollbar_x, y_offset, 8, panel_height - y_offset))
-                pg.draw.rect(panel, (200, 200, 200), (scrollbar_x, scrollbar_y, 8, scrollbar_height))
+
+            for row in range(visible_rows):
+                for col in range(thumbs_per_row):
+                    idx = (start_row + row) * thumbs_per_row + col
+                    if idx >= len(group_surfaces):
+                        break
+                        
+                    surf = group_surfaces[idx]
+                    x = 10 + col * (thumb_size + margin)
+                    y = y_offset + row * (thumb_size + margin)
+
+                    if surf not in self.preview_cache:
+                        try:
+                            self.preview_cache[surf] = pg.transform.scale(surf, (thumb_size, thumb_size))
+                            
+                        except Exception:
+                            self.preview_cache[surf] = pg.Surface((thumb_size, thumb_size))
+                            self.preview_cache[surf].fill((100, 0, 0))
+
+                    panel.blit(self.preview_cache[surf], (x, y))
+                    pg.draw.rect(panel, (100, 255, 100), (x, y, thumb_size, thumb_size), 1)
 
         elif self.menu_state == "storage_location":
             surfaces = self.get_current_storage_surfaces()
@@ -668,8 +693,7 @@ class MemoryDebugger:
             panel.blit(title_surf, (10, 10))
 
             start_line = self.scroll_offsets[self.menu_state]
-            visible_lines = self.visible_lines()
-            for i in range(visible_lines):
+            for i in range(self.visible_lines()):
                 idx = start_line + i
                 if idx >= len(surfaces):
                     break
@@ -678,13 +702,6 @@ class MemoryDebugger:
                 text_surf = self.font.render(info_text, True, (200, 200, 255))
                 panel.blit(text_surf, (10, 30 + i * 18))
 
-            if len(surfaces) > visible_lines:
-                scrollbar_height = max(20, visible_lines / len(surfaces) * panel_height)
-                scroll_ratio = self.scroll_offsets[self.menu_state] / (len(surfaces) - visible_lines)
-                scrollbar_y = scroll_ratio * (panel_height - scrollbar_height)
-                pg.draw.rect(panel, (100, 100, 100), (scrollbar_x, 0, 8, panel_height))
-                pg.draw.rect(panel, (200, 200, 200), (scrollbar_x, scrollbar_y, 8, scrollbar_height))
-
         elif self.menu_state == "object_info":
             info = self.get_object_info()
             panel_title = f"{self.selected_object} Info (ESC or Right Click to go back)"
@@ -692,7 +709,7 @@ class MemoryDebugger:
             panel.blit(title_surf, (10, 10))
 
             start_line = self.scroll_offsets[self.menu_state]
-            for i in range(visible_lines):
+            for i in range(self.visible_lines()):
                 idx = start_line + i
                 if idx >= len(info):
                     break
@@ -700,11 +717,8 @@ class MemoryDebugger:
                 text_surf = self.font.render(info[idx], True, (200, 255, 200))
                 panel.blit(text_surf, (10, 30 + i * 18))
 
-            if len(info) > visible_lines:
-                scrollbar_height = max(20, visible_lines / len(info) * panel_height)
-                scroll_ratio = self.scroll_offsets[self.menu_state] / (len(info) - visible_lines)
-                scrollbar_y = scroll_ratio * (panel_height - scrollbar_height)
-                pg.draw.rect(panel, (100, 100, 100), (scrollbar_x, 0, 8, panel_height))
-                pg.draw.rect(panel, (200, 200, 200), (scrollbar_x, scrollbar_y, 8, scrollbar_height))
+        if max_scroll > 0:
+            pg.draw.rect(panel, (100, 100, 100), (scrollbar_x, 0, 8, panel_height))
+            pg.draw.rect(panel, (200, 200, 200), (scrollbar_x, scrollbar_y, 8, scrollbar_height))
 
         screen.blit(panel, (panel_x, panel_y))
