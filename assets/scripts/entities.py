@@ -8,6 +8,7 @@ class Entities:
     def __init__(self, game):
         self.game = game
         
+        self.show_indicators = True
         self.sounds = {
             "hit": [
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_1.wav"), "volume": 2},
@@ -469,6 +470,9 @@ class Entities:
         pg.draw.rect(self.game.screen, (0, 255, 0), (bar_x, bar_y, bar_width * health_percentage, bar_height))
             
     def entity_indicators(self, entity):
+        if not self.show_indicators:
+            return
+        
         if not hasattr(self, "arrow_surface"):
             self.arrow_surface = pg.Surface((20, 20), pg.SRCALPHA)
             pg.draw.polygon(self.arrow_surface, (255, 0, 0), [(7, 14), (0, 0), (14, 0)])

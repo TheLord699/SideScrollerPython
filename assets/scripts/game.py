@@ -153,16 +153,30 @@ class Environment:
       render_order=0
     )
     self.game.ui.create_ui(
-      x=self.game.screen_width / 2.5, y=self.game.screen_height / 2, width=200, height=20, is_slider=True,
+      x=self.game.screen_width / 2.6, y=self.game.screen_height / 2, width=200, height=20, is_slider=True,
       min_value=0.0, max_value=1.1, initial_value=self.volume,
       step_size=0.01, element_id="volume_slider", 
       variable=lambda value: self.update_slider_value("volume_slider", value),
     )
     
     self.game.ui.create_ui(
-      x=self.game.screen_width / 2.5, y=self.game.screen_height / 2.5, width=200, height=20,
+      x=self.game.screen_width / 2.6, y=self.game.screen_height / 2.5, width=200, height=20,
       element_id="volume_text", label="Volume",
       font=self.game.environment.fonts["fantasy"],
+    )
+    self.game.ui.create_ui(
+      sprite_sheet_path="ui_sheet", image_id="item_33_0",
+      x=self.game.screen_width / 2, y=400, sprite_width=95, sprite_height=32, 
+      centered=True, width=200, height=100,
+      alpha=True, is_button=True,
+      scale_multiplier=1.1,
+      label="Toggle Indicators", # label="Indicators: On" if self.game.entities.show_indicators else "Indicators: Off"
+      font=self.game.environment.fonts["fantasy"],
+      font_size=16,
+      element_id="indicator_button",
+      callback=lambda: (setattr(self.game.entities, "show_indicators", not self.game.entities.show_indicators)),
+      hover_range=3.5,
+      render_order=0
     )
 
   def death_menu(self):
