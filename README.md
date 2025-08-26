@@ -1,9 +1,6 @@
 This is my first attempt at creating a side scroller using Pygame, as well as my first time working on a project this big.
 There are a few concepts I didn’t utilize in this project, I basically opted for composition in everything and haven’t used inheritance (yucky).
 
-What I’ve learned from this project:
-Just because you can code, doesn’t mean you should.
-
 I did do some tests with switching to rendering using ModernGl though I've decided that 
 I'll probably just use Pygame as I'll have to rewrite rendering
 
