@@ -45,7 +45,6 @@ class Environment:
       "pixel": "assets/sprites/gui/fonts/pixel.ttf",
       "fantasy": "assets/sprites/gui/fonts/pixel_fantasy.ttf"
     }
-    
     self.menu_functions = {
       "main": self.main_menu,
       "play": self.start_game,
@@ -153,20 +152,20 @@ class Environment:
       render_order=0
     )
     self.game.ui.create_ui(
-      x=self.game.screen_width / 2.6, y=self.game.screen_height / 2, width=200, height=20, is_slider=True,
+      x=self.game.screen_width / 2.6, y=200, width=200, height=20, is_slider=True,
       min_value=0.0, max_value=1.1, initial_value=self.volume,
       step_size=0.01, element_id="volume_slider", 
       variable=lambda value: self.update_slider_value("volume_slider", value),
     )
     
     self.game.ui.create_ui(
-      x=self.game.screen_width / 2.6, y=self.game.screen_height / 2.5, width=200, height=20,
+      x=self.game.screen_width / 2.6, y=125, width=200, height=20,
       element_id="volume_text", label="Volume",
       font=self.game.environment.fonts["fantasy"],
     )
     self.game.ui.create_ui(
       sprite_sheet_path="ui_sheet", image_id="item_33_0",
-      x=self.game.screen_width / 2, y=400, sprite_width=95, sprite_height=32, 
+      x=self.game.screen_width / 2, y=325, sprite_width=95, sprite_height=32, 
       centered=True, width=200, height=100,
       alpha=True, is_button=True,
       scale_multiplier=1.1,
@@ -178,6 +177,20 @@ class Environment:
       hover_range=3.5,
       render_order=0
     )
+    self.game.ui.create_ui(
+      sprite_sheet_path="ui_sheet", image_id="item_33_0",
+      x=self.game.screen_width / 2, y=450, sprite_width=95, sprite_height=32, 
+      centered=True, width=200, height=100,
+      alpha=True, is_button=True,
+      scale_multiplier=1.1,
+      label="Toggle Particles",
+      font=self.game.environment.fonts["fantasy"],
+      font_size=16,
+      element_id="particle_button",
+      callback=lambda: (setattr(self.game.particles, "enable_particles", not self.game.particles.enable_particles)),
+      hover_range=3.5,
+      render_order=0
+    )
 
   def death_menu(self):
     self.game.ui.create_ui(
@@ -185,9 +198,10 @@ class Environment:
       x=self.game.screen_width / 2, y=250, sprite_width=128, sprite_height=32, 
       centered=True, width=250, height=100,
       alpha=True, is_button=True,
-      scale_multiplier=1,
+      scale_multiplier=1.1,
       element_id="restart_button",
       callback=lambda: (self.game.player.load_settings(), setattr(self, "menu", "play")),
+      hover_range=3.5,
       render_order=0
     )
     self.current_track = None
