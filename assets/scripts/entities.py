@@ -467,39 +467,35 @@ class Entities:
         
         pg.draw.rect(self.game.screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
         pg.draw.rect(self.game.screen, (0, 255, 0), (bar_x, bar_y, bar_width * health_percentage, bar_height))
-        
+            
     def show_entity_indicators(self, entity):
         if not hasattr(self, "arrow_surface"):
-            self.arrow_surface = pg.Surface((15, 15), pg.SRCALPHA)
-            pg.draw.polygon(
-                self.arrow_surface,
-                (255, 0, 0),
-                [(5, 10), (0, 0), (10, 0)]
-            )
+            self.arrow_surface = pg.Surface((20, 20), pg.SRCALPHA)
+            pg.draw.polygon(self.arrow_surface, (255, 0, 0), [(7, 14), (0, 0), (14, 0)])
+
+            self.arrow_scales = {}
+            for s in [0.9, 1.0, 1.1]:
+                width, height = self.arrow_surface.get_size()
+                self.arrow_scales[round(s, 1)] = pg.transform.scale(self.arrow_surface, (int(width * s), int(height * s)))
 
         if not hasattr(self, "bubble_surface"):
             bubble_width, bubble_height = 18, 14
             self.bubble_surface = pg.Surface((bubble_width, bubble_height + 6), pg.SRCALPHA)
 
-            pg.draw.ellipse(
-                self.bubble_surface,
-                (255, 255, 255),
-                (0, 0, bubble_width, bubble_height)
-            )
-            pg.draw.ellipse(
-                self.bubble_surface,
-                (200, 200, 200),
-                (0, 0, bubble_width, bubble_height),
-                1
-            )
+            pg.draw.ellipse(self.bubble_surface, (255, 255, 255), (0, 0, bubble_width, bubble_height))
+            pg.draw.ellipse(self.bubble_surface, (200, 200, 200), (0, 0, bubble_width, bubble_height), 1)
 
             tail_points = [(bubble_width // 2 - 3, bubble_height - 1), (bubble_width // 2 + 3, bubble_height - 1), (bubble_width // 2, bubble_height + 5)]
             pg.draw.polygon(self.bubble_surface, (255, 255, 255), tail_points)
             pg.draw.polygon(self.bubble_surface, (200, 200, 200), tail_points, 1)
 
-            pg.draw.circle(self.bubble_surface, (100, 100, 100), (6, 6), 1)
-            pg.draw.circle(self.bubble_surface, (100, 100, 100), (9, 6), 1)
-            pg.draw.circle(self.bubble_surface, (100, 100, 100), (12, 6), 1)
+            for x in (6, 9, 12):
+                pg.draw.circle(self.bubble_surface, (100, 100, 100), (x, 6), 1)
+
+            self.bubble_scales = {}
+            for s in [0.9, 1.0, 1.1]:
+                width, height = self.bubble_surface.get_size()
+                self.bubble_scales[round(s, 1)] = pg.transform.scale(self.bubble_surface, (int(width * s), int(height * s)))
 
         dx = entity["x"] - self.game.player.x
         dy = entity["y"] - self.game.player.y
@@ -510,13 +506,11 @@ class Entities:
 
         if distance_sq <= indicator_radius_sq:
             distance = math.sqrt(distance_sq)
-
             cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
             screen_x = entity["x"] - cam_x
             screen_y = entity["y"] - cam_y - entity["height"] - 20
 
-            max_opacity = 255
-            min_opacity = 50
+            max_opacity, min_opacity = 255, 50
             fade_start = indicator_radius * 0.6
 
             if distance <= fade_start:
@@ -530,16 +524,18 @@ class Entities:
             else:
                 opacity = min_opacity
 
-            if entity["entity_type"] == "enemy":
-                arrow = self.arrow_surface.copy()
-                arrow.set_alpha(opacity)
-                self.game.screen.blit(arrow, (screen_x - 5, screen_y))
+            time = pg.time.get_ticks() / 300
+            scale = round(1.0 + 0.1 * math.sin(time), 1)
 
+            if entity["entity_type"] == "enemy":
+                arrow = self.arrow_scales.get(scale, self.arrow_surface)
+                arrow.set_alpha(int(opacity))
+                self.game.screen.blit(arrow, (screen_x - arrow.get_width() // 2, screen_y - arrow.get_height() // 2))
+                
             elif entity["entity_type"] == "npc":
-                bubble = self.bubble_surface.copy()
-                bubble.set_alpha(opacity)
-                bubble_width, bubble_height = bubble.get_size()
-                self.game.screen.blit(bubble, (screen_x - bubble_width // 2, screen_y - bubble_height - 6))
+                bubble = self.bubble_scales.get(scale, self.bubble_surface)
+                bubble.set_alpha(int(opacity))
+                self.game.screen.blit(bubble, (screen_x - bubble.get_width() // 2, screen_y - bubble.get_height() - 6))
 
     def render(self, entity):
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
