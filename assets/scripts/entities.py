@@ -467,6 +467,49 @@ class Entities:
         
         pg.draw.rect(self.game.screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
         pg.draw.rect(self.game.screen, (0, 255, 0), (bar_x, bar_y, bar_width * health_percentage, bar_height))
+    
+    def show_entity_indicators(self, entity):
+        distance = math.sqrt((entity["x"] - self.game.player.x)**2 + (entity["y"] - self.game.player.y)**2)
+        
+        indicator_radius = self.game.player.interact_radius.width * 2
+        
+        if distance <= indicator_radius:
+            cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+            screen_x = entity["x"] - cam_x
+            screen_y = entity["y"] - cam_y - entity["height"] - 20
+            
+            max_opacity = 255
+            min_opacity = 50
+            opacity = max(min_opacity, max_opacity - (distance / indicator_radius) * (max_opacity - min_opacity))
+                        
+            if entity["entity_type"] == "enemy":
+                arrow_surface = pg.Surface((15, 15), pg.SRCALPHA)
+
+                # Upside-down arrow (pointing down)
+                pg.draw.polygon(
+                    arrow_surface,
+                    (255, 0, 0, opacity),
+                    [(5, 10), (0, 0), (10, 0)]  # tip at bottom, base at top
+                )
+
+                self.game.screen.blit(arrow_surface, (screen_x - 5, screen_y))
+
+            elif entity["entity_type"] == "npc":
+                bubble_width, bubble_height = 18, 14
+                bubble_surface = pg.Surface((bubble_width, bubble_height + 6), pg.SRCALPHA)
+
+                pg.draw.ellipse(bubble_surface, (255, 255, 255, opacity), (0, 0, bubble_width, bubble_height))
+                pg.draw.ellipse(bubble_surface, (200, 200, 200, opacity), (0, 0, bubble_width, bubble_height), 1)
+
+                tail_points = [(bubble_width//2 - 3, bubble_height - 1), (bubble_width//2 + 3, bubble_height - 1), (bubble_width//2, bubble_height + 5)]
+                pg.draw.polygon(bubble_surface, (255, 255, 255, opacity), tail_points)
+                pg.draw.polygon(bubble_surface, (200, 200, 200, opacity), tail_points, 1)
+
+                pg.draw.circle(bubble_surface, (100, 100, 100, opacity), (6, 6), 1)
+                pg.draw.circle(bubble_surface, (100, 100, 100, opacity), (9, 6), 1)
+                pg.draw.circle(bubble_surface, (100, 100, 100, opacity), (12, 6), 1)
+
+                self.game.screen.blit(bubble_surface, (screen_x - bubble_width//2, screen_y - bubble_height - 6))
 
     def render(self, entity):
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
@@ -594,7 +637,7 @@ class Entities:
             offset_center = (center_x, center_y)
             pg.draw.line(self.game.screen, (255, 255, 0), original_center, offset_center, 2)
         
-        if entity["entity_type"] in ["enemy", "npc"]:
+        if entity["entity_type"] in ["enemy"]:
             aggro_range = entity.get("aggro_range", 300)
             
             detection_surface = pg.Surface((aggro_range*2, aggro_range*2), pg.SRCALPHA)
@@ -635,3 +678,4 @@ class Entities:
             self.render(entity)
             self.mouse_interact(entity)
             self.show_hitboxes(entity)
+            self.show_entity_indicators(entity)
