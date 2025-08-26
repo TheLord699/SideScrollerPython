@@ -1,5 +1,4 @@
 import pygame as pg
-import json
 import os
 
 class Environment:
