@@ -21,37 +21,39 @@ class Particles:
         self.pool.append(particle)
 
     def generate(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30, image=None, image_size=None, fade=False, gravity=0.0, floor_behavior=None, friction=None):
-        if self.enable_particles:
-            if floor_behavior:
-                pos = self.find_valid_spawn_position(pos, radius)
+        if not self.enable_particles:
+            return
+            
+        if floor_behavior:
+            pos = self.find_valid_spawn_position(pos, radius)
 
-            particle = self.get_particle_from_pool()
-            particle.update({
-                "pos": pg.Vector2(pos),
-                "vel": pg.Vector2(velocity),
-                "color": color,
-                "radius": radius,
-                "lifespan": lifespan,
-                "age": 0,
-                "image": None,
-                "rect": None,
-                "fade": fade,
-                "gravity": gravity,
-                "friction": friction,
-                "floor_behavior": floor_behavior,
-            })
+        particle = self.get_particle_from_pool()
+        particle.update({
+            "pos": pg.Vector2(pos),
+            "vel": pg.Vector2(velocity),
+            "color": color,
+            "radius": radius,
+            "lifespan": lifespan,
+            "age": 0,
+            "image": None,
+            "rect": None,
+            "fade": fade,
+            "gravity": gravity,
+            "friction": friction,
+            "floor_behavior": floor_behavior,
+        })
 
-            if image:
-                if image_size:
-                    image = pg.transform.scale(image, image_size)
-                    
-                particle["image"] = image
-                particle["rect"] = image.get_rect(center=pos)
+        if image:
+            if image_size:
+                image = pg.transform.scale(image, image_size)
                 
-            else:
-                particle["rect"] = pg.Rect(pos[0] - radius, pos[1] - radius, radius * 2, radius * 2)
+            particle["image"] = image
+            particle["rect"] = image.get_rect(center=pos)
+            
+        else:
+            particle["rect"] = pg.Rect(pos[0] - radius, pos[1] - radius, radius * 2, radius * 2)
 
-            self.particles.append(particle)
+        self.particles.append(particle)
 
     def find_valid_spawn_position(self, pos, radius):
         x, y = pos
