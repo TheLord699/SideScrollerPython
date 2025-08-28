@@ -87,8 +87,7 @@ class UI:
                         cols = sheet.get_width() // sprite_width
 
                         if image_id: 
-                            parts = image_id
-                            row, col = parts[0], parts[1]
+                            row, col = image_id[0], image_id[1]
                             if 0 <= row < rows and 0 <= col < cols:
                                 original_image = sheet.subsurface(pg.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height))
                                 original_image = pg.transform.scale(original_image, (width, height))

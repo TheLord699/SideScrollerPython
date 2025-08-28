@@ -19,10 +19,10 @@ class Game:
     pg.init()
     
     os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) # dont think will work for builds/executables
-        
+
     self.clock = pg.time.Clock()
-  
-    self.version = "0.4.0-dev"
+
+    self.version = "0.4.5-dev"
     icon = pg.image.load("assets/sprites/enemy/bug.png")
 
     self.screen_width, self.screen_height = 800, 600

@@ -24,17 +24,13 @@ class Player:
 
         self.cam_x = self.x - self.game.screen_width / 2
         self.cam_y = self.y - self.game.screen_height / 1.5
-        self.camera_speed = 10
         self.camera_smoothing_factor = 0.1
 
-        self.sheet_width = 100
-        self.sheet_height = 100
         self.scale_factor = self.game.environment.scale 
         self.hitbox_width = 5 * self.scale_factor
         self.hitbox_height = 15 * self.scale_factor
         self.attack_hitbox_width = 17 * self.scale_factor
         self.attack_hitbox_height = 15 * self.scale_factor
-        self.attack_hitbox_offset = 5
         self.hitbox = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
         self.interact_radius = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
         self.attack_hitbox = pg.Rect(0, 0, self.attack_hitbox_width, self.attack_hitbox_height)
@@ -146,6 +142,9 @@ class Player:
     def load_frames(self):
         self.frames = {}
         self.flipped_frames = {}
+        
+        self.sheet_width = 100
+        self.sheet_height = 100
         
         for state, settings in self.state_frames.items():
             self.frames[state] = []
@@ -1193,6 +1192,19 @@ class Player:
         end_point = origin + direction * ray_length
 
         pg.draw.line(self.game.screen, color, origin, end_point, thickness)
+        self.ray_jump(direction)
+    
+    def ray_jump(self, direction):
+        force_magnitude = 15
+        
+        direction_length = np.linalg.norm(direction)
+        if direction_length == 0:
+            return
+            
+        normalized_direction = direction / direction_length
+        
+        self.x -= normalized_direction[0] * force_magnitude
+        self.y -= normalized_direction[1] * force_magnitude
 
     def update(self):
         if self.game.environment.menu in {"play", "death", "pause"}:
