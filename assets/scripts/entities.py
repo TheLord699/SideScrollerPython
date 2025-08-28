@@ -218,6 +218,7 @@ class Entities:
 
         if entity["entity_type"] in {"npc", "enemy"}:
             if entity["health"] <= 0:
+                self.death_particles(entity)
                 self.entities.remove(entity)
     
     def update_animation(self, entity):
@@ -288,6 +289,28 @@ class Entities:
                 lifespan=100,
                 fade=True,
                 image_size=(radius * 3, radius * 3),
+            )
+            
+    def death_particles(self, entity, amount=15):
+        for particles in range(amount):
+            vel_x = random.uniform(-1.5, 1.5)
+            vel_y = random.uniform(-2.0, -3.5)
+            
+            radius = random.randint(3, 6)
+            
+            image_path = f"assets/sprites/particles/smoke{random.choice([1, 2])}.png"
+            smoke_img = pg.image.load(image_path).convert_alpha()
+            
+            self.game.particles.generate(
+                pos=(entity["x"] + random.uniform(-5, 5), 
+                    entity["y"] + random.uniform(-5, 5)),
+                velocity=(vel_x, vel_y),
+                gravity=0,
+                radius=radius,
+                lifespan=random.randint(40, 80),
+                fade=True,
+                image=smoke_img,
+                image_size=(radius * 4, radius * 4),
             )
 
     def update_collision(self, entity):
