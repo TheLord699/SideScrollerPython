@@ -1,2 +1,43 @@
+# Directories to ignore
 tests/
 .vscode/
+assets/scripts/__pycache__/
+assets/sounds/Minifantasy_Dungeon_SFX/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# PyInstaller
+build/
+dist/
+
+# Database files
+*.db
+*.sqlite3
+
+# Byte-compiled / optimized files
+*.pyc
