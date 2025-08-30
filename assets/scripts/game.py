@@ -164,32 +164,32 @@ class Environment:
       font=self.game.environment.fonts["fantasy"],
     )
     self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=325, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      label="Toggle Indicators", # label="Indicators: On" if self.game.entities.show_indicators else "Indicators: Off"
-      font=self.game.environment.fonts["fantasy"],
-      font_size=16,
-      element_id="indicator_button",
-      callback=lambda: (setattr(self.game.entities, "show_indicators", not self.game.entities.show_indicators)),
-      hover_range=3.5,
-      render_order=0
+        sprite_sheet_path="ui_sheet", image_id=[33, 0],
+        x=self.game.screen_width / 2, y=325, sprite_width=95, sprite_height=32, 
+        centered=True, width=200, height=100,
+        alpha=True, is_button=True,
+        scale_multiplier=1.1,
+        dynamic_value=lambda: "Indicators: On" if self.game.entities.show_indicators else "Indicators: Off",
+        font=self.game.environment.fonts["fantasy"],
+        font_size=16,
+        element_id="indicator_button",
+        callback=lambda: (setattr(self.game.entities, "show_indicators", not self.game.entities.show_indicators)),
+        hover_range=3.5,
+        render_order=0
     )
     self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=450, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      label="Toggle Particles",
-      font=self.game.environment.fonts["fantasy"],
-      font_size=16,
-      element_id="particle_button",
-      callback=lambda: (setattr(self.game.particles, "enable_particles", not self.game.particles.enable_particles)),
-      hover_range=3.5,
-      render_order=0
+        sprite_sheet_path="ui_sheet", image_id=[33, 0],
+        x=self.game.screen_width / 2, y=450, sprite_width=95, sprite_height=32, 
+        centered=True, width=200, height=100,
+        alpha=True, is_button=True,
+        scale_multiplier=1.1,
+        dynamic_value=lambda: "Particles: On" if self.game.particles.enable_particles else "Particles: Off",
+        font=self.game.environment.fonts["fantasy"],
+        font_size=16,
+        element_id="particle_button",
+        callback=lambda: (setattr(self.game.particles, "enable_particles", not self.game.particles.enable_particles)),
+        hover_range=3.5,
+        render_order=0
     )
 
   def death_menu(self):
