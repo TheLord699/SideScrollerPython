@@ -291,7 +291,7 @@ class Entities:
                 image_size=(radius * 3, radius * 3),
             )
             
-    def death_particles(self, entity, amount=15):
+    def death_particles(self, entity, amount=13):
         for particles in range(amount):
             vel_x = random.uniform(-1.5, 1.5)
             vel_y = random.uniform(-2.0, -3.5)
@@ -302,8 +302,7 @@ class Entities:
             smoke_img = pg.image.load(image_path).convert_alpha()
             
             self.game.particles.generate(
-                pos=(entity["x"] + random.uniform(-5, 5), 
-                    entity["y"] + random.uniform(-5, 5)),
+                pos=(entity["x"] + random.uniform(-2, 2), entity["y"] + random.uniform(-5, 5)),
                 velocity=(vel_x, vel_y),
                 gravity=0,
                 radius=radius,
@@ -314,16 +313,17 @@ class Entities:
             )
 
     def update_collision(self, entity):
-        hitbox_w = entity.get("hitbox_width", entity["width"])
-        hitbox_h = entity.get("hitbox_height", entity["height"])
+        hitbox_width = entity.get("hitbox_width", entity["width"])
+        hitbox_heigth = entity.get("hitbox_height", entity["height"])
+        
         offset_x = entity.get("hitbox_offset_x", 0)
         offset_y = entity.get("hitbox_offset_y", 0)
         
         entity_hitbox = pg.Rect(
-            entity["x"] - hitbox_w / 2 + offset_x,
-            entity["y"] - hitbox_h / 2 + offset_y,
-            hitbox_w,
-            hitbox_h
+            entity["x"] - hitbox_width / 2 + offset_x,
+            entity["y"] - hitbox_heigth / 2 + offset_y,
+            hitbox_width,
+            hitbox_heigth
         )
         
         ground_check = pg.Rect(
@@ -354,19 +354,19 @@ class Entities:
                 
                 if overlap_x < overlap_y:
                     if entity_hitbox.centerx > tile_hitbox.centerx:
-                        entity["x"] = tile_hitbox.right + hitbox_w / 2 - offset_x
+                        entity["x"] = tile_hitbox.right + hitbox_width / 2 - offset_x
                         
                     else:
-                        entity["x"] = tile_hitbox.left - hitbox_w / 2 - offset_x
+                        entity["x"] = tile_hitbox.left - hitbox_width / 2 - offset_x
                         
                 else:
                     if entity_hitbox.centery < tile_hitbox.centery:
-                        entity["y"] = tile_hitbox.top - hitbox_h / 2 - offset_y
+                        entity["y"] = tile_hitbox.top - hitbox_heigth / 2 - offset_y
                         entity["vel_y"] = 0
                         entity["on_ground"] = True
                         
                     else:
-                        entity["y"] = tile_hitbox.bottom + hitbox_h / 2 - offset_y
+                        entity["y"] = tile_hitbox.bottom + hitbox_heigth / 2 - offset_y
                         entity["vel_y"] = 0
         
         if entity["entity_type"] in {"enemy", "npc", "actor"}:

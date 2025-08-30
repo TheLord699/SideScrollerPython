@@ -4,10 +4,14 @@ There are a few concepts I didn’t utilize in this project, I basically opted f
 I did do some tests with switching to rendering using ModernGl though I've decided that 
 I'll probably just use Pygame as I'll have to rewrite rendering
 
+also I know I should have a seperate script that handles all sprites/rendering :(
+
 There are some weird quirks with my code, one immediately noticeable one would be that I don't have a separate 
 render func in the main.py file and main.py isnt in project root but in the script folder with everything else... -gulp
 
 ALL ASSETS ARE FROM itch.io 
+
+You need to already have Python installed
 
 Dependencies: Pygame-ce, numpy
 

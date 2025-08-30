@@ -62,7 +62,7 @@ class UI:
                     label=None, font=None, font_size=24, text_color=(255, 255, 255), render_order=0,
                     is_slider=False, min_value=0, max_value=100, initial_value=50, step_size=1, variable=None,
                     is_dialogue=False, typing_speed=30, auto_advance=False, advance_speed=2000,
-                    parallax_factor=None, follow_factor=None, hover_range=None):
+                    parallax_factor=None, follow_factor=None, hover_range=None, dynamic_value=None):
         
         try:
             if any(el["id"] == element_id for el in self.ui_elements):
@@ -109,8 +109,17 @@ class UI:
                 original_image = self.game.environment.missing_texture.copy()
                 original_image = pg.transform.scale(original_image, (width, height))
 
-            if is_dialogue and label:
-                full_text = label
+            dynamic_display = None
+            if dynamic_value is not None:
+                if callable(dynamic_value):
+                    dynamic_display = dynamic_value()
+                else:
+                    dynamic_display = str(dynamic_value)
+            
+            display_label = dynamic_display if dynamic_display is not None else label
+
+            if is_dialogue and display_label:
+                full_text = display_label
                 current_text = ""
                 typing_index = 0
                 last_typing_time = pg.time.get_ticks()
@@ -119,7 +128,7 @@ class UI:
                 
             else:
                 full_text = None
-                current_text = label
+                current_text = display_label
                 typing_index = 0
                 last_typing_time = 0
                 typing_complete = True
@@ -171,7 +180,8 @@ class UI:
                 "current_offset": (0, 0),
                 "width": width,
                 "height": height,
-                "centered": centered
+                "centered": centered,
+                "dynamic_value": dynamic_value,
             }
 
             if centered:
@@ -194,6 +204,27 @@ class UI:
 
     def remove_ui_element(self, element_id):
         self.ui_elements = [el for el in self.ui_elements if el["id"] != element_id]
+
+    def update_dynamic_values(self):
+        for element in self.ui_elements:
+            if element.get("dynamic_value") is not None:
+                if callable(element["dynamic_value"]):
+                    current_value = element["dynamic_value"]()
+                else:
+                    current_value = element["dynamic_value"]
+                
+                current_display = str(current_value)
+                
+                if current_display != element.get("dynamic_display"):
+                    element["dynamic_display"] = current_display
+                    element["label"] = current_display
+                    
+                    if not element.get("is_dialogue", False):
+                        ui_font = self.load_font(element["font_path"], element["font_size"])
+                        element["text_surface"] = ui_font.render(current_display, False, element["text_color"])
+                        
+                        if "rect" in element:
+                            element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
 
     def update_dialogue_text(self, element):
         if not element["is_dialogue"] or element["typing_complete"]:
@@ -355,7 +386,7 @@ class UI:
         else:
             element["holding"] = False
 
-    def update_slider_interaction(self, element, mouse_pos, mouse_pressed): # working on
+    def update_slider_interaction(self, element, mouse_pos, mouse_pressed):
         track_rect = element["slider_rect"]
         knob_rect = element["slider_knob"]
 
@@ -428,6 +459,8 @@ class UI:
         mouse_pressed = pg.mouse.get_pressed()
 
         self.ui_elements.sort(key=lambda x: x.get("render_order", 0))
+        
+        self.update_dynamic_values()
 
         for element in self.ui_elements:
             if any([element.get("parallax_factor"), element.get("follow_factor"), element.get("hover_range")]):
