@@ -124,6 +124,10 @@ class Player:
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_1.wav"), "volume": 2.0},
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_2.wav"), "volume": 2.0},
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_3.wav"), "volume": 2.0}
+            ],
+            "dash": [
+                {"sound": pg.mixer.Sound("assets/sounds/player/movement/15_human_dash_1.wav"), "volume": 2.0},
+                {"sound": pg.mixer.Sound("assets/sounds/player/movement/15_human_dash_2.wav"), "volume": 2.0}
             ]
         }
         
@@ -1072,7 +1076,7 @@ class Player:
 
             self.dash_visuals(start_x, distance_traveled)
 
-            dash_sound = random.choice(self.sounds["jump"])
+            dash_sound = random.choice(self.sounds["dash"])
             dash_sound["sound"].play()
 
     def start_attack(self): # will make all attacks projectile based using projectile func

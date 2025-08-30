@@ -62,7 +62,8 @@ class UI:
                     label=None, font=None, font_size=24, text_color=(255, 255, 255), render_order=0,
                     is_slider=False, min_value=0, max_value=100, initial_value=50, step_size=1, variable=None,
                     is_dialogue=False, typing_speed=30, auto_advance=False, advance_speed=2000,
-                    parallax_factor=None, follow_factor=None, hover_range=None, dynamic_value=None):
+                    parallax_factor=None, follow_factor=None, hover_range=None, dynamic_value=None,
+                    click_sound=None, release_sound=None):
         
         try:
             if any(el["id"] == element_id for el in self.ui_elements):
@@ -113,6 +114,7 @@ class UI:
             if dynamic_value is not None:
                 if callable(dynamic_value):
                     dynamic_display = dynamic_value()
+                    
                 else:
                     dynamic_display = str(dynamic_value)
             
@@ -182,6 +184,8 @@ class UI:
                 "height": height,
                 "centered": centered,
                 "dynamic_value": dynamic_value,
+                "click_sound": click_sound,
+                "release_sound": release_sound,
             }
 
             if centered:
@@ -363,6 +367,12 @@ class UI:
                 element["scaled_text_surface"] = scaled_text_surface
                 element["scaled_text_rect"] = scaled_text_surface.get_rect(center=element["rect"].center)
 
+            if element["click_sound"]:
+                sound = element["click_sound"]["sound"]
+                volume = element["click_sound"]["volume"]
+                sound.set_volume(self.game.environment.volume / 10 * volume)
+                sound.play()
+
         elif element.get("scaled") and (not hovered or not mouse_pressed[0]):
             old_center = element["rect"].center
             element["image"] = element["original_image"].copy()
@@ -383,6 +393,12 @@ class UI:
                 element["holding"] = False
                 self.mouse_locked = True
                 
+                if element["release_sound"]:
+                    sound = element["release_sound"]["sound"]
+                    volume = element["release_sound"]["volume"]
+                    sound.set_volume(self.game.environment.volume / 10 * volume)
+                    sound.play()
+
         else:
             element["holding"] = False
 
@@ -394,14 +410,25 @@ class UI:
         pg.draw.rect(self.game.screen, (0, 0, 255), knob_rect)
 
         if pg.mouse.get_pressed()[0]:
-            if knob_rect.collidepoint(mouse_pos):
+            if knob_rect.collidepoint(mouse_pos) and not element["grabbed"]:
                 element["grabbed"] = True
+                if element["click_sound"]:
+                    sound = element["click_sound"]["sound"]
+                    volume = element["click_sound"]["volume"]
+                    sound.set_volume(self.game.environment.volume / 10 * volume) # will have a seperate volume handler func soon
+                    sound.play()
         
         else:
+            if element["grabbed"] and element["release_sound"]:
+                sound = element["release_sound"]["sound"]
+                volume = element["release_sound"]["volume"]
+                sound.set_volume(self.game.environment.volume / 10 * volume)
+                sound.play()
+                
             element["grabbed"] = False
             
         if element["grabbed"]:
-            knob_rect.x = max(track_rect.x, min(mouse_pos[0] - knob_rect.width // 2, track_rect.right - knob_rect.width))
+            knob_rect.x = max(track_rect.x, min(mouse_pos[0] - knob_rect.width / 2, track_rect.right - knob_rect.width))
             
         relative_position = (knob_rect.x - track_rect.x) / track_rect.width
         new_value = element["min_value"] + relative_position * (element["max_value"] - element["min_value"])

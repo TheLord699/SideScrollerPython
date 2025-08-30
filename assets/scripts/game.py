@@ -119,6 +119,7 @@ class Environment:
       alpha=True, is_button=True,
       scale_multiplier=1.1,
       label="Play",
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       font=self.game.environment.fonts["fantasy"],
       element_id="play_button",
       callback=self.change_menu("play"),
@@ -132,6 +133,7 @@ class Environment:
       alpha=True, is_button=True,
       scale_multiplier=1.1,
       label="Settings",
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       font=self.game.environment.fonts["fantasy"],
       element_id="settings_button",
       callback=self.change_menu("settings"),
@@ -147,6 +149,7 @@ class Environment:
       alpha=True, is_button=True,
       scale_multiplier=1.1,
       element_id="back_button",
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       callback=self.change_menu("main"),
       hover_range=3.5,
       render_order=0
@@ -155,6 +158,7 @@ class Environment:
       x=self.game.screen_width / 2.6, y=200, width=200, height=20, is_slider=True,
       min_value=0.0, max_value=1.1, initial_value=self.volume,
       step_size=0.01, element_id="volume_slider", 
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       variable=lambda value: self.update_slider_value("volume_slider", value),
     )
     
@@ -173,6 +177,7 @@ class Environment:
         font=self.game.environment.fonts["fantasy"],
         font_size=16,
         element_id="indicator_button",
+        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
         callback=lambda: (setattr(self.game.entities, "show_indicators", not self.game.entities.show_indicators)),
         hover_range=3.5,
         render_order=0
@@ -187,6 +192,7 @@ class Environment:
         font=self.game.environment.fonts["fantasy"],
         font_size=16,
         element_id="particle_button",
+        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
         callback=lambda: (setattr(self.game.particles, "enable_particles", not self.game.particles.enable_particles)),
         hover_range=3.5,
         render_order=0
@@ -200,6 +206,7 @@ class Environment:
       alpha=True, is_button=True,
       scale_multiplier=1.1,
       element_id="restart_button",
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       callback=lambda: (self.game.player.load_settings(), setattr(self, "menu", "play")),
       hover_range=3.5,
       render_order=0
