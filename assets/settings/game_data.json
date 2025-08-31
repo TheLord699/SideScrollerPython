@@ -1,9 +1,9 @@
 {
     "seed": 595875973,
-    "volume": 0,
+    "volume": 0.45,
     "show_indicators": true,
     "enable_particles": true,
-    "player_max_health": 3,
+    "player_max_health": 20,
     "player_inventory": [
         {
             "name": "Red Gem",
