@@ -80,6 +80,38 @@ class Environment:
     self.music_channel.stop()
     self.music_channel.play(self.music[new_track], loops=-1)
     self.current_track = new_track
+    
+  def save_data(self):
+    self.game.data_manager.set_setting("seed", self.seed)
+    self.game.data_manager.set_setting("volume", self.volume)
+    self.game.data_manager.set_setting("show_indicators", self.game.entities.show_indicators)
+    self.game.data_manager.set_setting("enable_particles", self.game.particles.enable_particles)
+    self.game.data_manager.set_setting("player_max_health", self.game.player.max_health)
+
+    inventory_to_save = []
+    for item in self.game.player.inventory.values():
+      inventory_to_save.append({
+        "name": item["name"],
+        "type": item["type"],
+        "value": item["value"],
+        "quantity": item["quantity"]
+      })
+
+    self.game.data_manager.set_setting("player_inventory", inventory_to_save)
+
+  def load_data(self):
+    self.game.data_manager.load_data()
+    self.seed = self.game.data_manager.get_setting("seed",)
+    self.volume = self.game.data_manager.get_setting("volume")
+    self.game.entities.show_indicators = self.game.data_manager.get_setting("show_indicators")
+    self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
+    self.game.player.max_health = self.game.data_manager.get_setting("player_max_health")
+    self.game.player.current_health = self.game.player.max_health
+
+    saved_inventory = self.game.data_manager.get_setting("player_inventory")
+    self.game.player.inventory = {}
+    for index, item in enumerate(saved_inventory):
+      self.game.player.inventory[index] = item
 
   def update_slider_value(self, element_id, value):
     if element_id == "volume_slider":
@@ -200,12 +232,14 @@ class Environment:
 
   def death_menu(self):
     self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[12, 0],
-      x=self.game.screen_width / 2, y=250, sprite_width=128, sprite_height=32, 
-      centered=True, width=250, height=100,
+      sprite_sheet_path="ui_sheet", image_id=[33, 0],
+      x=self.game.screen_width / 2, y=250, sprite_width=95, sprite_height=32, 
+      centered=True, width=200, height=100,
       alpha=True, is_button=True,
       scale_multiplier=1.1,
       element_id="restart_button",
+      label="Restart",
+      font=self.game.environment.fonts["fantasy"],
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       callback=lambda: (self.game.player.load_settings(), setattr(self, "menu", "play")),
       hover_range=3.5,
@@ -261,6 +295,7 @@ class Environment:
 
   def clear_ui(self):
     self.game.ui.ui_elements.clear()
+    #self.game.ui.clear_all_cache()
     
   def load_map(self, map_name): 
     self.current_map = self.maps[map_name]

@@ -1,0 +1,27 @@
+{
+    "seed": 595875973,
+    "volume": 0,
+    "show_indicators": true,
+    "enable_particles": true,
+    "player_max_health": 3,
+    "player_inventory": [
+        {
+            "name": "Red Gem",
+            "type": "valuable",
+            "value": 60,
+            "quantity": 1
+        },
+        {
+            "name": "Potion",
+            "type": "consumable",
+            "value": 10,
+            "quantity": 2
+        },
+        {
+            "name": "Gold",
+            "type": "valuable",
+            "value": 45,
+            "quantity": 2
+        }
+    ]
+}

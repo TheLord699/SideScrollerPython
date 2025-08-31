@@ -20,6 +20,7 @@ class UI:
             
         except Exception as e:
             print(f"Error loading sprite sheet {path}: {e}")
+            self.loaded_sheets[sheet_name]
 
     def load_image(self, image_path, alpha=None):
         if image_path in self.loaded_images:
@@ -209,6 +210,11 @@ class UI:
     def remove_ui_element(self, element_id):
         self.ui_elements = [el for el in self.ui_elements if el["id"] != element_id]
 
+    def clear_all_cache(self):
+        self.loaded_sheets.clear()
+        self.loaded_images.clear()
+        self.loaded_fonts.clear()
+
     def update_dynamic_values(self):
         for element in self.ui_elements:
             if element.get("dynamic_value") is not None:
@@ -292,13 +298,18 @@ class UI:
 
             hover_radius = max(element["rect"].width, element["rect"].height) * 0.5
 
-            if 0 < dist < hover_radius:
+            min_distance = 13
+            if dist > min_distance and dist < hover_radius:
                 strength = 1.0 - (dist / hover_radius)
                 max_offset = float(element["hover_range"])
 
-                scale = (max_offset * strength) / dist
-                offset_x += dx * scale
-                offset_y += dy * scale
+                if dist > 0:
+                    normalized_dx = dx / dist
+                    normalized_dy = dy / dist
+                    
+                    scale = (max_offset * strength * strength) / hover_radius
+                    offset_x += normalized_dx * scale * hover_radius
+                    offset_y += normalized_dy * scale * hover_radius
         
         current_offset_x, current_offset_y = element["current_offset"]
         smooth_factor = 0.2
@@ -415,7 +426,7 @@ class UI:
                 if element["click_sound"]:
                     sound = element["click_sound"]["sound"]
                     volume = element["click_sound"]["volume"]
-                    sound.set_volume(self.game.environment.volume / 10 * volume) # will have a seperate volume handler func soon
+                    sound.set_volume(self.game.environment.volume / 10 * volume)
                     sound.play()
         
         else:
