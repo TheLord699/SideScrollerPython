@@ -14,7 +14,7 @@ pg.display.set_caption("Tile Map Editor")
 font = pg.font.SysFont("Consolas", 18)
 
 MAPS_ROOT = "assets/maps"
-TILESHEETS_ROOT = "assets/sprites/maps"
+TILESHEETS_ROOT = "assets/sprites/maps/tile_sheets"
 ENTITIES_FILE = "assets/settings/entities.json"
 TILE_PANEL_WIDTH = 256
 MIN_TILE_PANEL_WIDTH = 150
@@ -222,7 +222,7 @@ def save_map(folder, tiles, tilesheets):
             shutil.copy2(sheet["path"], sheet_dest)
 
         saved_sheets.append({
-            "path": os.path.join("assets", "sprites", "maps", sheet_filename).replace("\\", "/"),
+            "path": os.path.join("assets", "sprites", "maps", "tile_sheets", sheet_filename).replace("\\", "/"),
             "tile_dimension": sheet["tile_dimension"]
         })
 
@@ -794,7 +794,7 @@ if mode == "yes" or mode == "y":
 else:
     map_name = ask_input("Enter new map name", "my_map")
     map_folder = os.path.join(MAPS_ROOT, map_name)
-    tile_sheet_path = ask_input("Enter tilesheet image path", "assets/sprites/maps/Assets.png")
+    tile_sheet_path = ask_input("Enter tilesheet image path", "assets/sprites/maps/tile_sheets/Assets.png")
     
     while True:
         try:

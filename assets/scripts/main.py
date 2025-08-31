@@ -24,7 +24,7 @@ class Game:
     self.clock = pg.time.Clock()
 
     self.version = "0.4.5-dev"
-    icon = pg.image.load("assets/sprites/enemy/bug.png")
+    icon = pg.image.load("assets/sprites/misc/bug.png")
 
     self.screen_width, self.screen_height = 800, 600
     self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.RESIZABLE | pg.SCALED)

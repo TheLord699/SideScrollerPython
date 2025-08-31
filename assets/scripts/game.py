@@ -7,7 +7,7 @@ class Environment:
     
     self.fps = 60
     
-    self.volume = 0 # multiplier
+    self.volume = 0.0 # multiplier
     self.gravity = 0.5 # 0.5
     self.max_fall_speed = 20 # terminal vel for all entities + player
     self.scale = 3 # 3
@@ -94,7 +94,8 @@ class Environment:
         "name": item["name"],
         "type": item["type"],
         "value": item["value"],
-        "quantity": item["quantity"]
+        "quantity": item["quantity"],
+        "health": item.get("health", 0)
       })
 
     self.game.data_manager.set_setting("player_inventory", inventory_to_save)
