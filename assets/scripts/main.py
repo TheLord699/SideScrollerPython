@@ -9,6 +9,7 @@ from player import Player
 from entities import Entities
 from map import Map
 from ui import UI 
+from data_manager import DataManager
 from particles import Particles
 from memory_debugger import MemoryDebugger
 from light_source import LightSource
@@ -37,6 +38,7 @@ class Game:
     self.game_loop()
 
   def init_game_objects(self):
+    self.data_manager = DataManager()
     self.ui = UI(self)
     self.environment = Environment(self)
     self.ai = AISystem(self)
@@ -113,6 +115,14 @@ class Game:
 
             elif event.key == pg.K_b:
               self.environment.menu = "main"
+            
+            elif event.key == pg.K_v:
+              self.environment.save_data()
+              print("Game data saved.")
+            
+            elif event.key == pg.K_f:
+              self.environment.load_data()
+              print("Game data loaded.")
 
             elif event.key == pg.K_m:
               self.memory_debugger.toggle()

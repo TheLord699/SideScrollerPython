@@ -25,6 +25,13 @@
 -want to add a shop
 
 
+Do immediately:
+
+-fix caching and unloading of caches(UI)
+
+-make caching automatic and uncaching manual in reset(game)
+
+
 
 
 
