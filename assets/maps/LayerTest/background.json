@@ -1,11 +1,11 @@
 {
-    "1": {"x": -50, "y": -200, "width": 10000, "height": 1000, "layer": 1, "multiplier": 0.02, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/layers/sky.png"},
-    "2": {"x": -50, "y": 0, "width": 500, "height": 500, "layer": 2, "multiplier": 0.1, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/layers/far-mountains.png"},
-    "3": {"x": -50, "y": 170, "width": 500, "height": 500, "layer": 3, "multiplier": 0.12, "repeat_directions":["horizontal"], "move_directions":"left", "move_speed": 0.15, "bob_amount": 0.05,  "image": "assets/sprites/maps/backgrounds/background_1/layers/far-clouds.png"},
-    "4": {"x": 100, "y": 150, "width": 500, "height": 500, "layer": 4, "multiplier": 0.15, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/layers/far-mountains.png"},
-    "5": {"x": -50, "y": 250, "width": 350, "height": 350, "layer": 6, "multiplier": 0.2, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/layers/trees.png"},
-    "6": {"x": -50, "y": 150, "width": 500, "height": 500, "layer": 5, "multiplier": 0.17, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/layers/mountains.png"},
-    "7": {"x": -50, "y": 200, "width": 1000, "height": 1000, "layer": 7, "multiplier": 0.3, "repeat_directions":["horizontal"],  "move_directions":"right", "move_speed": 0.15, "bob_amount": 0.15, "image": "assets/sprites/maps/backgrounds/background_1/layers/near-clouds.png"}
+    "1": {"x": -50, "y": -200, "width": 10000, "height": 1000, "layer": 1, "multiplier": 0.02, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/sky.png"},
+    "2": {"x": -50, "y": 0, "width": 500, "height": 500, "layer": 2, "multiplier": 0.1, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/far-mountains.png"},
+    "3": {"x": -50, "y": 170, "width": 500, "height": 500, "layer": 3, "multiplier": 0.12, "repeat_directions":["horizontal"], "move_directions":"left", "move_speed": 0.15, "bob_amount": 0.05,  "image": "assets/sprites/maps/backgrounds/background_1/far-clouds.png"},
+    "4": {"x": 100, "y": 150, "width": 500, "height": 500, "layer": 4, "multiplier": 0.15, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/far-mountains.png"},
+    "5": {"x": -50, "y": 250, "width": 350, "height": 350, "layer": 6, "multiplier": 0.2, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/trees.png"},
+    "6": {"x": -50, "y": 150, "width": 500, "height": 500, "layer": 5, "multiplier": 0.17, "repeat_directions":["horizontal"], "image": "assets/sprites/maps/backgrounds/background_1/mountains.png"},
+    "7": {"x": -50, "y": 200, "width": 1000, "height": 1000, "layer": 7, "multiplier": 0.3, "repeat_directions":["horizontal"],  "move_directions":"right", "move_speed": 0.15, "bob_amount": 0.15, "image": "assets/sprites/maps/backgrounds/background_1/near-clouds.png"}
 }
 
   

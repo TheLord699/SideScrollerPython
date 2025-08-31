@@ -21,6 +21,10 @@ Controls:
 
 ____________________________________
 
+save: V
+
+load: F
+
 movement: WASD
 
 dash: Shift

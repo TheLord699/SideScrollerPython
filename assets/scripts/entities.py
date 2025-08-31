@@ -472,6 +472,7 @@ class Entities:
                     entity["vel_y"] = 0
                     entity["on_ground"] = True
                     return True
+                
                 else:
                     entity["vel_y"] *= 0.8
                     entity["on_ground"] = True

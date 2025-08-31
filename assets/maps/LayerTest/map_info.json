@@ -1,11 +1,11 @@
 {
   "tilesheets": [
     {
-      "path": "assets/sprites/maps/Assets.png",
+      "path": "assets/sprites/maps/tile_sheets/Assets.png",
       "tile_dimension": 16
     },
     {
-      "path": "assets/sprites/maps/Cliff_Tile.png",
+      "path": "assets/sprites/maps/tile_sheets/Cliff_Tile.png",
       "tile_dimension": 16
     }
   ],
@@ -493,7 +493,8 @@
       "layer": 1,
       "direction": 0,
       "hitbox": false,
-      "swimmable": true
+      "swimmable": true,
+      "ripple": true
     },
     {
       "x": 2,

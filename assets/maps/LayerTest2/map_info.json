@@ -1,15 +1,15 @@
 {
   "tilesheets": [
     {
-      "path": "assets/sprites/maps/Assets.png",
+      "path": "assets/sprites/maps/tile_sheets/Assets.png",
       "tile_dimension": 16
     },
     {
-      "path": "assets/sprites/maps/Mossy - Decorations&Hazards.png",
+      "path": "assets/sprites/maps/tile_sheets/Mossy - Decorations&Hazards.png",
       "tile_dimension": 512
     },
     {
-      "path": "assets/sprites/maps/Mossy - FloatingPlatforms.png",
+      "path": "assets/sprites/maps/tile_sheets/Mossy - FloatingPlatforms.png",
       "tile_dimension": 512
     }
   ],
