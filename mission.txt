@@ -31,6 +31,8 @@ Do immediately:
 
 -make caching automatic and uncaching manual in reset(game)
 
+-fix entity ground collision code(it prevents the entities from jumping)
+
 
 
 

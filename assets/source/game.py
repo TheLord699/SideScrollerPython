@@ -10,13 +10,13 @@ class Environment:
     self.volume = 0.0 # multiplier
     self.gravity = 0.5 # 0.5
     self.max_fall_speed = 20 # terminal vel for all entities + player
-    self.scale = 3 # 3
+    self.scale = 3 # 3 (experimental)
     self.max_particles = 20 # 20
     
     self.max_darkness = 50 # 50, greater is lighter
     self.lighting = False
     self.bloom = False
-    self.bloom_tint = (0, 0, 255)
+    self.bloom_tint = (255, 255, 255)
     
     self.menu = "main"
     self.last_menu = None
@@ -90,29 +90,31 @@ class Environment:
 
     inventory_to_save = []
     for item in self.game.player.inventory.values():
-      inventory_to_save.append({
-        "name": item["name"],
-        "type": item["type"],
-        "value": item["value"],
-        "quantity": item["quantity"],
-        "health": item.get("health", 0)
-      })
+      safe_item = {
+        "name": item.get("name"),
+        "type": item.get("type"),
+        "value": item.get("value"),
+        "quantity": item.get("quantity"),
+        "health": item.get("health")
+      }
+      inventory_to_save.append(safe_item)
 
     self.game.data_manager.set_setting("player_inventory", inventory_to_save)
 
   def load_data(self):
     self.game.data_manager.load_data()
-    self.seed = self.game.data_manager.get_setting("seed",)
+    self.seed = self.game.data_manager.get_setting("seed")
     self.volume = self.game.data_manager.get_setting("volume")
     self.game.entities.show_indicators = self.game.data_manager.get_setting("show_indicators")
     self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
     self.game.player.max_health = self.game.data_manager.get_setting("player_max_health")
     self.game.player.current_health = self.game.player.max_health
 
-    saved_inventory = self.game.data_manager.get_setting("player_inventory")
+    saved_inventory = self.game.data_manager.get_setting("player_inventory", [])
     self.game.player.inventory = {}
-    for index, item in enumerate(saved_inventory):
-      self.game.player.inventory[index] = item
+    
+    for index, saved_item in enumerate(saved_inventory):
+      self.game.player.inventory[index] = saved_item
 
   def update_slider_value(self, element_id, value):
     if element_id == "volume_slider":

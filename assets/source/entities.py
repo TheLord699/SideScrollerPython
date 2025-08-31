@@ -554,7 +554,7 @@ class Entities:
             else:
                 opacity = min_opacity
 
-            time = pg.time.get_ticks() / 300
+            time = pg.time.get_ticks() / 250
             scale = round(1.0 + 0.1 * math.sin(time), 1)
 
             if entity["entity_type"] == "enemy":
