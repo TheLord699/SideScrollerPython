@@ -1,6 +1,7 @@
 # Copyright (c) 2025 Finnian Ainslie
 # Licensed under the MIT License
 import pygame as pg
+import psutil
 import os
 
 from background import Background 
@@ -19,7 +20,14 @@ class Game:
   def __init__(self):
     pg.init()
     
-    os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) # dont think will work for builds/executables
+    # will either remove both or add platform checks later on
+    os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) # I dont think this will work for builds/executables
+    
+    try:
+      psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS)  # windows only
+      
+    except:
+      print("CPU prioritization not enabled (incompatible device)") # temp for now
 
     self.clock = pg.time.Clock()
 
@@ -50,7 +58,7 @@ class Game:
     self.memory_debugger = MemoryDebugger(self)
     self.lighting = LightSource(self)
 
-  def render_fps(self):
+  def render_fps(self): # temp function, will remove later
     fps = self.clock.get_fps()
     default_font = pg.font.Font(None, 24)
     fps_text = default_font.render(f"FPS: {round(fps)}", True, (255, 255, 255))
@@ -144,7 +152,7 @@ class Game:
       self.update()
     
       # testing
-      self.memory_debugger.render()
+      self.memory_debugger.render() # will remove later
       #self.render_fps()
 
       pg.display.flip()

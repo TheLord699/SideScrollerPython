@@ -57,7 +57,7 @@ class UI:
             self.loaded_fonts[font_key] = font
             return font
 
-    def create_ui(self, x, y, width, height, alpha=None, is_button=False, scale_multiplier=1.1,
+    def create_ui(self, x, y, width, height, alpha=None, is_button=False, scale_multiplier=1.1, # if you're reading this, never write code the way I did here
                     image_path=None, sprite_sheet_path=None, sprite_width=16, sprite_height=16,
                     image_id=None, element_id=None, centered=False, callback=None, is_hold=False,
                     label=None, font=None, font_size=24, text_color=(255, 255, 255), render_order=0,
