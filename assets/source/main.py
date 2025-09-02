@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Finnian Ainslie
+# Copyright (c) 2025 TheLawd
 # Licensed under the MIT License
 import pygame as pg
 import psutil
@@ -24,7 +24,7 @@ class Game:
     os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) # I dont think this will work for builds/executables
     
     try:
-      psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS)  # windows only
+      psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS) # windows only
       
     except:
       print("CPU prioritization not enabled (incompatible device)") # temp for now
