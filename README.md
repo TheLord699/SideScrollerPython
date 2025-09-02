@@ -13,7 +13,7 @@ ALL ASSETS ARE FROM itch.io
 
 You need to already have Python installed
 
-Dependencies: Pygame-ce, numpy
+Dependencies: Pygame-ce, numpy, psutil
 
 ____________________________________
 
