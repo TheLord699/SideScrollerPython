@@ -127,10 +127,6 @@ class Game:
             elif event.key == pg.K_v:
               self.environment.save_data()
               print("Game data saved.")
-            
-            elif event.key == pg.K_f:
-              self.environment.load_data()
-              print("Game data loaded.")
 
             elif event.key == pg.K_m:
               self.memory_debugger.toggle()

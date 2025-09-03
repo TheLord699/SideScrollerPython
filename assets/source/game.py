@@ -47,6 +47,7 @@ class Environment:
     }
     self.menu_functions = {
       "main": self.main_menu,
+      "select_menu": self.select_menu,
       "play": self.start_game,
       "settings": self.settings_menu,
       "death": self.death_menu
@@ -115,7 +116,7 @@ class Environment:
     
     for index, saved_item in enumerate(saved_inventory):
       self.game.player.inventory[index] = saved_item
-
+    
   def update_slider_value(self, element_id, value):
     if element_id == "volume_slider":
       self.volume = value
@@ -157,7 +158,7 @@ class Environment:
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       font=self.game.environment.fonts["fantasy"],
       element_id="play_button",
-      callback=self.change_menu("play"),
+      callback=self.change_menu("select_menu"),
       hover_range=3.5,
       render_order=0
     )
@@ -172,6 +173,48 @@ class Environment:
       font=self.game.environment.fonts["fantasy"],
       element_id="settings_button",
       callback=self.change_menu("settings"),
+      hover_range=3.5,
+      render_order=0
+    )
+  
+  def select_menu(self):
+    self.game.ui.create_ui(
+      sprite_sheet_path="ui_sheet", image_id=[33, 0],
+      x=self.game.screen_width / 2, y=250, sprite_width=95, sprite_height=32, 
+      centered=True, width=200, height=100,
+      alpha=True, is_button=True,
+      scale_multiplier=1.1,
+      label="New Game",
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+      font=self.game.environment.fonts["fantasy"],
+      element_id="new_game_button",
+      callback=self.change_menu("play"),
+      hover_range=3.5,
+      render_order=0
+    )
+    self.game.ui.create_ui(
+      sprite_sheet_path="ui_sheet", image_id=[33, 0],
+      x=self.game.screen_width / 2, y=400, sprite_width=95, sprite_height=32, 
+      centered=True, width=200, height=100,
+      alpha=True, is_button=True,
+      scale_multiplier=1.1,
+      label="Load Game",
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+      font=self.game.environment.fonts["fantasy"],
+      element_id="load_button",
+      callback=lambda: (setattr(self, "menu", "play"), setattr(self.game.player, "settings_loaded", True), self.load_data()),
+      hover_range=3.5,
+      render_order=0
+    )
+    self.game.ui.create_ui(
+      sprite_sheet_path="ui_sheet", image_id=[0, 0],
+      x=self.game.screen_width / 7, y=500, sprite_width=32, sprite_height=32, 
+      centered=True, width=100, height=100,
+      alpha=True, is_button=True,
+      scale_multiplier=1.1,
+      element_id="back_button",
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+      callback=self.change_menu("main"),
       hover_range=3.5,
       render_order=0
     )
@@ -203,34 +246,34 @@ class Environment:
       font=self.game.environment.fonts["fantasy"],
     )
     self.game.ui.create_ui(
-        sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2, y=325, sprite_width=95, sprite_height=32, 
-        centered=True, width=200, height=100,
-        alpha=True, is_button=True,
-        scale_multiplier=1.1,
-        dynamic_value=lambda: "Indicators: On" if self.game.entities.show_indicators else "Indicators: Off",
-        font=self.game.environment.fonts["fantasy"],
-        font_size=16,
-        element_id="indicator_button",
-        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        callback=lambda: (setattr(self.game.entities, "show_indicators", not self.game.entities.show_indicators)),
-        hover_range=3.5,
-        render_order=0
+      sprite_sheet_path="ui_sheet", image_id=[33, 0],
+      x=self.game.screen_width / 2, y=325, sprite_width=95, sprite_height=32, 
+      centered=True, width=200, height=100,
+      alpha=True, is_button=True,
+      scale_multiplier=1.1,
+      dynamic_value=lambda: "Indicators: On" if self.game.entities.show_indicators else "Indicators: Off",
+      font=self.game.environment.fonts["fantasy"],
+      font_size=16,
+      element_id="indicator_button",
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+      callback=lambda: (setattr(self.game.entities, "show_indicators", not self.game.entities.show_indicators)),
+      hover_range=3.5,
+      render_order=0
     )
     self.game.ui.create_ui(
-        sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2, y=450, sprite_width=95, sprite_height=32, 
-        centered=True, width=200, height=100,
-        alpha=True, is_button=True,
-        scale_multiplier=1.1,
-        dynamic_value=lambda: "Particles: On" if self.game.particles.enable_particles else "Particles: Off",
-        font=self.game.environment.fonts["fantasy"],
-        font_size=16,
-        element_id="particle_button",
-        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        callback=lambda: (setattr(self.game.particles, "enable_particles", not self.game.particles.enable_particles)),
-        hover_range=3.5,
-        render_order=0
+      sprite_sheet_path="ui_sheet", image_id=[33, 0],
+      x=self.game.screen_width / 2, y=450, sprite_width=95, sprite_height=32, 
+      centered=True, width=200, height=100,
+      alpha=True, is_button=True,
+      scale_multiplier=1.1,
+      dynamic_value=lambda: "Particles: On" if self.game.particles.enable_particles else "Particles: Off",
+      font=self.game.environment.fonts["fantasy"],
+      font_size=16,
+      element_id="particle_button",
+      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+      callback=lambda: (setattr(self.game.particles, "enable_particles", not self.game.particles.enable_particles)),
+      hover_range=3.5,
+      render_order=0
     )
 
   def death_menu(self):
@@ -298,7 +341,7 @@ class Environment:
     if self.menu == "death":
       return 
 
-    if self.menu in {"play"} or self.menu in "main" and not self.last_menu == "settings":
+    if self.menu in {"play", "main"} and self.last_menu not in {"settings", "select_menu"}:
       self.menu_background_loaded = False
       pg.mixer.stop()
 
