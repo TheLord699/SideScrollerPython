@@ -88,6 +88,10 @@ class Environment:
     self.game.data_manager.set_setting("show_indicators", self.game.entities.show_indicators)
     self.game.data_manager.set_setting("enable_particles", self.game.particles.enable_particles)
     self.game.data_manager.set_setting("player_max_health", self.game.player.max_health)
+    self.game.data_manager.set_setting("player_current_health", self.game.player.current_health)
+    self.game.data_manager.set_setting("player_direction", self.game.player.direction)
+    self.game.data_manager.set_setting("player_x", self.game.player.x)
+    self.game.data_manager.set_setting("player_y", self.game.player.y)
 
     inventory_to_save = []
     for item in self.game.player.inventory.values():
@@ -109,7 +113,10 @@ class Environment:
     self.game.entities.show_indicators = self.game.data_manager.get_setting("show_indicators")
     self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
     self.game.player.max_health = self.game.data_manager.get_setting("player_max_health")
-    self.game.player.current_health = self.game.player.max_health
+    self.game.player.current_health = self.game.data_manager.get_setting("player_current_health")
+    self.game.player.direction = self.game.data_manager.get_setting("player_direction")
+    self.game.player.x = self.game.data_manager.get_setting("player_x")
+    self.game.player.y = self.game.data_manager.get_setting("player_y")
 
     saved_inventory = self.game.data_manager.get_setting("player_inventory", [])
     self.game.player.inventory = {}
