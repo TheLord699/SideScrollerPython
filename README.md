@@ -79,13 +79,13 @@ Install them with:
 ------------------------------------------------------------
 📝 TODO
 ------------------------------------------------------------
-- [ ] Implement weapon system + weapon stats JSON
-- [ ] Load level info from JSON (entities, spawn points, death barriers, etc.)
-- [ ] Replace temporary values (e.g., friction, attack damage) with proper configs
-- [ ] Rework all attacks to be projectile-based
-- [ ] Rewrite player hitbox system
-- [ ] Rewrite entities + entities.json format
-- [ ] Add can_walk_off_edge and height check settings per-entity
-- [ ] Use spatial grid partitioning for entities + player (not just tiles)
-- [ ] Centralize asset loading and rendering
-- [ ] Add a shop system
+- Implement weapon system + weapon stats JSON
+- Load level info from JSON (entities, spawn points, death barriers, etc.)
+- Replace temporary values (e.g., friction, attack damage) with proper configs
+- Rework all attacks to be projectile-based
+- Rewrite player hitbox system
+- Rewrite entities + entities.json format
+- Add can_walk_off_edge and height check settings per-entity
+- Use spatial grid partitioning for entities + player (not just tiles)
+- Centralize asset loading and rendering
+- Add a shop system
