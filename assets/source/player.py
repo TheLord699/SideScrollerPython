@@ -595,6 +595,9 @@ class Player:
                         pickup_sound["sound"].play()
             
             if entity["entity_type"] == "npc":
+                if not self.on_ground:
+                    return
+                
                 entity_hitbox = pg.Rect(entity["x"] - entity["width"] / 2, entity["y"] - entity["height"] / 2, entity["width"], entity["height"])
                 
                 if self.interact_radius.colliderect(entity_hitbox):

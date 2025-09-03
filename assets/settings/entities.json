@@ -142,7 +142,7 @@
   "enemies": {
     "Bab": {
       "name": "Bab",
-      "health": 100,
+      "health": 50,
       "amount": 0,
       "hitbox_offset_y": 20,
       "hitbox_width": 48,
@@ -161,12 +161,6 @@
       "jump_force": 8,
       "aggro_range": 150,
       "attack_damage": 0.1,
-      "message": [
-        "please stay away from me",
-        "you smell...",
-        "bad...",
-        "like really bad..."
-      ],
       "states": {
           "idle": {
               "start_row": 0,
