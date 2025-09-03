@@ -26,10 +26,13 @@ This project is more of a showcase of different systems:
 📸 Screenshots
 ------------------------------------------------------------
 Title Screen:
-https://github.com/TheLord699/SideScrollerPython/blob/a9c685ae1db8d070a10e447c9e7f7f11895733ff/Title.png?raw=true
+
+![image alt](https://github.com/TheLord699/SideScrollerPython/blob/a9c685ae1db8d070a10e447c9e7f7f11895733ff/Title.png?raw=true)
+
 
 Lighting Example:
-https://github.com/TheLord699/SideScrollerPython/blob/e03d5a201bbb3d47f0805023a4e0e42a7e3cb6c3/Title_light.png?raw=true
+
+![image alt](https://github.com/TheLord699/SideScrollerPython/blob/e03d5a201bbb3d47f0805023a4e0e42a7e3cb6c3/Title_light.png?raw=true)
 
 ------------------------------------------------------------
 🎮 Controls
