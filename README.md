@@ -76,8 +76,8 @@ Debug / Extra:
 You’ll need Python installed.
 
 Dependencies:
-    pygame-ce
-    numpy
+    pygame-ce,
+    numpy,
     psutil
 
 Install them with:

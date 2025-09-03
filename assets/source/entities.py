@@ -483,18 +483,28 @@ class Entities:
     def health_bar(self, entity):
         if entity["health"] <= 0 or entity["health"] == entity["max_health"]:
             return
-        
+
+        if not hasattr(self, "health_font"):
+            self.health_font = pg.font.Font(self.game.environment.fonts["fantasy"], 12)
+
         health_percentage = entity["health"] / entity["max_health"]
-        bar_width = entity["width"]
-        bar_height = 5
+        bar_width, bar_height = entity["width"], 5
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
-        
-        bar_x = entity["x"] - cam_x - bar_width // 2
-        bar_y = entity["y"] - cam_y - entity["height"] // 2 - 10
-        
+
+        bar_x = int(entity["x"] - cam_x - bar_width // 2)
+        bar_y = int(entity["y"] - cam_y - entity["height"] // 2 - 10)
+
+        if "last_health" not in entity or entity["last_health"] != entity["health"] or "health_text" not in entity:
+            entity["last_health"] = entity["health"]
+            entity["health_text"] = self.health_font.render(f"{int(entity['health'])}/{int(entity['max_health'])}", True, (255, 255, 255))
+
+        text_surface = entity["health_text"]
+        text_rect = text_surface.get_rect(center=(bar_x + bar_width // 2, bar_y - 6))
+        self.game.screen.blit(text_surface, text_rect)
+
         pg.draw.rect(self.game.screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
         pg.draw.rect(self.game.screen, (0, 255, 0), (bar_x, bar_y, bar_width * health_percentage, bar_height))
-            
+
     def entity_indicators(self, entity):
         if not self.show_indicators:
             return
