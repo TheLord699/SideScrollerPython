@@ -235,8 +235,19 @@ class Environment:
 
   def death_menu(self):
     self.game.ui.create_ui(
+      x=self.game.screen_width / 2.6, y=150, sprite_width=95, sprite_height=32, 
+      centered=False, width=200, height=100,
+      alpha=True,
+      scale_multiplier=1,
+      label="You Died",
+      font=self.game.environment.fonts["fantasy"],
+      element_id="Death_message",
+      font_size=35,
+      render_order=0
+    )
+    self.game.ui.create_ui(
       sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=250, sprite_width=95, sprite_height=32, 
+      x=self.game.screen_width / 2, y=350, sprite_width=95, sprite_height=32, 
       centered=True, width=200, height=100,
       alpha=True, is_button=True,
       scale_multiplier=1.1,

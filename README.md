@@ -1,93 +1,91 @@
-This is my first attempt at creating a side scroller using Pygame, as well as my first time working on a project this big.
-There are a few concepts I didn’t utilize in this project, I basically opted for composition in everything and haven’t used inheritance (yucky).
+Side Scroller (Python + Pygame)
+================================
 
-I did do some tests with switching to rendering using ModernGl though I've decided that 
-I'll probably just use Pygame as I'll have to rewrite rendering
+This is my first attempt at creating a side scroller using Pygame-ce.
+It’s also my first time working on a project of this scale, so expect quirks, experiments,
+and plenty of “could be betters.”  
 
-also I know I should have a seperate script that handles all sprites/rendering :(
+I went heavy on composition (no inheritance, yucky), and while I did some testing
+with rendering in ModernGL, I decided to stick with Pygame for now since rewriting
+everything would be painful.  
 
-There are some weird quirks with my code, one immediately noticeable one would be that I don't have a separate 
-render func in the main.py file and main.py isnt in project root but in the script folder with everything else... -gulp
+Note: All assets are from itch.io
 
-ALL ASSETS ARE FROM itch.io 
+------------------------------------------------------------
+🚀 Features / Systems
+------------------------------------------------------------
+This project is more of a showcase of different systems:
+- Entity system (drag-and-drop with mouse)
+- Inventory system
+- Debugging tools (memory debugger, hitbox view, etc.)
+- Lighting system (toggleable via in-game terminal)
+- Save/load system
+- Basic combat + movement mechanics
 
-You need to already have Python installed
+------------------------------------------------------------
+📸 Screenshots
+------------------------------------------------------------
+Title Screen:
+https://github.com/TheLord699/SideScrollerPython/blob/a9c685ae1db8d070a10e447c9e7f7f11895733ff/Title.png?raw=true
 
-Dependencies: Pygame-ce, numpy, psutil
+Lighting Example:
+https://github.com/TheLord699/SideScrollerPython/blob/e03d5a201bbb3d47f0805023a4e0e42a7e3cb6c3/Title_light.png?raw=true
 
-____________________________________
+------------------------------------------------------------
+🎮 Controls
+------------------------------------------------------------
+Save: V
+Load: F
+Movement: WASD
+Dash: Shift
+Inventory: I
+Consume item: E
+Drop item: Q
+Attack: Spacebar
+Pickup item / Talk to NPC: E
+Back to menu: B
+Open memory debugger: M
+Close memory debugger: ESC
+Open terminal (inside memory debugger): Tab
 
-Controls:
+Debug / Extra:
+- Toggle lighting: open terminal → environment.lighting = True, then press N
+- Show hitboxes: open terminal → debugging = True
+- Drag entities with mouse (don’t try to pick them up while dragging!)
 
-____________________________________
+------------------------------------------------------------
+📦 Installation
+------------------------------------------------------------
+You’ll need Python installed.
 
-save: V
+Dependencies:
+    pygame-ce
+    numpy
+    psutil
 
-load: F
+Install them with:
+    pip install pygame-ce numpy psutil
 
-movement: WASD
+------------------------------------------------------------
+🛠️ Current Quirks / Notes
+------------------------------------------------------------
+- No dedicated render() function in main.py (everything’s inline)
+- main.py is in the /scripts folder instead of project root (gulp)
+- Some things are loaded into memory more than once
+- Using self.game.screen_width / height for rendering bounds (can switch to self.game.screen.get_size())
+- Entity hitboxes aren’t stored in their list → can’t reference them across classes
+- Sliding after jumps is intentional (for now)
 
-dash: Shift
-
-inventory: I
-
-consume item: E
-
-drop item: Q
-
-attack: Spacebar
-
-item pickup/talk to npcs: E
-
-back to menu: B
-
-Open memory_debugger: M
-
-Close memory_debugger: ESC
-
-Open terminal(do this in memory_debugger): Tab
-
-If you want to test lighting go into terminal, write environment.lighting = True
-and press N to place stationary lights
-
-If you want to see hitboxes and other debug stuff write into terminal debugging = True
-
-You can drag entities with mouse but dont pickup item you are dragging
-
-____________________________________
-
-This project is more of a showcase of different systems
-
-![image alt](https://github.com/TheLord699/SideScrollerPython/blob/a9c685ae1db8d070a10e447c9e7f7f11895733ff/Title.png?raw=true)
-
-![image alt](https://github.com/TheLord699/SideScrollerPython/blob/e03d5a201bbb3d47f0805023a4e0e42a7e3cb6c3/Title_light.png?raw=true)
-
-TODO:
-
--implement weapon system, create weapon json for storing stats
-
--load level info from json, so entities and locations, death barrier pos, player spawn and other shit
-
--define temporary values(friction value in entity and attack damage(will be able to do once weapon stats json created))
-
--rework all attacks to be projectile based
-
--player hitbox needs complete re-write
-
--maybe change but purposely kept sliding even after jump
-
--somethings are loaded into memory more than once
-
--want to completley re-write certain systyems like entities and entities.json format
-
--Note: using self.game.screen_width and height for rendering bounds for now but can change to, self.game.screen.get_size()
-
--Note: entity hitboxes arent saved into their list so you arent able to refrence in other classes
-
--need to make it so I can set can_walk_off_edge or something like that in entitiy for each entities, same with height check for edge
-
--Note: spacial grid partitioning is currently only used with tile collisions, also do so with entities and player
-
--need to centralize asset loading and perhaps rendering
-
--want to add a shop
+------------------------------------------------------------
+📝 TODO
+------------------------------------------------------------
+- [ ] Implement weapon system + weapon stats JSON
+- [ ] Load level info from JSON (entities, spawn points, death barriers, etc.)
+- [ ] Replace temporary values (e.g., friction, attack damage) with proper configs
+- [ ] Rework all attacks to be projectile-based
+- [ ] Rewrite player hitbox system
+- [ ] Rewrite entities + entities.json format
+- [ ] Add can_walk_off_edge and height check settings per-entity
+- [ ] Use spatial grid partitioning for entities + player (not just tiles)
+- [ ] Centralize asset loading and rendering
+- [ ] Add a shop system
