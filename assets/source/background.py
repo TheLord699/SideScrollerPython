@@ -78,7 +78,7 @@ class Background:
 				self.cam_x = self.game.player.cam_x
 				self.cam_y = self.game.player.cam_y
 		
-		elif self.game.environment.menu in {"main", "settings"}: 
+		elif self.game.environment.menu in {"main", "settings", "select_menu"}: 
 			if not self.menu_scrolling:
 				self.cam_x = 0
 				self.cam_y = 0

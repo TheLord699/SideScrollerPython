@@ -485,7 +485,7 @@ class Entities:
             return
 
         if not hasattr(self, "health_font"):
-            self.health_font = pg.font.Font(self.game.environment.fonts["fantasy"], 12)
+            self.health_font = pg.font.Font(self.game.environment.fonts["fantasy"], 13)
 
         health_percentage = entity["health"] / entity["max_health"]
         bar_width, bar_height = entity["width"], 5

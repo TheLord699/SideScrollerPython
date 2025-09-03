@@ -39,8 +39,6 @@ Lighting Example:
 ------------------------------------------------------------
 Save: V
 
-Load: F
-
 Movement: WASD
 
 Dash: Shift
