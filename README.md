@@ -25,7 +25,7 @@ This project is more of a showcase of different systems:
 ------------------------------------------------------------
 📸 Screenshots
 ------------------------------------------------------------
-Title Screen:
+In-game:
 
 ![image alt](https://github.com/TheLord699/SideScrollerPython/blob/a9c685ae1db8d070a10e447c9e7f7f11895733ff/Title.png?raw=true)
 
