@@ -50,7 +50,7 @@
   "npcs": {
     "Bob": {
       "name": "Bob",
-      "health": 100,
+      "health": 30,
       "hitbox_offset_y": 20,
       "hitbox_width": 48,
       "hitbox_height": 48,
@@ -80,7 +80,7 @@
     },
     "Bab": {
       "name": "Bab",
-      "health": 100,
+      "health": 30,
       "hitbox_offset_y": 20,
       "hitbox_width": 48,
       "hitbox_height": 48,
@@ -111,7 +111,7 @@
     },
     "Jimmy": {
       "name": "Jimmy",
-      "health": 100,
+      "health": 30,
       "amount": 0,
       "hitbox_width": 40,
       "hitbox_height": 88,

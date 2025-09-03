@@ -214,9 +214,8 @@ class Player:
             self.attack_sequence = 1
         
         if self.current_state in {"death"} or getattr(self, "sliding", False):   
-            if self.friction <= 0:
-                if self.on_ground:
-                    self.friction = 0.3
+            if self.friction <= 0 and self.on_ground:
+                self.friction = 0.3
                          
             self.vel_x -= self.friction * (1 if self.vel_x > 0 else -1 if self.vel_x < 0 else 0)
                     
@@ -554,7 +553,7 @@ class Player:
                     font=self.game.environment.fonts["fantasy"],
                     render_order=0,
                     is_dialogue=True,
-                    typing_speed=30
+                    typing_speed=25
                 )
 
                 self.game.ui.create_ui(

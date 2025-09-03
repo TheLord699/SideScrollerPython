@@ -8,17 +8,18 @@ class LightSource:
         self.stationary_lights = []
         self.moving_lights = []
         self.active_lights = []
+        
+        self.light_mask_cache = {}
+        self.blur_kernel_cache = {}
 
-        self.ambient_light = self.game.environment.max_darkness
         self.light_surface = None
         self.temp_surface = None
         self.tint_surface = None
-        self.light_mask_cache = {}
-        self.blur_kernel_cache = {}
 
         # might remove later
         self.max_cache_size = 100
 
+        self.ambient_light = self.game.environment.max_darkness
         self.enable_bloom = self.game.environment.bloom
         self.bloom_tint = self.game.environment.bloom_tint
 
