@@ -38,22 +38,36 @@ Lighting Example:
 🎮 Controls
 ------------------------------------------------------------
 Save: V
+
 Load: F
+
 Movement: WASD
+
 Dash: Shift
+
 Inventory: I
+
 Consume item: E
+
 Drop item: Q
+
 Attack: Spacebar
+
 Pickup item / Talk to NPC: E
+
 Back to menu: B
+
 Open memory debugger: M
+
 Close memory debugger: ESC
+
 Open terminal (inside memory debugger): Tab
 
 Debug / Extra:
 - Toggle lighting: open terminal → environment.lighting = True, then press N
+
 - Show hitboxes: open terminal → debugging = True
+
 - Drag entities with mouse (don’t try to pick them up while dragging!)
 
 ------------------------------------------------------------
