@@ -124,7 +124,7 @@ class Game:
             elif event.key == pg.K_b:
               self.environment.menu = "main"
             
-            elif event.key == pg.K_v:
+            elif event.key == pg.K_g:
               self.environment.save_data()
               print("Game data saved.")
 

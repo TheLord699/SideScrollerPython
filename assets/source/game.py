@@ -107,6 +107,7 @@ class Environment:
     self.game.data_manager.set_setting("player_inventory", inventory_to_save)
 
   def load_data(self):
+    self.game.player.load_settings()
     self.game.data_manager.load_data()
     self.seed = self.game.data_manager.get_setting("seed")
     self.volume = self.game.data_manager.get_setting("volume")
