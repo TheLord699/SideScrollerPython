@@ -25,6 +25,7 @@ class Player:
         self.cam_x = self.x - self.game.screen_width / 2
         self.cam_y = self.y - self.game.screen_height / 1.5
         self.camera_smoothing_factor = 0.1
+        self.free_cam = False
 
         self.scale_factor = self.game.environment.scale 
         self.hitbox_width = 5 * self.scale_factor
@@ -1142,6 +1143,9 @@ class Player:
 
     def update_camera(self):
         # can change the target here
+        if self.free_cam:
+            return
+        
         target_cam_x = self.x - self.game.screen_width / 2
         target_cam_y = self.y - self.game.screen_height / 1.5 # 1.5
 
@@ -1211,6 +1215,25 @@ class Player:
         
         self.x -= normalized_direction[0] * force_magnitude
         self.y -= normalized_direction[1] * force_magnitude
+    
+    def handle_free_cam(self):
+        if not self.free_cam:
+            return
+        
+        keys = pg.key.get_pressed()
+        speed = 10
+        
+        if keys[pg.K_UP]:
+            self.cam_y -= speed
+            
+        if keys[pg.K_DOWN]:
+            self.cam_y += speed
+            
+        if keys[pg.K_LEFT]:
+            self.cam_x -= speed
+            
+        if keys[pg.K_RIGHT]:
+            self.cam_x += speed
 
     def update(self):
         if self.game.environment.menu in {"play", "death", "pause"}:
@@ -1235,6 +1258,7 @@ class Player:
             self.render_dialogue()
             self.render()
             self.render_hitboxes()
+            self.handle_free_cam()
             
         else:
             if hasattr(self, "settings_loaded"):
