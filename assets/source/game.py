@@ -31,6 +31,7 @@ class Environment:
     self.seed = int.from_bytes(os.urandom(4), "big")
   
     self.music_channel = pg.mixer.Channel(1)
+    self.music_channel.set_volume(self.volume * 0.1)
     
     self.missing_texture = pg.image.load("assets/sprites/missing_texture.png").convert_alpha()
     
