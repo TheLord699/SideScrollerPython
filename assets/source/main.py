@@ -85,63 +85,65 @@ class Game:
         "moving"
       )
       self.lighting.active_lights.append(player_light)
+    
+  def handle_events(self):
+    self.events = pg.event.get()
+    for event in self.events:
+      if event.type == pg.QUIT:
+        self.running = False
+        
+    # will remove for release
+      if self.memory_debugger.show_memory_info:
+        self.memory_debugger.handle_mouse_event(event)
+        self.memory_debugger.handle_terminal_input(event)
+
+        if event.type == pg.KEYDOWN:
+          if event.key in (pg.K_UP, pg.K_PAGEUP):
+            self.memory_debugger.handle_scroll("up")
+
+          elif event.key in (pg.K_DOWN, pg.K_PAGEDOWN):
+            self.memory_debugger.handle_scroll("down")
+            
+      else:
+        if event.type == pg.KEYDOWN:
+          if event.key == pg.K_h:
+            self.player.take_damage(0.1)
+
+          elif event.key == pg.K_j:
+            self.player.current_health += 0.5
+
+          elif event.key == pg.K_k:
+            self.player.vel_y = -15
+
+          elif event.key == pg.K_l:
+            self.player.max_health += 1
+            self.player.current_health = self.player.max_health
+
+          elif event.key == pg.K_b:
+            self.environment.menu = "main"
+          
+          elif event.key == pg.K_g:
+            self.environment.save_data()
+            print("Game data saved.")
+
+          elif event.key == pg.K_m:
+            self.memory_debugger.toggle()
+
+          elif event.key == pg.K_n:
+            new_light = (
+              self.player.x + self.player.hitbox_width / 2,
+              self.player.y + self.player.hitbox_height / 2,
+              200,
+              1.0,
+              (255, 255, 200),
+              "stationary"
+            )
+            self.lighting.active_lights.append(new_light)
 
   def game_loop(self):
-    running = True
-    while running:
-      self.events = pg.event.get()
-      for event in self.events:
-        if event.type == pg.QUIT:
-          running = False
-          
-      # will remove for release
-        if self.memory_debugger.show_memory_info:
-          self.memory_debugger.handle_mouse_event(event)
-          self.memory_debugger.handle_terminal_input(event)
-
-          if event.type == pg.KEYDOWN:
-            if event.key in (pg.K_UP, pg.K_PAGEUP):
-              self.memory_debugger.handle_scroll("up")
-
-            elif event.key in (pg.K_DOWN, pg.K_PAGEDOWN):
-              self.memory_debugger.handle_scroll("down")
-              
-        else:
-          if event.type == pg.KEYDOWN:
-            if event.key == pg.K_h:
-              self.player.take_damage(0.1)
-
-            elif event.key == pg.K_j:
-              self.player.current_health += 0.5
-
-            elif event.key == pg.K_k:
-              self.player.vel_y = -15
-
-            elif event.key == pg.K_l:
-              self.player.max_health += 1
-              self.player.current_health = self.player.max_health
-
-            elif event.key == pg.K_b:
-              self.environment.menu = "main"
-            
-            elif event.key == pg.K_g:
-              self.environment.save_data()
-              print("Game data saved.")
-
-            elif event.key == pg.K_m:
-              self.memory_debugger.toggle()
-
-            elif event.key == pg.K_n:
-              new_light = (
-                self.player.x + self.player.hitbox_width / 2,
-                self.player.y + self.player.hitbox_height / 2,
-                200,
-                1.0,
-                (255, 255, 200),
-                "stationary"
-              )
-              self.lighting.active_lights.append(new_light)
-      # will remove for release
+    self.running = True
+    while self.running:
+      self.handle_events()
 
       self.screen.fill((0, 0, 0))
 
