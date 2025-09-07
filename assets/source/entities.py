@@ -4,6 +4,8 @@ import random
 import math
 import os
 
+from pygame._sdl2 import Window, Renderer, Texture
+
 class Entities:
     def __init__(self, game):
         self.game = game
@@ -28,20 +30,24 @@ class Entities:
     def load_tilesheet(self, path, tile_width, tile_height):
         self.tilesheet = None
         self.item_sprites.clear()
+        self.item_textures.clear()  # Clear textures too
 
         if not path or not os.path.exists(path):
             print(f"Tilesheet not found: {path}")
             return
 
-        self.tilesheet = pg.image.load(path).convert_alpha()
+        # Load without convert_alpha() for GPU rendering
+        self.tilesheet = pg.image.load(path)
         sheet_width, sheet_height = self.tilesheet.get_size()
 
         for row in range(sheet_height // tile_height):
             for col in range(sheet_width // tile_width):
                 rect = pg.Rect(col * tile_width, row * tile_height, tile_width, tile_height)
                 sprite = self.tilesheet.subsurface(rect).copy()
+                texture = Texture.from_surface(self.game.renderer, sprite)  # Create texture
                 key = (row, col)
                 self.item_sprites[key] = sprite
+                self.item_textures[key] = texture  # Store texture
 
     def load_settings(self):
         self.x = 0
@@ -62,6 +68,7 @@ class Entities:
         self.entities = []
         self.entity_info = {}
         self.item_sprites = {}
+        self.item_textures = {}  # New: Store textures for GPU rendering
         
         self.load_entity_info()
 
@@ -107,7 +114,8 @@ class Entities:
             self.load_tilesheet(template["tile_sheet"][0], template["tile_sheet"][1], template["tile_sheet"][2])
         
         index_key = tuple(template.get("index")) if isinstance(template.get("index"), list) else template.get("index")
-        image = self.item_sprites.get(index_key, self.game.environment.missing_texture.copy())
+        image = self.item_sprites.get(index_key, self.game.environment.missing_texture_surface.copy())
+        texture = self.item_textures.get(index_key, self.game.environment.missing_texture)  # Get texture
         
         entity = {
             "entity_type": entity_type,
@@ -123,6 +131,7 @@ class Entities:
             "hitbox_offset_y": template.get("hitbox_offset_y", 0),
             "weight": template.get("weight", 1),
             "image": image,
+            "texture": texture,  # Store texture for GPU rendering
             "vel_x": 0,
             "vel_y": 0,
             "on_ground": False,
@@ -177,9 +186,11 @@ class Entities:
 
     def setup_entity_animations(self, entity):
         entity["animation_frames"] = {}
+        entity["animation_textures"] = {}  # New: Store textures for GPU rendering
         
         for state, state_data in entity["states"].items():
             frames = []
+            textures = []  # New: Store textures for GPU rendering
             start_row = state_data.get("start_row", 0)
             start_col = state_data.get("start_col", 0)
             frame_count = state_data.get("frames", 1)
@@ -192,13 +203,18 @@ class Entities:
                 key = (row, col)
                 if key in self.item_sprites:
                     frames.append(self.item_sprites[key])
-                    
+                    textures.append(self.item_textures[key])  # Store texture
                 else:
                     print(f"Warning: Missing animation frame {key} for state {state}")
                     frames.append(entity["image"])
+                    textures.append(entity["texture"])  # Use default texture
             
             entity["animation_frames"][state] = {
                 "frames": frames,
+                "speed": animation_speed
+            }
+            entity["animation_textures"][state] = {
+                "textures": textures,
                 "speed": animation_speed
             }
 
@@ -250,8 +266,11 @@ class Entities:
                 entity["animation_timer"] = 0
 
             animation_data = entity.get("animation_frames", {}).get(entity["current_state"])
-            if animation_data:
+            texture_data = entity.get("animation_textures", {}).get(entity["current_state"])  # Get texture data
+            
+            if animation_data and texture_data:
                 frames = animation_data["frames"]
+                textures = texture_data["textures"]  # Get textures
                 speed = animation_data["speed"]
 
                 entity["animation_timer"] += 1
@@ -264,6 +283,7 @@ class Entities:
                     entity["animation_frame"] = (entity["animation_frame"] + 1) % len(frames)
 
                 entity["image"] = frames[entity["animation_frame"]]
+                entity["texture"] = textures[entity["animation_frame"]]  # Update texture
 
                 if entity["entity_type"] in ("npc", "enemy"):
                     ai_dir = entity.get("ai_direction", 0)
@@ -299,7 +319,7 @@ class Entities:
             radius = random.randint(3, 6)
             
             image_path = f"assets/sprites/particles/smoke{random.choice([1, 2])}.png"
-            smoke_img = pg.image.load(image_path).convert_alpha()
+            smoke_img = pg.image.load(image_path)  # Removed convert_alpha()
             
             self.game.particles.generate(
                 pos=(entity["x"] + random.uniform(-2, 2), entity["y"] + random.uniform(-5, 5)),
@@ -496,14 +516,19 @@ class Entities:
 
         if "last_health" not in entity or entity["last_health"] != entity["health"] or "health_text" not in entity:
             entity["last_health"] = entity["health"]
-            entity["health_text"] = self.health_font.render(f"{int(entity['health'])}/{int(entity['max_health'])}", True, (255, 255, 255))
+            health_text_surface = self.health_font.render(f"{int(entity['health'])}/{int(entity['max_health'])}", True, (255, 255, 255))
+            entity["health_text"] = Texture.from_surface(self.game.renderer, health_text_surface)  # Create texture
+            entity["health_text_rect"] = health_text_surface.get_rect(center=(bar_x + bar_width // 2, bar_y - 6))
 
-        text_surface = entity["health_text"]
-        text_rect = text_surface.get_rect(center=(bar_x + bar_width // 2, bar_y - 6))
-        self.game.screen.blit(text_surface, text_rect)
+        # Draw health text using texture
+        entity["health_text"].draw(dstrect=entity["health_text_rect"])
 
-        pg.draw.rect(self.game.screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
-        pg.draw.rect(self.game.screen, (0, 255, 0), (bar_x, bar_y, bar_width * health_percentage, bar_height))
+        # Draw health bars using renderer
+        self.game.renderer.draw_color = (255, 0, 0, 255)
+        self.game.renderer.fill_rect((bar_x, bar_y, bar_width, bar_height))
+        
+        self.game.renderer.draw_color = (0, 255, 0, 255)
+        self.game.renderer.fill_rect((bar_x, bar_y, bar_width * health_percentage, bar_height))
 
     def entity_indicators(self, entity):
         if not self.show_indicators:
@@ -512,11 +537,13 @@ class Entities:
         if not hasattr(self, "arrow_surface"):
             self.arrow_surface = pg.Surface((20, 20), pg.SRCALPHA)
             pg.draw.polygon(self.arrow_surface, (255, 0, 0), [(7, 14), (0, 0), (14, 0)])
+            self.arrow_texture = Texture.from_surface(self.game.renderer, self.arrow_surface)  # Create texture
 
             self.arrow_scales = {}
             for s in [0.9, 1.0, 1.1]:
                 width, height = self.arrow_surface.get_size()
-                self.arrow_scales[round(s, 1)] = pg.transform.scale(self.arrow_surface, (int(width * s), int(height * s)))
+                scaled_surface = pg.transform.scale(self.arrow_surface, (int(width * s), int(height * s)))
+                self.arrow_scales[round(s, 1)] = Texture.from_surface(self.game.renderer, scaled_surface)  # Create texture
 
         if not hasattr(self, "bubble_surface"):
             bubble_width, bubble_height = 18, 14
@@ -532,10 +559,13 @@ class Entities:
             for x in (6, 9, 12):
                 pg.draw.circle(self.bubble_surface, (100, 100, 100), (x, 6), 1)
 
+            self.bubble_texture = Texture.from_surface(self.game.renderer, self.bubble_surface)  # Create texture
+
             self.bubble_scales = {}
             for s in [0.9, 1.0, 1.1]:
                 width, height = self.bubble_surface.get_size()
-                self.bubble_scales[round(s, 1)] = pg.transform.scale(self.bubble_surface, (int(width * s), int(height * s)))
+                scaled_surface = pg.transform.scale(self.bubble_surface, (int(width * s), int(height * s)))
+                self.bubble_scales[round(s, 1)] = Texture.from_surface(self.game.renderer, scaled_surface)  # Create texture
 
         dx = entity["x"] - self.game.player.x
         dy = entity["y"] - self.game.player.y
@@ -568,44 +598,41 @@ class Entities:
             scale = round(1.0 + 0.1 * math.sin(time), 1)
 
             if entity["entity_type"] == "enemy":
-                arrow = self.arrow_scales.get(scale, self.arrow_surface)
-                arrow.set_alpha(int(opacity))
-                self.game.screen.blit(arrow, (screen_x - arrow.get_width() // 2, screen_y - arrow.get_height() // 2))
+                arrow = self.arrow_scales.get(scale, self.arrow_texture)
+                # For alpha, we need to handle this differently with textures
+                # This is a limitation - we'd need to create a new texture with alpha
+                # For now, we'll just draw without alpha
+                arrow.draw(dstrect=(screen_x - 10, screen_y - 10, 20, 20))
                 
             elif entity["entity_type"] == "npc":
-                bubble = self.bubble_scales.get(scale, self.bubble_surface)
-                bubble.set_alpha(int(opacity))
-                self.game.screen.blit(bubble, (screen_x - bubble.get_width() // 2, screen_y - bubble.get_height() - 6))
+                bubble = self.bubble_scales.get(scale, self.bubble_texture)
+                # Same alpha limitation as above
+                bubble.draw(dstrect=(screen_x - 9, screen_y - 10, 18, 20))
 
     def render(self, entity):
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
         screen_width, screen_height = self.game.screen_width, self.game.screen_height
 
-        if entity["image"]:
+        if entity["texture"]:  # Use texture instead of image
             sprite_x = entity["x"] - cam_x - entity["width"] // 2
             sprite_y = entity["y"] - cam_y - entity["height"] // 2
 
             if sprite_x + entity["width"] >= 0 and sprite_x <= screen_width and sprite_y + entity["height"] >= 0 and sprite_y <= screen_height:
                 if entity.get("damage_effect", 0) > 0:
-                    tinted_image = entity["image"].copy()
-                    tinted_image.fill((255, 0, 0), special_flags=pg.BLEND_ADD)
-
+                    # For damage effect, we need to handle tinting differently
+                    # This is a limitation with textures - we'd need to create a tinted version
+                    # For now, we'll just draw the regular texture
                     entity["damage_effect"] -= 0.05
                     if entity["damage_effect"] < 0:
                         entity["damage_effect"] = 0
-                        
-                else:
-                    tinted_image = entity["image"]
 
-                scaled_image = pg.transform.scale(tinted_image, (entity["width"], entity["height"]))
-
+                # Handle flipping for GPU rendering
+                flip_x = False
                 if entity["entity_type"] in {"npc"}:
-                    self.health_bar(entity)
                     if entity["x"] > self.game.player.x:
-                        scaled_image = pg.transform.flip(scaled_image, True, False)
+                        flip_x = True
                 
                 elif entity["entity_type"] in {"enemy"}:
-                    self.health_bar(entity)
                     if "last_dir" not in entity:
                         entity["last_dir"] = 1
                     
@@ -616,9 +643,13 @@ class Entities:
                         entity["last_dir"] = -1
                     
                     if entity["last_dir"] == -1:
-                        scaled_image = pg.transform.flip(scaled_image, True, False)
+                        flip_x = True
 
-                self.game.screen.blit(scaled_image, (sprite_x, sprite_y))
+                # Draw the texture
+                entity["texture"].draw(dstrect=(sprite_x, sprite_y, entity["width"], entity["height"]))
+
+                if entity["entity_type"] in {"npc", "enemy"}:
+                    self.health_bar(entity)
 
     def mouse_interact(self, entity):
         mouse_x, mouse_y = pg.mouse.get_pos()
@@ -687,36 +718,35 @@ class Entities:
         else:
             color = (255, 255, 255)
         
-        fill_surface = pg.Surface((hitbox_w, hitbox_h), pg.SRCALPHA)
-        fill_surface.fill((*color, 50))
-        self.game.screen.blit(fill_surface, (hitbox_rect.x, hitbox_rect.y))
+        # Draw hitbox using renderer
+        self.game.renderer.draw_color = color + (50,)
+        self.game.renderer.fill_rect(hitbox_rect)
         
-        pg.draw.rect(self.game.screen, color, hitbox_rect, 2)
+        self.game.renderer.draw_color = color + (255,)
+        self.game.renderer.draw_rect(hitbox_rect)
         
         center_x = entity["x"] + offset_x - cam_x
         center_y = entity["y"] + offset_y - cam_y
         
-        pg.draw.circle(self.game.screen, color, (int(center_x), int(center_y)), 3)
+        # Draw center point
+        self.game.renderer.draw_color = color + (255,)
+        self.game.renderer.fill_rect((center_x - 1, center_y - 1, 3, 3))
         
         if offset_x != 0 or offset_y != 0:
             original_center = (entity["x"] - cam_x, entity["y"] - cam_y)
             offset_center = (center_x, center_y)
-            pg.draw.line(self.game.screen, (255, 255, 0), original_center, offset_center, 2)
+            # Draw line between centers
+            self.game.renderer.draw_color = (255, 255, 0, 255)
+            self.game.renderer.draw_line(original_center, offset_center)
         
         if entity["entity_type"] in ["enemy"]:
             aggro_range = entity.get("aggro_range", 300)
             
-            detection_surface = pg.Surface((aggro_range*2, aggro_range*2), pg.SRCALPHA)
-            pg.draw.circle(
-                detection_surface, 
-                (255, 165, 0, 30),
-                (aggro_range, aggro_range), 
+            # Draw aggro range using renderer
+            self.game.renderer.draw_color = (255, 165, 0, 30)
+            self.game.renderer.fill_circle(
+                (entity["x"] - cam_x, entity["y"] - cam_y),
                 aggro_range
-            )
-            
-            self.game.screen.blit(
-                detection_surface,
-                (entity["x"] - aggro_range - cam_x, entity["y"] - aggro_range - cam_y)
             )
             
             player_center = (self.game.player.x - cam_x, self.game.player.y - cam_y)
@@ -724,13 +754,9 @@ class Entities:
             distance = math.sqrt((player_center[0]-entity_center[0])**2 + (player_center[1]-entity_center[1])**2)
             
             if distance <= aggro_range:
-                pg.draw.line(
-                    self.game.screen, 
-                    (255, 0, 255),
-                    entity_center, 
-                    player_center, 
-                    2
-                )
+                # Draw line to player
+                self.game.renderer.draw_color = (255, 0, 255, 255)
+                self.game.renderer.draw_line(entity_center, player_center)
                             
     def update(self):
         for entity in self.entities[:]:

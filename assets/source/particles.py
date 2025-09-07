@@ -2,6 +2,8 @@ import pygame as pg
 import random
 import numpy as np
 
+from pygame._sdl2 import Window, Renderer, Texture
+
 class Particles:
     def __init__(self, game):
         self.game = game
@@ -36,6 +38,7 @@ class Particles:
             "lifespan": lifespan,
             "age": 0,
             "image": None,
+            "texture": None,  # New: Store texture for GPU rendering
             "rect": None,
             "fade": fade,
             "gravity": gravity,
@@ -48,6 +51,7 @@ class Particles:
                 image = pg.transform.scale(image, image_size)
                 
             particle["image"] = image
+            particle["texture"] = Texture.from_surface(self.game.renderer, image)  # Create texture
             particle["rect"] = image.get_rect(center=pos)
             
         else:
@@ -132,7 +136,7 @@ class Particles:
                         
                 return
 
-    def render_particle(self, surface, particle):
+    def render_particle(self, particle):
         screen_width, screen_height = self.game.screen_width, self.game.screen_height
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
 
@@ -141,31 +145,38 @@ class Particles:
         w, h = particle["rect"].width, particle["rect"].height
 
         if screen_x + w < 0 or screen_x > screen_width or screen_y + h < 0 or screen_y > screen_height:
-            return
+            return False
 
         if self.game.environment.menu not in {"play", "death", "pause"}:
-            return
-
-        screen_pos = (screen_x, screen_y)
+            return False
 
         if particle["image"]:
-            img = particle["image"].copy()
+            # Handle image particles with GPU rendering
             if particle["fade"]:
                 alpha = max(0, 255 * (1 - particle["age"] / particle["lifespan"]))
-                img.set_alpha(alpha)
-                
-            surface.blit(img, screen_pos)
-            
+                # For fading, we need to create a new surface with alpha
+                temp_surface = particle["image"].copy()
+                temp_surface.set_alpha(alpha)
+                temp_texture = Texture.from_surface(self.game.renderer, temp_surface)
+                temp_texture.draw(dstrect=(screen_x, screen_y, w, h))
+            else:
+                particle["texture"].draw(dstrect=(screen_x, screen_y, w, h))
         else:
+            # Handle shape particles
             if particle["fade"]:
                 alpha = max(0, 255 * (1 - particle["age"] / particle["lifespan"]))
                 color = (*particle["color"][:3], int(alpha))
+                # Create a surface for the fading particle
                 surf = pg.Surface((particle["radius"] * 2, particle["radius"] * 2), pg.SRCALPHA)
                 pg.draw.rect(surf, color, surf.get_rect())
-                surface.blit(surf, screen_pos)
-                
+                texture = Texture.from_surface(self.game.renderer, surf)
+                texture.draw(dstrect=(screen_x, screen_y, particle["radius"] * 2, particle["radius"] * 2))
             else:
-                pg.draw.rect(surface, particle["color"], pg.Rect(screen_pos[0], screen_pos[1], particle["radius"] * 2, particle["radius"] * 2))
+                # Draw solid rectangle using renderer
+                self.game.renderer.draw_color = particle["color"] + (255,)
+                self.game.renderer.fill_rect((screen_x, screen_y, particle["radius"] * 2, particle["radius"] * 2))
+        
+        return True
 
     def update(self):
         if not self.particles:
@@ -194,7 +205,6 @@ class Particles:
 
             if particle["image"]:
                 particle["rect"].center = particle["pos"]
-                
             else:
                 particle["rect"].topleft = (particle["pos"].x - particle["radius"], particle["pos"].y - particle["radius"])
 
@@ -203,9 +213,8 @@ class Particles:
         for particle in self.particles:
             if particle["age"] >= particle["lifespan"]:
                 self.recycle_particle(particle)
-                
             else:
                 alive_particles.append(particle)
-                self.render_particle(self.game.screen, particle)
+                self.render_particle(particle)
                 
         self.particles = alive_particles

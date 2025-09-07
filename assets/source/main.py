@@ -4,6 +4,8 @@ import pygame as pg
 import psutil
 import os
 
+from pygame._sdl2 import Window, Renderer, Texture
+
 from background import Background 
 from game import Environment
 from player import Player
@@ -20,7 +22,7 @@ class Game:
   def __init__(self):
     pg.init()
     
-    # will either remove both or add platform checks later on
+    # will either remove both or add platform checks later
     os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) # I dont think this will work for builds/executables
     
     try:
@@ -32,15 +34,15 @@ class Game:
     self.clock = pg.time.Clock()
 
     self.version = "0.4.5-dev"
-    icon = pg.image.load("assets/sprites/misc/bug.png")
+    icon_surface = pg.image.load("assets/sprites/misc/bug.png")
 
     self.screen_width, self.screen_height = 800, 600
-    self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.RESIZABLE | pg.SCALED)
+    self.window = Window(f"SideScroller {self.version}", size=(self.screen_width, self.screen_height))
+    self.renderer = Renderer(self.window)
     
     self.debugging = False # will remove later
 
-    pg.display.set_caption(f"SideScroller {self.version}")
-    pg.display.set_icon(icon)
+    self.icon_texture = Texture.from_surface(self.renderer, icon_surface)
 
     self.init_game_objects()
     self.game_loop()
@@ -61,8 +63,9 @@ class Game:
   def render_fps(self): # temp function, will remove later
     fps = self.clock.get_fps()
     default_font = pg.font.Font(None, 24)
-    fps_text = default_font.render(f"FPS: {round(fps)}", True, (255, 255, 255))
-    self.screen.blit(fps_text, (self.screen_width - 120, 10))
+    fps_surface = default_font.render(f"FPS: {round(fps)}", True, (255, 255, 255))
+    fps_texture = Texture.from_surface(self.renderer, fps_surface)
+    fps_texture.draw(dstrect=(self.screen_width - 120, 10, fps_surface.get_width(), fps_surface.get_height()))
 
   def update(self):
     self.environment.update()
@@ -145,15 +148,15 @@ class Game:
     while self.running:
       self.handle_events()
 
-      self.screen.fill((0, 0, 0))
+      self.renderer.clear()
 
       self.update()
     
       # testing
       self.memory_debugger.render() # will remove later
-      #self.render_fps()
+      self.render_fps()
 
-      pg.display.flip()
+      self.renderer.present()
       self.clock.tick(self.environment.fps)
 
     pg.quit()
