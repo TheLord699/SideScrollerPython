@@ -1,7 +1,5 @@
 import pygame as pg
 
-from pygame._sdl2 import Window, Renderer, Texture
-
 class UI:
     def __init__(self, game):
         self.game = game
@@ -10,7 +8,6 @@ class UI:
         self.loaded_sheets = {}
         self.loaded_images = {}
         self.loaded_fonts = {}
-        self.loaded_textures = {}  # New texture cache
         
         self.mouse_locked = False
         
@@ -19,50 +16,25 @@ class UI:
             return 
         
         try:
-            # Load surface but don't convert (GPU rendering)
-            surface = pg.image.load(path)
-            self.loaded_sheets[sheet_name] = surface
+            self.loaded_sheets[sheet_name] = pg.image.load(path).convert_alpha()
             
         except Exception as e:
             print(f"Error loading sprite sheet {path}: {e}")
-            self.loaded_sheets[sheet_name] = None
+            self.loaded_sheets[sheet_name]
 
     def load_image(self, image_path, alpha=None):
         if image_path in self.loaded_images:
             return self.loaded_images[image_path]
 
         try:
-            # Load surface without convert/convert_alpha
-            image = pg.image.load(image_path)
+            image = pg.image.load(image_path).convert_alpha() if alpha else pg.image.load(image_path).convert()
             self.loaded_images[image_path] = image
-            
-            # Also create and cache a texture
-            texture = Texture.from_surface(self.game.renderer, image)
-            self.loaded_textures[image_path] = texture
-            
             return image
         
         except Exception as e:
             print(f"Error loading image from {image_path}: {e}")
-            return self.game.environment.missing_texture_surface
+            return self.game.environment.missing_texture.copy()
     
-    def get_texture(self, image_path):
-        """Get cached texture or create one if needed"""
-        if image_path in self.loaded_textures:
-            return self.loaded_textures[image_path]
-        
-        # If we have the surface but not the texture
-        if image_path in self.loaded_images:
-            texture = Texture.from_surface(self.game.renderer, self.loaded_images[image_path])
-            self.loaded_textures[image_path] = texture
-            return texture
-        
-        # Load the image if not already loaded
-        surface = self.load_image(image_path)
-        texture = Texture.from_surface(self.game.renderer, surface)
-        self.loaded_textures[image_path] = texture
-        return texture
-
     def load_font(self, font_path, size=24):
         font_key = f"{font_path}_{size}"
         
@@ -72,6 +44,7 @@ class UI:
         try:
             if font_path:
                 font = pg.font.Font(font_path, size)
+                
             else:
                 font = pg.font.Font(None, size)
                 
@@ -84,7 +57,7 @@ class UI:
             self.loaded_fonts[font_key] = font
             return font
 
-    def create_ui(self, x, y, width, height, alpha=None, is_button=False, scale_multiplier=1.1,
+    def create_ui(self, x, y, width, height, alpha=None, is_button=False, scale_multiplier=1.1, # if you're reading this, never write code the way I did here
                     image_path=None, sprite_sheet_path=None, sprite_width=16, sprite_height=16,
                     image_id=None, element_id=None, centered=False, callback=None, is_hold=False,
                     label=None, font=None, font_size=24, text_color=(255, 255, 255), render_order=0,
@@ -97,17 +70,15 @@ class UI:
             if any(el["id"] == element_id for el in self.ui_elements):
                 return  
 
-            original_surface = None
-            texture = None
+            original_image = None
             missing_texture = False
 
             if image_path:
-                original_surface = self.load_image(image_path)
-                if original_surface == self.game.environment.missing_texture_surface:
+                original_image = self.load_image(image_path, alpha)
+                if original_image == self.game.environment.missing_texture:
                     missing_texture = True
-                else:
-                    original_surface = pg.transform.scale(original_surface, (width, height))
-                    texture = self.get_texture(image_path)
+                    
+                original_image = pg.transform.scale(original_image, (width, height))
 
             elif sprite_sheet_path:
                 sheet = self.loaded_sheets.get(sprite_sheet_path)
@@ -120,31 +91,31 @@ class UI:
                         if image_id: 
                             row, col = image_id[0], image_id[1]
                             if 0 <= row < rows and 0 <= col < cols:
-                                original_surface = sheet.subsurface(pg.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height))
-                                original_surface = pg.transform.scale(original_surface, (width, height))
-                                # Create texture from the subsurface
-                                texture = Texture.from_surface(self.game.renderer, original_surface)
+                                original_image = sheet.subsurface(pg.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height))
+                                original_image = pg.transform.scale(original_image, (width, height))
+                                
                             else:
                                 missing_texture = True
                                     
                     except Exception as e:
                         print(f"Error loading sprite from preloaded sheet {sprite_sheet_path}: {e}")
                         missing_texture = True
+                        
                 else:
                     missing_texture = True
                     print(f"Sprite sheet {sprite_sheet_path} not found, using missing texture")
 
-            show_missing_texture = (missing_texture or original_surface is None) and not is_slider and not (label and not is_button)
+            show_missing_texture = (missing_texture or original_image is None) and not is_slider and not (label and not is_button)
             
             if show_missing_texture:
-                original_surface = self.game.environment.missing_texture_surface.copy()
-                original_surface = pg.transform.scale(original_surface, (width, height))
-                texture = self.game.environment.missing_texture
+                original_image = self.game.environment.missing_texture.copy()
+                original_image = pg.transform.scale(original_image, (width, height))
 
             dynamic_display = None
             if dynamic_value is not None:
                 if callable(dynamic_value):
                     dynamic_display = dynamic_value()
+                    
                 else:
                     dynamic_display = str(dynamic_value)
             
@@ -157,6 +128,7 @@ class UI:
                 last_typing_time = pg.time.get_ticks()
                 typing_complete = False
                 advance_timer = pg.time.get_ticks()
+                
             else:
                 full_text = None
                 current_text = display_label
@@ -167,14 +139,11 @@ class UI:
 
             ui_font = self.load_font(font, font_size)
             text_surface = None
-            text_texture = None
             if current_text:
-                text_surface = ui_font.render(current_text, True, text_color)
-                text_texture = Texture.from_surface(self.game.renderer, text_surface)
+                text_surface = ui_font.render(current_text, False, text_color)
 
             ui_element = {
-                "original_surface": original_surface,
-                "texture": texture,
+                "original_image": original_image,
                 "alpha": alpha,
                 "is_button": is_button,
                 "scale_multiplier": scale_multiplier,
@@ -189,7 +158,6 @@ class UI:
                 "font_size": font_size,
                 "text_color": text_color,
                 "text_surface": text_surface,
-                "text_texture": text_texture,
                 "render_order": render_order,
                 "is_slider": is_slider,
                 "min_value": min_value,
@@ -222,15 +190,16 @@ class UI:
             }
 
             if centered:
-                ui_element["rect"] = original_surface.get_rect(center=(x, y)) if original_surface else pg.Rect(x, y, width, height)
+                ui_element["rect"] = original_image.get_rect(center=(x, y)) if original_image else pg.Rect(x, y, width, height)
+                
             else:
                 ui_element["rect"] = pg.Rect(x, y, width, height)
 
             if text_surface:
                 ui_element["text_rect"] = text_surface.get_rect(center=ui_element["rect"].center)
 
-            if original_surface:
-                ui_element["surface"] = ui_element["original_surface"].copy()
+            if original_image:
+                ui_element["image"] = ui_element["original_image"].copy()
                 ui_element["center"] = (ui_element["rect"].centerx, ui_element["rect"].centery)
 
             self.ui_elements.append(ui_element)
@@ -245,7 +214,6 @@ class UI:
         self.loaded_sheets.clear()
         self.loaded_images.clear()
         self.loaded_fonts.clear()
-        self.loaded_textures.clear()
 
     def update_dynamic_values(self):
         for element in self.ui_elements:
@@ -263,12 +231,10 @@ class UI:
                     
                     if not element.get("is_dialogue", False):
                         ui_font = self.load_font(element["font_path"], element["font_size"])
-                        text_surface = ui_font.render(current_display, True, element["text_color"])
-                        element["text_surface"] = text_surface
-                        element["text_texture"] = Texture.from_surface(self.game.renderer, text_surface)
+                        element["text_surface"] = ui_font.render(current_display, False, element["text_color"])
                         
                         if "rect" in element:
-                            element["text_rect"] = text_surface.get_rect(center=element["rect"].center)
+                            element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
 
     def update_dialogue_text(self, element):
         if not element["is_dialogue"] or element["typing_complete"]:
@@ -285,11 +251,8 @@ class UI:
             element["label"] = element["full_text"][:element["typing_index"]]
             element["last_typing_time"] = current_time
             
-            ui_font = self.load_font(element["font_path"], element["font_size"])
-            text_surface = ui_font.render(element["label"], True, element["text_color"])
-            element["text_surface"] = text_surface
-            element["text_texture"] = Texture.from_surface(self.game.renderer, text_surface)
-            element["text_rect"] = text_surface.get_rect(center=element["rect"].center)
+            element["text_surface"] = self.load_font(element["font_path"], element["font_size"]).render(element["label"], False, element["text_color"])
+            element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
             
             if element["typing_index"] >= len(element["full_text"]):
                 element["typing_complete"] = True
@@ -357,13 +320,14 @@ class UI:
         element["current_offset"] = (new_offset_x, new_offset_y)
 
         if element["centered"]:
-            element["rect"] = element["surface"].get_rect(
+            element["rect"] = element["image"].get_rect(
                 center=(element["base_position"][0] + new_offset_x, element["base_position"][1] + new_offset_y)
-            ) if element["original_surface"] else pg.Rect(
+            ) if element["original_image"] else pg.Rect(
                 element["base_position"][0] + new_offset_x - element["width"]/2,
                 element["base_position"][1] + new_offset_y - element["height"]/2,
                 element["width"], element["height"]
             )
+            
         else:
             element["rect"] = pg.Rect(
                 element["base_position"][0] + new_offset_x,
@@ -374,6 +338,7 @@ class UI:
         if element.get("text_surface"):
             if element["scaled"] and "scaled_text_rect" in element:
                 element["scaled_text_rect"] = element["scaled_text_surface"].get_rect(center=element["rect"].center)
+                
             elif "text_rect" in element:
                 element["text_rect"] = element["text_surface"].get_rect(center=element["rect"].center)
 
@@ -383,8 +348,8 @@ class UI:
                 self.mouse_locked = False
             return
 
-        if element["original_surface"] and element.get("alpha") and "mask" not in element:
-            element["mask"] = pg.mask.from_surface(element["original_surface"])
+        if element["original_image"] and element.get("alpha") and "mask" not in element:
+            element["mask"] = pg.mask.from_surface(element["original_image"])
 
         hovered = element["rect"].collidepoint(mouse_pos)
 
@@ -399,12 +364,10 @@ class UI:
             new_width = int(element["rect"].width * element["scale_multiplier"])
             new_height = int(element["rect"].height * element["scale_multiplier"])
             
-            # Scale the surface and create new texture
-            element["surface"] = pg.transform.scale(element["original_surface"], (new_width, new_height))
-            element["texture"] = Texture.from_surface(self.game.renderer, element["surface"])
-            element["rect"] = element["surface"].get_rect(center=old_center)
+            element["image"] = pg.transform.scale(element["original_image"], (new_width, new_height))
+            element["rect"] = element["image"].get_rect(center=old_center)
             element["scaled"] = True
-            element["mask"] = pg.mask.from_surface(element["surface"])
+            element["mask"] = pg.mask.from_surface(element["image"])
 
             if element.get("text_surface"):
                 text_scale = element["scale_multiplier"]
@@ -413,7 +376,6 @@ class UI:
                     (int(element["text_surface"].get_width() * text_scale),
                     int(element["text_surface"].get_height() * text_scale)))
                 element["scaled_text_surface"] = scaled_text_surface
-                element["scaled_text_texture"] = Texture.from_surface(self.game.renderer, scaled_text_surface)
                 element["scaled_text_rect"] = scaled_text_surface.get_rect(center=element["rect"].center)
 
             if element["click_sound"]:
@@ -424,18 +386,17 @@ class UI:
 
         elif element.get("scaled") and (not hovered or not mouse_pressed[0]):
             old_center = element["rect"].center
-            element["surface"] = element["original_surface"].copy()
-            element["texture"] = Texture.from_surface(self.game.renderer, element["surface"])
-            element["rect"] = element["surface"].get_rect(center=old_center)
+            element["image"] = element["original_image"].copy()
+            element["rect"] = element["image"].get_rect(center=old_center)
             element["scaled"] = False
             element.pop("mask", None)
             element.pop("scaled_text_surface", None)
-            element.pop("scaled_text_texture", None)
             element.pop("scaled_text_rect", None)
 
         if hovered:
             if mouse_pressed[0]:
                 element["holding"] = True
+                
             elif element["holding"]:
                 if element["callback"]:
                     element["callback"]()
@@ -448,6 +409,7 @@ class UI:
                     volume = element["release_sound"]["volume"]
                     sound.set_volume(self.game.environment.volume / 10 * volume)
                     sound.play()
+
         else:
             element["holding"] = False
 
@@ -455,12 +417,8 @@ class UI:
         track_rect = element["slider_rect"]
         knob_rect = element["slider_knob"]
 
-        # Draw slider using renderer instead of screen
-        self.game.renderer.draw_color = (200, 200, 200, 255)
-        self.game.renderer.fill_rect(track_rect)
-        
-        self.game.renderer.draw_color = (0, 0, 255, 255)
-        self.game.renderer.fill_rect(knob_rect)
+        pg.draw.rect(self.game.screen, (200, 200, 200), track_rect)
+        pg.draw.rect(self.game.screen, (0, 0, 255), knob_rect)
 
         if pg.mouse.get_pressed()[0]:
             if knob_rect.collidepoint(mouse_pos) and not element["grabbed"]:
@@ -503,13 +461,14 @@ class UI:
                 element["current_offset"] = (0, 0)
                 
                 if element["centered"]:
-                    element["rect"] = element["original_surface"].get_rect(
+                    element["rect"] = element["original_image"].get_rect(
                         center=element["base_position"]
-                    ) if element["original_surface"] else pg.Rect(
+                    ) if element["original_image"] else pg.Rect(
                         element["base_position"][0] - element["width"]/2,
                         element["base_position"][1] - element["height"]/2,
                         element["width"], element["height"]
                     )
+                    
                 else:
                     element["rect"] = pg.Rect(
                         element["base_position"][0],
@@ -523,14 +482,15 @@ class UI:
                 break
 
     def render_ui_element(self, element):
-        if element.get("texture"):
-            element["texture"].draw(dstrect=element["rect"])
+        if element["original_image"]:
+            self.game.screen.blit(element["image"], element["rect"])
 
-        if element.get("text_texture"):
-            if element["scaled"] and "scaled_text_texture" in element:
-                element["scaled_text_texture"].draw(dstrect=element["scaled_text_rect"])
-            elif "text_texture" in element:
-                element["text_texture"].draw(dstrect=element["text_rect"])
+        if element.get("text_surface"):
+            if element["scaled"] and "scaled_text_surface" in element:
+                self.game.screen.blit(element["scaled_text_surface"], element["scaled_text_rect"])
+                
+            elif "text_surface" in element:
+                self.game.screen.blit(element["text_surface"], element["text_rect"])
 
     def update(self):
         mouse_pos = pg.mouse.get_pos()
