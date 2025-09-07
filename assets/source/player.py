@@ -5,6 +5,9 @@ import json
 import math
 import os
 
+
+from pygame._sdl2 import Window, Renderer, Texture
+
 class Player:
     def __init__(self, game):
         self.game = game
@@ -86,6 +89,7 @@ class Player:
             "death": {"frames": 4, "speed": 0.15},
         }
         self.frames = {state: [] for state in self.state_frames}
+        self.textures = {state: [] for state in self.state_frames}  # New: Store textures for GPU rendering
         
         self.sounds = {
             "jump": [
@@ -146,18 +150,23 @@ class Player:
 
     def load_frames(self):
         self.frames = {}
+        self.textures = {}  # New: Store textures for GPU rendering
         self.flipped_frames = {}
+        self.flipped_textures = {}  # New: Store flipped textures for GPU rendering
         
         self.sheet_width = 100
         self.sheet_height = 100
         
         for state, settings in self.state_frames.items():
             self.frames[state] = []
+            self.textures[state] = []  # Initialize texture list
             self.flipped_frames[state] = []
+            self.flipped_textures[state] = []  # Initialize flipped texture list
             
             sheet_path = f"assets/sprites/player/{state}_animation.png"
             try:
-                sheet = pg.image.load(sheet_path).convert_alpha()
+                # Load without convert_alpha() for GPU rendering
+                sheet = pg.image.load(sheet_path)
                 
             except:
                 print(f"Failed to load sprite sheet: {sheet_path}")
@@ -174,14 +183,20 @@ class Player:
                     self.sheet_height
                 )
                 
-                frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
+                frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA)
                 frame_image.blit(sheet, (0, 0), frame_rect)
                 frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
                 
                 flipped_image = pg.transform.flip(frame_image, True, False)
                 
+                # Create textures for GPU rendering
+                frame_texture = Texture.from_surface(self.game.renderer, frame_image)
+                flipped_texture = Texture.from_surface(self.game.renderer, flipped_image)
+                
                 self.frames[state].append(frame_image)
+                self.textures[state].append(frame_texture)  # Store texture
                 self.flipped_frames[state].append(flipped_image)
+                self.flipped_textures[state].append(flipped_texture)  # Store flipped texture
 
     def update_state(self):     
         for sound_group in self.sounds.values():
@@ -245,7 +260,7 @@ class Player:
                     vel_y = random.uniform(-0.5, -0.1)
                     radius = random.randint(2, 4)
                     image_path = f"assets/sprites/particles/smoke{random.choice([1, 2])}.png"
-                    smoke_img = pg.image.load(image_path).convert_alpha()
+                    smoke_img = pg.image.load(image_path)  # Removed convert_alpha()
 
                     self.game.particles.generate(
                         pos=(self.x + self.hitbox_width / 2 - flip_offset + random.uniform(-10, 10), self.y + self.hitbox_height / 2 + random.uniform(0, 5)),
@@ -676,7 +691,7 @@ class Player:
 
             radius = random.randint(2, 4)
             image_path = f"assets/sprites/particles/smoke{random.choice([1, 2])}.png"
-            smoke_img = pg.image.load(image_path).convert_alpha()
+            smoke_img = pg.image.load(image_path)  # Removed convert_alpha()
 
             pos_x = self.x + self.hitbox_width / 2 + random.uniform(-15, 15) - flip_offset
             pos_y = self.y + self.hitbox_height / 2 + random.uniform(0, 7)
@@ -1005,8 +1020,15 @@ class Player:
             ghost_x = start_x + (step_size * i * dash_dir)
             ghost_y = self.y - 5
 
-            current_frame_image = self.frames[self.current_state][self.current_frame]
+            # Use textures for GPU rendering
+            current_texture = self.textures[self.current_state][self.current_frame]
+            if self.direction == "left":
+                current_texture = self.flipped_textures[self.current_state][self.current_frame]
 
+            # For ghost effects, we need to create a surface with alpha
+            # This is a limitation of SDL2 textures - we can't easily modify alpha
+            # We'll fall back to surface rendering for this effect
+            current_frame_image = self.frames[self.current_state][self.current_frame]
             if self.direction == "left":
                 current_frame_image = pg.transform.flip(current_frame_image, True, False)
 
@@ -1020,9 +1042,6 @@ class Player:
             white_image.fill((255, 255, 255, opacity), special_flags=pg.BLEND_RGBA_MULT)
 
             flip_offset = 14 if self.direction == "right" else 0
-            #screen_x = ghost_x + self.hitbox_width / 2 - flip_offset - self.cam_x
-            #screen_y = ghost_y + self.hitbox_height / 8 - self.cam_y
-
             lifespan = 15 + (num_ghosts - i - 1) * 2
 
             self.game.particles.generate(
@@ -1124,22 +1143,21 @@ class Player:
 
         frame_idx = min(self.current_frame, len(self.frames[self.current_state]) - 1)
         
-        if hasattr(self, "flipped_frames"):
-            image = (self.flipped_frames[self.current_state][frame_idx] if self.direction == "left" else self.frames[self.current_state][frame_idx])
-            
+        # Use textures for GPU rendering
+        if self.direction == "left":
+            texture = self.flipped_textures[self.current_state][frame_idx]
         else:
-            image = self.frames[self.current_state][frame_idx]
-            if self.direction == "left":
-                image = pg.transform.flip(image, True, False)
+            texture = self.textures[self.current_state][frame_idx]
 
-        img_w, img_h = image.get_size()
+        img_w, img_h = texture.get_rect().size
         cam_x, cam_y = self.cam_x, self.cam_y
         hb_cx, hb_cy = self.hitbox.centerx, self.hitbox.centery
         
         sprite_x = hb_cx - cam_x - img_w // 2 + self.flip_offset[self.direction]
         sprite_y = hb_cy - cam_y + self.foot_alignment - img_h // 2
 
-        self.game.screen.blit(image, (sprite_x, sprite_y))
+        # Draw the texture using GPU rendering
+        texture.draw(dstrect=(sprite_x, sprite_y, img_w, img_h))
 
     def update_camera(self):
         # can change the target here
@@ -1159,33 +1177,31 @@ class Player:
         if not self.game.debugging:
             return
 
-        interact_color = (0, 0, 255, 50)
-        interact_surface = pg.Surface((self.interact_radius.width, self.interact_radius.height), pg.SRCALPHA)
-        interact_surface.fill(interact_color)
-        self.game.screen.blit(
-            interact_surface,
-            (
-                self.interact_radius.centerx - self.cam_x - self.interact_radius.width // 2,
-                self.interact_radius.centery - self.cam_y - self.interact_radius.height // 2
-            )
-        )
+        # Draw hitboxes using renderer
+        self.game.renderer.draw_color = (0, 0, 255, 50)
+        self.game.renderer.fill_rect((
+            self.interact_radius.centerx - self.cam_x - self.interact_radius.width // 2,
+            self.interact_radius.centery - self.cam_y - self.interact_radius.height // 2,
+            self.interact_radius.width,
+            self.interact_radius.height
+        ))
 
         if self.attacking:
-            hitbox_color = (255, 0, 0, 100)
-            hitbox_surface = pg.Surface((self.attack_hitbox_width, self.attack_hitbox_height), pg.SRCALPHA)
-            hitbox_surface.fill(hitbox_color)
-            self.game.screen.blit(
-                hitbox_surface,
-                (self.attack_hitbox.x - self.cam_x, self.attack_hitbox.y - self.cam_y)
-            )
+            self.game.renderer.draw_color = (255, 0, 0, 100)
+            self.game.renderer.fill_rect((
+                self.attack_hitbox.x - self.cam_x,
+                self.attack_hitbox.y - self.cam_y,
+                self.attack_hitbox.width,
+                self.attack_hitbox.height
+            ))
 
-        hitbox_color = (0, 255, 0, 100)
-        hitbox_surface = pg.Surface((self.hitbox_width, self.hitbox_height), pg.SRCALPHA)
-        hitbox_surface.fill(hitbox_color)
-        self.game.screen.blit(
-            hitbox_surface,
-            (self.hitbox.x - self.cam_x, self.hitbox.y - self.cam_y)
-        )
+        self.game.renderer.draw_color = (0, 255, 0, 100)
+        self.game.renderer.fill_rect((
+            self.hitbox.x - self.cam_x,
+            self.hitbox.y - self.cam_y,
+            self.hitbox.width,
+            self.hitbox.height
+        ))
     
     def shoot_ray(self, origin, destination, color=(255, 255, 0), thickness=2):
         origin = np.array(origin, dtype=float)
@@ -1201,7 +1217,9 @@ class Player:
         ray_length = 1000
         end_point = origin + direction * ray_length
 
-        pg.draw.line(self.game.screen, color, origin, end_point, thickness)
+        # Draw line using renderer
+        self.game.renderer.draw_color = color + (255,)
+        self.game.renderer.draw_line(origin, end_point)
         self.ray_jump(direction)
     
     def ray_jump(self, direction):

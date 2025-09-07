@@ -33,7 +33,9 @@ class Environment:
     self.music_channel = pg.mixer.Channel(1)
     self.music_channel.set_volume(self.volume * 0.1)
     
-    self.missing_texture = pg.image.load("assets/sprites/missing_texture.png").convert_alpha()
+    self.missing_texture_surface = pg.image.load("assets/sprites/missing_texture.png")#.convert_alpha()
+    self.missing_texture = pg.image.load("assets/sprites/missing_texture.png")#.convert_alpha()
+    
     
     # will switch to load from json
     self.game.ui.load_sheet("item_sheet", "assets/sprites/gui/items/Sheet.png")
@@ -323,7 +325,8 @@ class Environment:
       
       self.game.entities.reset()
       self.game.entities.create_entity("item", "Red Gem", 0, 500)
-      self.game.entities.create_entity("enemy", "Bab", 200, 500)
+      for i in range(100):
+        self.game.entities.create_entity("enemy", "Bab", 200, 500)
       self.game.entities.create_entity("item", "Potion", 50, 500) 
       self.game.entities.create_entity("item", "Gold", 100, 500)
       self.game.entities.create_entity("item", "Gold", 150, 500)

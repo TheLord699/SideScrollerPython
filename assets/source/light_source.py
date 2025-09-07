@@ -1,5 +1,6 @@
 import numpy as np
 import pygame as pg
+from pygame._sdl2 import Texture
 
 class LightSource:
     def __init__(self, game):
@@ -13,8 +14,11 @@ class LightSource:
         self.blur_kernel_cache = {}
 
         self.light_surface = None
+        self.light_texture = None
         self.temp_surface = None
+        self.temp_texture = None
         self.tint_surface = None
+        self.tint_texture = None
 
         # might remove later
         self.max_cache_size = 100
@@ -28,8 +32,11 @@ class LightSource:
     def resize_light_surface(self):
         size = (self.game.screen_width, self.game.screen_height)
         self.light_surface = pg.Surface(size, pg.SRCALPHA)
-        self.temp_surface = pg.Surface(size).convert()
-        self.tint_surface = None # reset in case of size change
+        self.light_texture = Texture.from_surface(self.game.renderer, self.light_surface)
+        self.temp_surface = pg.Surface(size)
+        self.temp_texture = Texture.from_surface(self.game.renderer, self.temp_surface)
+        self.tint_surface = None
+        self.tint_texture = None
 
     def add_stationary_light(self, x, y, radius, intensity, colour=(255, 255, 255)):
         self.stationary_lights.append({
@@ -123,7 +130,7 @@ class LightSource:
         for x in range(blurred.shape[1]):
             blurred[:, x] = np.convolve(blurred[:, x], kernel, mode="same")
 
-        blurred = np.clip(blurred, 0, 255).astype(np.uint8)
+        blurred = np.clip(blurred, 0, 255).ast(np.uint8)
         rgb = pg.surfarray.pixels3d(small_surface)
         final_array = np.zeros((blurred.shape[0], blurred.shape[1], 4), dtype=np.uint8)
         final_array[..., :3] = rgb
@@ -156,34 +163,55 @@ class LightSource:
             self.light_surface.blit(mask, (left, top), special_flags=pg.BLEND_ADD)
 
     def render(self):
+        # Clear the light surface
         self.light_surface.fill((0, 0, 0, 255))
 
+        # Render all lights to the light surface
         for light in self.stationary_lights:
             self.render_light(light)
             
         for light in self.moving_lights:
             self.render_light(light)
 
+        # Update the light texture
+        self.light_texture.update(self.light_surface)
+
         if self.enable_bloom:
+            # Apply bloom effect
             bloom_surface = self.gaussian_blur(self.light_surface, radius=8, scale_factor=0.25)
 
             if self.bloom_tint:
                 if not self.tint_surface or self.tint_surface.get_size() != bloom_surface.get_size():
                     self.tint_surface = pg.Surface(bloom_surface.get_size(), pg.SRCALPHA)
                     self.tint_surface.fill((*self.bloom_tint, 0))
+                    self.tint_texture = Texture.from_surface(self.game.renderer, self.tint_surface)
+                
                 bloom_surface.blit(self.tint_surface, (0, 0), special_flags=pg.BLEND_RGB_MULT)
 
-            self.light_surface.blit(bloom_surface, (0, 0), special_flags=pg.BLEND_ADD)
+            # Create bloom texture
+            bloom_texture = Texture.from_surface(self.game.renderer, bloom_surface)
+            
+            # Draw bloom with additive blending
+            self.game.renderer.blend_mode = 1  # Additive blending
+            bloom_texture.draw(dstrect=(0, 0, self.game.screen_width, self.game.screen_height))
+            self.game.renderer.blend_mode = 0  # Reset to normal blending
 
+        # Apply ambient light
         self.temp_surface.fill((self.ambient_light, self.ambient_light, self.ambient_light))
-        self.temp_surface.blit(self.light_surface, (0, 0), special_flags=pg.BLEND_ADD)
-        self.game.screen.blit(self.temp_surface, (0, 0), special_flags=pg.BLEND_MULT)
+        self.temp_texture.update(self.temp_surface)
+        
+        # Draw the ambient light
+        self.temp_texture.draw(dstrect=(0, 0, self.game.screen_width, self.game.screen_height))
+        
+        # Draw the light texture with multiplicative blending
+        self.game.renderer.blend_mode = 2  # Multiplicative blending
+        self.light_texture.draw(dstrect=(0, 0, self.game.screen_width, self.game.screen_height))
+        self.game.renderer.blend_mode = 0  # Reset to normal blending
 
     def handle_lights(self):
         for light in self.active_lights:
             if len(light) < 6 or light[5] == "moving":
                 self.add_moving_light(*light[:5])
-                
             else:
                 self.add_stationary_light(*light[:5])
                 
