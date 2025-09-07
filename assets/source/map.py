@@ -4,8 +4,6 @@ import os
 import time
 import random
 
-from pygame._sdl2 import Window, Renderer, Texture
-
 class Map:
     def __init__(self, game):
         self.game = game
@@ -34,7 +32,6 @@ class Map:
         
         self.tile_sheets = []
         self.all_tile_surfaces = []
-        self.all_tile_textures = []  # New: Store textures for GPU rendering
         self.tile_attributes = {}
         self.non_empty_cells = set()
 
@@ -52,6 +49,7 @@ class Map:
                 
             try:
                 self.tile_sheets = map_data["tilesheets"]
+                
             except:
                 self.tile_sheets = [{
                     "path": map_data.get("tile_sheet_path", ""),
@@ -67,6 +65,7 @@ class Map:
                     with open(attributes_file, "r") as file:
                         attributes_data = json.load(file)
                     self.tile_attributes = {int(k): v for k, v in attributes_data.items()}
+                    
                 except Exception as e:
                     print(f"Warning: Failed to load tile attributes - {e}")
 
@@ -74,9 +73,6 @@ class Map:
             if not self.all_tile_surfaces:
                 print("Error: Failed to load any tilesheets")
                 return False
-
-            # Create textures from surfaces for GPU rendering
-            self.all_tile_textures = self.create_tile_textures(self.all_tile_surfaces)
 
             self.generate_tile_hitboxes()
             self.init_spatial_grid()
@@ -92,8 +88,7 @@ class Map:
         all_surfaces = []
         for sheet in tilesheets:
             try:
-                # Load without convert_alpha() for GPU rendering
-                tilesheet_img = pg.image.load(sheet["path"])
+                tilesheet_img = pg.image.load(sheet["path"]).convert_alpha()
                 sheet_width, sheet_height = tilesheet_img.get_size()
                 tile_size = sheet["tile_dimension"]
                 sheet_surfaces = []
@@ -130,21 +125,6 @@ class Map:
 
         return all_surfaces
 
-    def create_tile_textures(self, all_surfaces):
-        """Create textures from tile surfaces for GPU rendering"""
-        all_textures = []
-        for sheet_data in all_surfaces:
-            sheet_textures = []
-            for surface in sheet_data["surfaces"]:
-                texture = Texture.from_surface(self.game.renderer, surface)
-                sheet_textures.append(texture)
-            
-            # Add textures to the sheet data
-            sheet_data["textures"] = sheet_textures
-            all_textures.append(sheet_textures)
-        
-        return all_textures
-
     def generate_tile_hitboxes(self):
         self.tile_hitboxes = []
         self.tile_id = []
@@ -154,6 +134,7 @@ class Map:
                 tilesheet_idx = tile.get("tilesheet", 0)
                 if tilesheet_idx < len(self.all_tile_surfaces):
                     visual_size = self.all_tile_surfaces[tilesheet_idx]["visual_size"]
+                    
                 else:
                     visual_size = self.visual_tile_size
                 
@@ -262,44 +243,39 @@ class Map:
                 speed = anim.get("speed", 0.1)
                 frame_idx = int((current_time % (len(frames) * speed)) / speed)
                 tile_id = frames[frame_idx]
+                
             else:
                 tile_id = tile["id"]
                 
-            # Use textures instead of surfaces for GPU rendering
-            if tilesheet_idx < len(self.all_tile_textures) and tile_id < len(self.all_tile_textures[tilesheet_idx]):
-                texture = self.all_tile_textures[tilesheet_idx][tile_id]
-                batch_key = (tile["layer"], tilesheet_idx)
+            tile_surfaces = self.all_tile_surfaces[tilesheet_idx]["surfaces"]
+            if tile_id >= len(tile_surfaces):
+                continue
                 
-                if batch_key not in render_batches:
-                    render_batches[batch_key] = []
-                    
-                render_batches[batch_key].append((
-                    texture,
-                    (tx - self.cam_x, ty - self.cam_y),
-                    tile.get("direction", 0)
-                ))
+            batch_key = (tile["layer"], tilesheet_idx)
+            
+            if batch_key not in render_batches:
+                render_batches[batch_key] = []
+                
+            render_batches[batch_key].append((
+                tile_surfaces[tile_id],
+                (tx - self.cam_x, ty - self.cam_y),
+                tile.get("direction", 0)
+            ))
         
-        # Render all batches using GPU
         for (layer, tilesheet_idx), batch in sorted(render_batches.items()):
-            for texture, pos, direction in batch:
+            for surface, pos, direction in batch:
                 if direction != 0:
-                    # For rotated textures, we need to handle this differently
-                    # Since we can't easily rotate textures, we'll fall back to surface rendering
-                    # This is a limitation of the SDL2 texture system
-                    surface = texture.to_surface()
-                    rotated_surface = pg.transform.rotate(surface, direction)
-                    temp_texture = Texture.from_surface(self.game.renderer, rotated_surface)
-                    temp_texture.draw(dstrect=(pos[0], pos[1], rotated_surface.get_width(), rotated_surface.get_height()))
+                    img = pg.transform.rotate(surface, direction)
+                    self.game.screen.blit(img, pos)
+                    
                 else:
-                    texture.draw(dstrect=(pos[0], pos[1], visual_size, visual_size))
+                    self.game.screen.blit(surface, pos)
 
     def render_debug(self, hitbox=None, padding=15):
         if not self.game.debugging:
             return
         
-        # For debug rendering, we'll use a temporary surface since debug rendering
-        # involves lots of small draw calls that are better handled with surfaces
-        screen_rect = pg.Rect(0, 0, self.game.screen_width, self.game.screen_height)
+        screen_rect = self.game.screen.get_rect()
 
         font_small = pg.font.SysFont('Arial', 10)
         font_medium = pg.font.SysFont('Arial', 12)
@@ -318,17 +294,13 @@ class Map:
                 x = col * cell_size + offset_x
                 y = row * cell_size + offset_y
 
-                # Draw grid cells using renderer
-                self.game.renderer.draw_color = (100, 100, 100, 50)
-                self.game.renderer.draw_rect((x, y, cell_size, cell_size))
+                pg.draw.rect(self.game.screen, (100, 100, 100, 50), (x, y, cell_size, cell_size), 1)
 
                 cell_index = row * self.grid_width + col
                 count = len(self.grid[cell_index])
                 if count > 0:
-                    # For text, we still need to use surfaces
-                    text_surface = font_small.render(str(count), True, (255, 255, 255))
-                    text_texture = Texture.from_surface(self.game.renderer, text_surface)
-                    text_texture.draw(dstrect=(x + 2, y + 2))
+                    text = font_small.render(str(count), True, (255, 255, 255))
+                    self.game.screen.blit(text, (x + 2, y + 2))
 
         for tile_hitbox in self.tile_hitboxes:
             rect = pg.Rect(
@@ -338,8 +310,7 @@ class Map:
                 tile_hitbox.height,
             )
             if rect.colliderect(screen_rect):
-                self.game.renderer.draw_color = (255, 0, 0, 100)
-                self.game.renderer.draw_rect(rect)
+                pg.draw.rect(self.game.screen, (255, 0, 0, 100), rect, 1)
 
         if hitbox:
             nearby_tiles = self.get_nearby_tiles(hitbox, padding)
@@ -351,13 +322,10 @@ class Map:
                     tile_hitbox.height,
                 )
                 if rect.colliderect(screen_rect):
-                    self.game.renderer.draw_color = (0, 255, 0, 255)
-                    self.game.renderer.draw_rect(rect)
+                    pg.draw.rect(self.game.screen, (0, 255, 0), rect, 2)
 
-                    # For text, use surfaces
-                    text_surface = font_medium.render(str(tile_id), True, (255, 255, 255))
-                    text_texture = Texture.from_surface(self.game.renderer, text_surface)
-                    text_texture.draw(dstrect=(rect.x + 2, rect.y + 2))
+                    text = font_medium.render(str(tile_id), True, (255, 255, 255))
+                    self.game.screen.blit(text, (rect.x + 2, rect.y + 2))
 
             search_area = hitbox.inflate(padding * 2, padding * 2)
             search_rect = pg.Rect(
@@ -367,8 +335,7 @@ class Map:
                 search_area.height,
             )
             if search_rect.colliderect(screen_rect):
-                self.game.renderer.draw_color = (255, 255, 0, 255)
-                self.game.renderer.draw_rect(search_rect)
+                pg.draw.rect(self.game.screen, (255, 255, 0), search_rect, 1)
 
             hitbox_rect = pg.Rect(
                 hitbox.x - self.cam_x,
@@ -377,17 +344,16 @@ class Map:
                 hitbox.height,
             )
             if hitbox_rect.colliderect(screen_rect):
-                self.game.renderer.draw_color = (0, 0, 255, 255)
-                self.game.renderer.draw_rect(hitbox_rect)
+                pg.draw.rect(self.game.screen, (0, 0, 255), hitbox_rect, 2)
 
     def update(self):
         if self.game.environment.menu in {"play", "death", "pause"}:
             if hasattr(self.game, "player") and self.game.player:
                 self.cam_x = int(self.game.player.cam_x)
                 self.cam_y = int(self.game.player.cam_y)
+                
             else:
                 self.handle_camera_movement()
                 
             self.render()
-            if self.game.debugging:
-                self.render_debug(self.game.player.hitbox)
+            self.render_debug(self.game.player.hitbox)
