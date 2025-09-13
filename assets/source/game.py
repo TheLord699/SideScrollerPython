@@ -7,7 +7,7 @@ class Environment:
     
     self.fps = 60
     
-    self.volume = 0 # multiplier
+    self.volume = 0.5 # multiplier
     self.gravity = 0.5 # 0.5
     self.max_fall_speed = 20 # terminal vel for all entities + player
     self.scale = 3 # 3 (experimental)
@@ -197,7 +197,7 @@ class Environment:
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       font=self.game.environment.fonts["fantasy"],
       element_id="new_game_button",
-      callback=self.change_menu("play"),
+      callback=self.change_menu("play"), #callback=lambda: (self.game.ui.ui_elements.clear(), self.change_menu("play")() ,self.game.lighting.screen_transition(colour=(0, 0, 0))),
       hover_range=3.5,
       render_order=0
     )

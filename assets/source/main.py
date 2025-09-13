@@ -20,11 +20,11 @@ class Game:
   def __init__(self):
     pg.init()
     
-    # will either remove both or add platform checks later on
+    # will either remove or add platform checks later on
     os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) # I dont think this will work for builds/executables
     
     try:
-      psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS) # windows only
+      psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS) # windows only (probably gonna remove all together for final build... Gulp)
       
     except:
       print("CPU prioritization not enabled (incompatible device)") # temp for now
