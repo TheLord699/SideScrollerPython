@@ -154,6 +154,36 @@ class LightSource:
         
         if mask:
             self.light_surface.blit(mask, (left, top), special_flags=pg.BLEND_ADD)
+            
+    def screen_transition(self, colour=(0, 0, 0), duration=1000):
+        clock = pg.time.Clock()
+        sw, sh = self.game.screen_width, self.game.screen_height
+        center_x, center_y = sw // 2, sh // 2
+        max_radius = int(max(sw, sh))
+        steps = 60
+        shrink_steps = steps // 2
+        unshrink_steps = steps // 2
+        step_time = duration // steps
+
+        for i in range(shrink_steps):
+            progress = 1 - (i / shrink_steps)
+            radius = int(max_radius * progress)
+            transition_surface = pg.Surface((sw, sh), pg.SRCALPHA)
+            transition_surface.fill((*colour, 255))
+            pg.draw.circle(transition_surface, (0, 0, 0, 0), (center_x, center_y), radius)
+            self.game.screen.blit(transition_surface, (0, 0))
+            pg.display.flip()
+            clock.tick(1000 // step_time)
+
+        for i in range(unshrink_steps):
+            progress = i / unshrink_steps
+            radius = int(max_radius * progress)
+            transition_surface = pg.Surface((sw, sh), pg.SRCALPHA)
+            transition_surface.fill((*colour, 255))
+            pg.draw.circle(transition_surface, (0, 0, 0, 0), (center_x, center_y), radius)
+            self.game.screen.blit(transition_surface, (0, 0))
+            pg.display.flip()
+            clock.tick(1000 // step_time)
 
     def render(self):
         self.light_surface.fill((0, 0, 0, 255))
