@@ -155,7 +155,7 @@ class LightSource:
         if mask:
             self.light_surface.blit(mask, (left, top), special_flags=pg.BLEND_ADD)
                 
-    def screen_transition(self, colour=(0, 0, 0), duration=1000): # will move to environment class, reason its here is because old version of function utilised the lighting surfaces
+    def screen_transition(self, colour=(0, 0, 0), duration=60): # will move to environment class, reason its here is because old version of function utilised the lighting surfaces
         if not getattr(self.game.environment, "transition", False): # reminder: gonna have to tweak when port over to environment class, because lambda function(maybe multi threading?)
             return
 
