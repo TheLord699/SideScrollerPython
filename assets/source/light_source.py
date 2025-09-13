@@ -154,36 +154,67 @@ class LightSource:
         
         if mask:
             self.light_surface.blit(mask, (left, top), special_flags=pg.BLEND_ADD)
-            
-    def screen_transition(self, colour=(0, 0, 0), duration=1000):
+                
+    def screen_transition(self, colour=(0, 0, 0), duration=1000): # will move to environment class, reason its here is because old version of function utilised the lighting surfaces
+        if not getattr(self.game.environment, "transition", False): # reminder: gonna have to tweak when port over to environment class, because lambda function(maybe multi threading?)
+            return
+
         clock = pg.time.Clock()
         sw, sh = self.game.screen_width, self.game.screen_height
-        center_x, center_y = sw // 2, sh // 2
-        max_radius = int(max(sw, sh))
+        center = (sw // 2, sh // 2)
+
         steps = 60
-        shrink_steps = steps // 2
-        unshrink_steps = steps // 2
+        zoom_in_steps = steps // 2
+        zoom_out_steps = steps // 2
         step_time = duration // steps
 
-        for i in range(shrink_steps):
-            progress = 1 - (i / shrink_steps)
-            radius = int(max_radius * progress)
-            transition_surface = pg.Surface((sw, sh), pg.SRCALPHA)
-            transition_surface.fill((*colour, 255))
-            pg.draw.circle(transition_surface, (0, 0, 0, 0), (center_x, center_y), radius)
-            self.game.screen.blit(transition_surface, (0, 0))
+        snapshot = self.game.screen.copy()
+
+        def pixelate_surface(surface, pixel_factor=16):
+            if pixel_factor <= 1:
+                return surface
+            
+            small_size = (max(1, surface.get_width() // pixel_factor), max(1, surface.get_height() // pixel_factor))
+            small = pg.transform.smoothscale(surface, small_size)
+            return pg.transform.scale(small, surface.get_size())
+
+        for i in range(zoom_in_steps + 1):
+            progress = i / zoom_in_steps
+            scale = 1 + 2 * progress
+            pixel_factor = 1 + int(progress * 50)
+
+            new_w = max(1, int(sw * scale))
+            new_h = max(1, int(sh * scale))
+            scaled = pg.transform.smoothscale(snapshot, (new_w, new_h))
+            pixelated = pixelate_surface(scaled, pixel_factor)
+            rect = pixelated.get_rect(center=center)
+
+            bg = pg.Surface((sw, sh))
+            bg.fill(colour)
+            self.game.screen.blit(bg, (0, 0))
+            self.game.screen.blit(pixelated, rect)
             pg.display.flip()
             clock.tick(1000 // step_time)
 
-        for i in range(unshrink_steps):
-            progress = i / unshrink_steps
-            radius = int(max_radius * progress)
-            transition_surface = pg.Surface((sw, sh), pg.SRCALPHA)
-            transition_surface.fill((*colour, 255))
-            pg.draw.circle(transition_surface, (0, 0, 0, 0), (center_x, center_y), radius)
-            self.game.screen.blit(transition_surface, (0, 0))
+        for i in range(zoom_out_steps + 1):
+            progress = i / zoom_out_steps
+            scale = 3 - 2 * progress
+            pixel_factor = 1 + int((1 - progress) * 50)
+
+            new_w = max(1, int(sw * scale))
+            new_h = max(1, int(sh * scale))
+            scaled = pg.transform.smoothscale(snapshot, (new_w, new_h))
+            pixelated = pixelate_surface(scaled, pixel_factor)
+            rect = pixelated.get_rect(center=center)
+
+            bg = pg.Surface((sw, sh))
+            bg.fill(colour)
+            self.game.screen.blit(bg, (0, 0))
+            self.game.screen.blit(pixelated, rect)
             pg.display.flip()
             clock.tick(1000 // step_time)
+
+        self.game.environment.transition = False
 
     def render(self):
         self.light_surface.fill((0, 0, 0, 255))
@@ -220,6 +251,7 @@ class LightSource:
         self.active_lights.clear()
 
     def update(self):
+        self.screen_transition()
         if self.game.environment.lighting:
             self.clear_moving_lights()
             self.handle_lights()

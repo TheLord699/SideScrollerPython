@@ -22,6 +22,7 @@ class Environment:
     self.last_menu = None
     
     self.menu_background_loaded = False
+    self.transition = False
         
     self.current_time = None
     self.current_track = None
@@ -197,7 +198,7 @@ class Environment:
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       font=self.game.environment.fonts["fantasy"],
       element_id="new_game_button",
-      callback=self.change_menu("play"), #callback=lambda: (self.game.ui.ui_elements.clear(), self.change_menu("play")() ,self.game.lighting.screen_transition(colour=(0, 0, 0))),
+      callback=lambda: (setattr(self, "transition", True), self.change_menu("play")()),
       hover_range=3.5,
       render_order=0
     )
@@ -211,7 +212,7 @@ class Environment:
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       font=self.game.environment.fonts["fantasy"],
       element_id="load_button",
-      callback=lambda: (setattr(self, "menu", "play"), setattr(self.game.player, "settings_loaded", True), self.load_data()),
+      callback=lambda: (setattr(self, "transition", True), setattr(self, "menu", "play"), setattr(self.game.player, "settings_loaded", True), self.load_data()),
       hover_range=3.5,
       render_order=0
     )
