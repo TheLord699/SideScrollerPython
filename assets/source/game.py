@@ -198,7 +198,7 @@ class Environment:
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       font=self.game.environment.fonts["fantasy"],
       element_id="new_game_button",
-      callback=lambda: (setattr(self, "transition", True), self.change_menu("play")()),
+      callback=lambda: (self.change_menu("play")()),#callback=lambda: (setattr(self, "transition", True), self.change_menu("play")()),
       hover_range=3.5,
       render_order=0
     )
@@ -212,7 +212,7 @@ class Environment:
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       font=self.game.environment.fonts["fantasy"],
       element_id="load_button",
-      callback=lambda: (setattr(self, "transition", True), setattr(self, "menu", "play"), setattr(self.game.player, "settings_loaded", True), self.load_data()),
+      callback=lambda: (setattr(self, "menu", "play"), setattr(self.game.player, "settings_loaded", True), self.load_data()),
       hover_range=3.5,
       render_order=0
     )
