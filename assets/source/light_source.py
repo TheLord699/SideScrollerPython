@@ -163,10 +163,10 @@ class LightSource:
         sw, sh = self.game.screen_width, self.game.screen_height
         center = (sw // 2, sh // 2)
 
-        steps = 60
+        steps = 30
         zoom_in_steps = steps // 2
         zoom_out_steps = steps // 2
-        step_time = duration // steps
+        step_time = max(1, duration // steps)
 
         snapshot = self.game.screen.copy()
 
@@ -181,17 +181,15 @@ class LightSource:
         for i in range(zoom_in_steps + 1):
             progress = i / zoom_in_steps
             scale = 1 + 2 * progress
-            pixel_factor = 1 + int(progress * 50)
-
+            pixel_factor = 1 + int(progress * 30)
+            
             new_w = max(1, int(sw * scale))
             new_h = max(1, int(sh * scale))
-            scaled = pg.transform.smoothscale(snapshot, (new_w, new_h))
+            scaled = pg.transform.scale(snapshot, (new_w, new_h))
             pixelated = pixelate_surface(scaled, pixel_factor)
             rect = pixelated.get_rect(center=center)
 
-            bg = pg.Surface((sw, sh))
-            bg.fill(colour)
-            self.game.screen.blit(bg, (0, 0))
+            self.game.screen.fill(colour)
             self.game.screen.blit(pixelated, rect)
             pg.display.flip()
             clock.tick(1000 // step_time)
@@ -199,17 +197,15 @@ class LightSource:
         for i in range(zoom_out_steps + 1):
             progress = i / zoom_out_steps
             scale = 3 - 2 * progress
-            pixel_factor = 1 + int((1 - progress) * 50)
-
+            pixel_factor = 1 + int((1 - progress) * 30)
+            
             new_w = max(1, int(sw * scale))
             new_h = max(1, int(sh * scale))
-            scaled = pg.transform.smoothscale(snapshot, (new_w, new_h))
+            scaled = pg.transform.scale(snapshot, (new_w, new_h))
             pixelated = pixelate_surface(scaled, pixel_factor)
             rect = pixelated.get_rect(center=center)
 
-            bg = pg.Surface((sw, sh))
-            bg.fill(colour)
-            self.game.screen.blit(bg, (0, 0))
+            self.game.screen.fill(colour)
             self.game.screen.blit(pixelated, rect)
             pg.display.flip()
             clock.tick(1000 // step_time)
