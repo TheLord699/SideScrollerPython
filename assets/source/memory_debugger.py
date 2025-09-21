@@ -1,5 +1,7 @@
 import pygame as pg
 import traceback
+import psutil
+import os
 
 from collections import defaultdict
 
@@ -537,6 +539,7 @@ class MemoryDebugger:
                 elif hasattr(obj, '__dict__'):
                     for attr in vars(obj).values():
                         find_surfaces(attr)
+                        
             except Exception:
                 pass
 
@@ -545,10 +548,39 @@ class MemoryDebugger:
 
         return all_surfaces
 
+    def get_ram_usage(self):
+        try:
+            process = psutil.Process(os.getpid())
+            process_memory = process.memory_info().rss / 1024 / 1024  # MB
+            
+            virtual_memory = psutil.virtual_memory()
+            total_ram = virtual_memory.total / 1024 / 1024 / 1024  # GB
+            used_ram = virtual_memory.used / 1024 / 1024 / 1024  # GB
+            free_ram = virtual_memory.available / 1024 / 1024 / 1024  # GB
+            ram_percent = virtual_memory.percent
+            
+            return {
+                "process_memory": process_memory,
+                "total_ram": total_ram,
+                "used_ram": used_ram,
+                "free_ram": free_ram,
+                "ram_percent": ram_percent
+            }
+        except Exception:
+            return None
+
     def get_memory_info(self):
         info = []
         info.append("=== MEMORY DEBUGGER ===")
         info.append("Press ` or TAB for terminal. Scroll with mouse or keys. Press ESC to close.\n")
+        
+        ram_info = self.get_ram_usage()
+        if ram_info:
+            info.append("RAM Usage:")
+            info.append(f"  Process Memory: {ram_info['process_memory']:.2f} MB")
+            info.append(f"  System RAM: {ram_info['used_ram']:.2f} GB / {ram_info['total_ram']:.2f} GB ({ram_info['ram_percent']:.1f}% used)")
+            info.append(f"  Free RAM: {ram_info['free_ram']:.2f} GB")
+            info.append("")
 
         info.append("Game Objects Count:")
         info.append(f"  UI Elements: {len(getattr(self.game.ui, 'ui_elements', []))}")
@@ -624,6 +656,7 @@ class MemoryDebugger:
         if self.menu_state == "main":
             start_line = max(0, min(self.scroll_offsets[self.menu_state], len(self.memory_info) - self.visible_lines()))
 
+            ram_start = self.find_line_index("RAM Usage:")
             objects_start = self.find_line_index("Game Objects Count:")
             size_dist_start = self.find_line_index("Image Size Distribution:")
             storage_start = self.find_line_index("Storage Locations:")
@@ -634,7 +667,10 @@ class MemoryDebugger:
                     text = self.memory_info[line_idx]
                     color = (200, 255, 200)
 
-                    if line_idx in {objects_start, size_dist_start, storage_start}:
+                    if ram_start is not None and ram_start <= line_idx < ram_start + 5:
+                        color = (255, 200, 200)
+                        
+                    elif line_idx in {objects_start, size_dist_start, storage_start}:
                         color = (255, 255, 255)
                         
                     elif (objects_start is not None and size_dist_start is not None
