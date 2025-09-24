@@ -1,5 +1,5 @@
 {
 
-    "basic_sword": {"damage": 10, "range": 15, "speed": 0.2, "type": "melee"}
+    "basic_sword": {"damage": 10, "range": 15, "speed": 0.2, "sequence": 2, "type": "melee"}
 
 }

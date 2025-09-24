@@ -840,7 +840,12 @@ class Player:
 
     def advance_frame(self):
         if self.current_state.startswith("attacking"):
-            frame_delay = int(1 / self.weapon_info[self.equipped_weapon]["speed"])
+            if self.equipped_weapon not in self.weapon_info:
+                self.attacking = False
+                return
+                
+            weapon_data = self.weapon_info[self.equipped_weapon]
+            frame_delay = int(1 / weapon_data["speed"])
             
         else:
             frame_delay = int(1 / self.state_frames[self.current_state]["speed"])
@@ -855,7 +860,10 @@ class Player:
 
         if self.current_state.startswith("attacking") and self.current_frame == len(self.frames[self.current_state]) - 1:
             self.attacking = False
-            self.attack_sequence = (self.attack_sequence % 2) + 1
+            
+            max_sequence = weapon_data.get("sequence", 1)
+            self.attack_sequence = (self.attack_sequence % max_sequence) + 1
+            
             self.active_melee_attack_ids.clear()
 
     def handle_controls(self):
