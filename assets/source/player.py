@@ -5,6 +5,8 @@ import json
 import math
 import os
 
+from helper_methods import load_json
+
 class Player:
     def __init__(self, game):
         self.game = game
@@ -19,7 +21,7 @@ class Player:
         self.speed = 5 # 5
         self.dash_speed = 100 # 100
         self.weight = 1 # 1
-        self.jump_strength = 10
+        self.jump_strength = 10 # 10
         self.friction = 0
 
         self.cam_x = self.x - self.game.screen_width / 2
@@ -76,6 +78,8 @@ class Player:
         self.direction = "right"
         self.current_frame = 0
         self.animation_timer = 0
+        self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
+        self.equipped_weapon = "basic_sword"
         # will load settings from json instead of hard coding dictionaries
         self.state_frames = {
             "idle": {"frames": 6, "speed": 0.15},
@@ -139,8 +143,7 @@ class Player:
         
         random.seed(self.game.environment.seed)
         
-        with open(os.path.join("assets", "settings", "entities.json"), "r") as file:
-            self.item_info = json.load(file)
+        self.item_info = load_json(os.path.join("assets", "settings", "entities.json"))
         
         self.load_frames()
 
@@ -836,7 +839,12 @@ class Player:
         self.advance_frame()
 
     def advance_frame(self):
-        frame_delay = int(1 / self.state_frames[self.current_state]["speed"])
+        if self.current_state.startswith("attacking"):
+            frame_delay = int(1 / self.weapon_info[self.equipped_weapon]["speed"])
+            
+        else:
+            frame_delay = int(1 / self.state_frames[self.current_state]["speed"])
+            
         self.animation_timer += 1
 
         if self.animation_timer < frame_delay:
@@ -1083,7 +1091,7 @@ class Player:
             dash_sound["sound"].play()
 
     def start_attack(self): # will make all attacks projectile based using projectile func
-        if self.attacking:
+        if self.attacking or self.equipped_weapon not in self.weapon_info:
             return
             
         self.attacking = True
