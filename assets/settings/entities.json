@@ -155,7 +155,7 @@
         32,
         32
       ],
-      "index": "item_0_0",
+      "index": [0, 0],
       "behavior": "aggressive",
       "move_speed": 1.2,
       "jump_force": 8,

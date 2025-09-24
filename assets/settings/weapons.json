@@ -1,9 +1,0 @@
-{
-    "weapons":{
-        "sword_default":{
-            "damage": 10,
-            "hitbox_width": 0,
-            "hitbox_height": 0
-        }
-    }
-}

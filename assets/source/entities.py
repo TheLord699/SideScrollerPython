@@ -374,7 +374,7 @@ class Entities:
                 for attack_id in self.game.player.active_melee_attack_ids:
                     if entity.get("last_hit_id") != attack_id:
                         if entity["entity_type"] in {"enemy", "npc"} and entity["health"] > 0:
-                            entity["health"] -= 10
+                            entity["health"] -= self.game.player.weapon_info[self.game.player.equipped_weapon]["damage"]
                             entity["damage_effect"] = 1
                             self.spawn_hit_particles(entity)
                         

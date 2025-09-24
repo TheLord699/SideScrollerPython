@@ -1,6 +1,8 @@
 import os
 import json
 
+from helper_methods import load_json
+
 class DataManager:
     def __init__(self):
         self.filename = "assets/settings/game_data.json"
@@ -8,8 +10,7 @@ class DataManager:
 
     def load_data(self):
         try:
-            with open(self.filename, 'r') as file:
-                self.data = json.load(file)
+            self.data = load_json(self.filename)
                 
         except FileNotFoundError:
             self.data = {}
