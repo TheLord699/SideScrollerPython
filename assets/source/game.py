@@ -127,7 +127,7 @@ class Environment:
     for index, saved_item in enumerate(saved_inventory):
       self.game.player.inventory[index] = saved_item
     
-  def update_slider_value(self, element_id, value):
+  def update_slider_value(self, element_id, value): # ts needs to be changed
     if element_id == "volume_slider":
       self.volume = value
 
@@ -142,7 +142,7 @@ class Environment:
       alpha=True,
       scale_multiplier=1,
       label=f"ver: {self.game.version}",
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       element_id="version",
       font_size=16,
       render_order=0
@@ -153,7 +153,7 @@ class Environment:
       alpha=True,
       scale_multiplier=1,
       label="Generic Side Scroller",
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       element_id="title",
       font_size=28,
       render_order=0
@@ -166,7 +166,7 @@ class Environment:
       scale_multiplier=1.1,
       label="Play",
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       element_id="play_button",
       callback=self.change_menu("select_menu"),
       hover_range=3.5,
@@ -180,7 +180,7 @@ class Environment:
       scale_multiplier=1.1,
       label="Settings",
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       element_id="settings_button",
       callback=self.change_menu("settings"),
       hover_range=3.5,
@@ -196,7 +196,7 @@ class Environment:
       scale_multiplier=1.1,
       label="New Game",
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       element_id="new_game_button",
       callback=lambda: (self.change_menu("play")()),#callback=lambda: (setattr(self, "transition", True), self.change_menu("play")()),
       hover_range=3.5,
@@ -210,7 +210,7 @@ class Environment:
       scale_multiplier=1.1,
       label="Load Game",
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       element_id="load_button",
       callback=lambda: (setattr(self, "menu", "play"), setattr(self.game.player, "settings_loaded", True), self.load_data()),
       hover_range=3.5,
@@ -253,7 +253,7 @@ class Environment:
     self.game.ui.create_ui(
       x=self.game.screen_width / 2.6, y=125, width=200, height=20,
       element_id="volume_text", label="Volume",
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
     )
     self.game.ui.create_ui(
       sprite_sheet_path="ui_sheet", image_id=[33, 0],
@@ -262,7 +262,7 @@ class Environment:
       alpha=True, is_button=True,
       scale_multiplier=1.1,
       dynamic_value=lambda: "Indicators: On" if self.game.entities.show_indicators else "Indicators: Off",
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       font_size=16,
       element_id="indicator_button",
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
@@ -277,7 +277,7 @@ class Environment:
       alpha=True, is_button=True,
       scale_multiplier=1.1,
       dynamic_value=lambda: "Particles: On" if self.game.particles.enable_particles else "Particles: Off",
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       font_size=16,
       element_id="particle_button",
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
@@ -293,7 +293,7 @@ class Environment:
       alpha=True,
       scale_multiplier=1,
       label="You Died",
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       element_id="Death_message",
       font_size=35,
       render_order=0
@@ -306,7 +306,7 @@ class Environment:
       scale_multiplier=1.1,
       element_id="restart_button",
       label="Restart",
-      font=self.game.environment.fonts["fantasy"],
+      font=self.fonts["fantasy"],
       click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
       callback=lambda: (self.game.player.load_settings(), setattr(self, "menu", "play")),
       hover_range=3.5,
