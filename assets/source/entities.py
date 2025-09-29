@@ -371,7 +371,7 @@ class Entities:
         
         if entity["entity_type"] in {"enemy", "npc", "actor"}:
             if entity_hitbox.colliderect(self.game.player.attack_hitbox):
-                for attack_id in self.game.player.active_melee_attack_ids:
+                for attack_id in self.game.player.active_melee_ids:
                     if entity.get("last_hit_id") != attack_id:
                         if entity["entity_type"] in {"enemy", "npc"} and entity["health"] > 0:
                             entity["health"] -= self.game.player.weapon_info[self.game.player.equipped_weapon]["damage"]
@@ -397,7 +397,7 @@ class Entities:
                         
                         entity["last_hit_id"] = attack_id
             
-            for attack_id in self.game.player.active_projectile_attack_ids:
+            for attack_id in self.game.player.active_projectile_ids:
                 if (entity.get("last_hit_id") != attack_id and 
                     entity_hitbox.collidepoint(attack_id["x"], attack_id["y"])):
                     if entity["entity_type"] in {"enemy", "npc"} and entity["health"] > 0:
