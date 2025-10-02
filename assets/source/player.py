@@ -86,6 +86,7 @@ class Player:
             "walking": {"frames": 8, "speed": 0.2},
             "attacking1": {"frames": 6, "speed": 0.2},
             "attacking2": {"frames": 6, "speed": 0.2},
+            "jump": {"frames": 3, "speed": 0.15},
             "hurt": {"frames": 4, "speed": 0.10}, # 0.10
             "death": {"frames": 4, "speed": 0.15},
         }
