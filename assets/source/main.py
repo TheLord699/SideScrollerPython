@@ -55,8 +55,8 @@ class Game:
     self.entities = Entities(self)
     self.background = Background(self)
     self.particles = Particles(self)
-    self.memory_debugger = MemoryDebugger(self)
     self.lighting = LightSource(self)
+    self.memory_debugger = MemoryDebugger(self)
 
   def render_fps(self): # temp function, will remove later
     fps = self.clock.get_fps()
