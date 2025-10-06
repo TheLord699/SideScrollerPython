@@ -42,10 +42,10 @@ class Game:
     pg.display.set_caption(f"SideScroller {self.version}")
     pg.display.set_icon(icon)
 
-    self.init_game_objects()
+    self.init_objects()
     self.game_loop()
 
-  def init_game_objects(self):
+  def init_objects(self):
     self.data_manager = DataManager()
     self.ui = UI(self)
     self.environment = Environment(self)
