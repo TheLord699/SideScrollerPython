@@ -84,8 +84,8 @@ class Player:
         self.state_frames = {
             "idle": {"frames": 6, "speed": 0.15},
             "walking": {"frames": 8, "speed": 0.2},
-            "attacking1": {"frames": 6, "speed": 0.2},
-            "attacking2": {"frames": 6, "speed": 0.2},
+            "attacking1": {"frames": 6}, # Gonna need to change when weapon system fully implemented
+            "attacking2": {"frames": 6},
             "jump": {"frames": 3, "speed": 0.15},
             "hurt": {"frames": 4, "speed": 0.10}, # 0.10
             "death": {"frames": 4, "speed": 0.15},
@@ -841,7 +841,7 @@ class Player:
 
     def advance_frame(self):
         if self.current_state.startswith("attacking"):
-            if self.equipped_weapon not in self.weapon_info:
+            if self.equipped_weapon not in self.weapon_info: # this is dumb(maybe should make current weapon speed part of current state speed?)
                 self.attacking = False
                 return
                 
