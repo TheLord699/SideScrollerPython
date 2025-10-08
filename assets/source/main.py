@@ -106,39 +106,40 @@ class Game:
             
       else:
         if event.type == pg.KEYDOWN:
-          if event.key == pg.K_h:
-            self.player.take_damage(0.1)
+          match event.key:
+            case pg.K_h:
+              self.player.take_damage(0.1)
 
-          elif event.key == pg.K_j:
-            self.player.current_health += 0.5
+            case pg.K_j:
+              self.player.current_health += 0.5
 
-          elif event.key == pg.K_k:
-            self.player.vel_y = -15
+            case pg.K_k:
+              self.player.vel_y = -15
 
-          elif event.key == pg.K_l:
-            self.player.max_health += 1
-            self.player.current_health = self.player.max_health
+            case pg.K_l:
+              self.player.max_health += 1
+              self.player.current_health = self.player.max_health
 
-          elif event.key == pg.K_b:
-            self.environment.menu = "main"
-          
-          elif event.key == pg.K_g:
-            self.environment.save_data()
-            print("Game data saved.")
+            case pg.K_b:
+              self.environment.menu = "main"
+            
+            case pg.K_g:
+              self.environment.save_data()
+              print("Game data saved.")
 
-          elif event.key == pg.K_m:
-            self.memory_debugger.toggle()
+            case pg.K_m:
+              self.memory_debugger.toggle()
 
-          elif event.key == pg.K_n:
-            new_light = (
-              self.player.x + self.player.hitbox_width / 2,
-              self.player.y + self.player.hitbox_height / 2,
-              200,
-              1.0,
-              (255, 255, 200),
-              "stationary"
-            )
-            self.lighting.active_lights.append(new_light)
+            case pg.K_n:
+              new_light = (
+                self.player.x + self.player.hitbox_width / 2,
+                self.player.y + self.player.hitbox_height / 2,
+                200,
+                1.0,
+                (255, 255, 200),
+                "stationary"
+              )
+              self.lighting.active_lights.append(new_light)
 
   def game_loop(self):
     self.running = True
