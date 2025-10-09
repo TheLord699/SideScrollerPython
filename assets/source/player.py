@@ -872,21 +872,19 @@ class Player:
         mouse_buttons = pg.mouse.get_pressed()
         self.joystick = self.game.environment.joystick
 
-        controller = {}
         if self.joystick:
-            controller["left_x"] = self.joystick.get_axis(0)
-            controller["left_x"] = controller["left_x"] if abs(controller["left_x"]) > 0.1 else 0
-            controller["left_y"] = self.joystick.get_axis(1)
-            controller["left_y"] = controller["left_y"] if abs(controller["left_y"]) > 0.1 else 0
-
-            controller["A"] = self.joystick.get_button(0)
-            controller["B"] = self.joystick.get_button(1)
-            controller["X"] = self.joystick.get_button(2)
-            controller["Y"] = self.joystick.get_button(3)
-            controller["LB"] = self.joystick.get_button(4)
-            controller["RB"] = self.joystick.get_button(5)
-            controller["back"] = self.joystick.get_button(6)
-            controller["start"] = self.joystick.get_button(7)
+            controller = {
+                "left_x": self.joystick.get_axis(0) if abs(self.joystick.get_axis(0)) > 0.1 else 0,
+                "left_y": self.joystick.get_axis(1) if abs(self.joystick.get_axis(1)) > 0.1 else 0,
+                "A": self.joystick.get_button(0),
+                "B": self.joystick.get_button(1),
+                "X": self.joystick.get_button(2),
+                "Y": self.joystick.get_button(3),
+                "LB": self.joystick.get_button(4),
+                "RB": self.joystick.get_button(5),
+                "back": self.joystick.get_button(6),
+                "start": self.joystick.get_button(7)
+            }
 
             if self.joystick.get_numhats() > 0:
                 controller["dpad"] = self.joystick.get_hat(0)
