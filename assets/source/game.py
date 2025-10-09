@@ -109,23 +109,28 @@ class Environment:
     self.game.data_manager.set_setting("player_inventory", inventory_to_save)
 
   def load_data(self):
-    self.game.player.load_settings()
-    self.game.data_manager.load_data()
-    self.seed = self.game.data_manager.get_setting("seed")
-    self.volume = self.game.data_manager.get_setting("volume")
-    self.game.entities.show_indicators = self.game.data_manager.get_setting("show_indicators")
-    self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
-    self.game.player.max_health = self.game.data_manager.get_setting("player_max_health")
-    self.game.player.current_health = self.game.data_manager.get_setting("player_current_health")
-    self.game.player.direction = self.game.data_manager.get_setting("player_direction")
-    self.game.player.x = self.game.data_manager.get_setting("player_x")
-    self.game.player.y = self.game.data_manager.get_setting("player_y")
+    try:
+      self.game.player.load_settings()
+      self.game.data_manager.load_data()
+      self.seed = self.game.data_manager.get_setting("seed")
+      self.volume = self.game.data_manager.get_setting("volume")
+      self.game.entities.show_indicators = self.game.data_manager.get_setting("show_indicators")
+      self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
+      self.game.player.max_health = self.game.data_manager.get_setting("player_max_health")
+      self.game.player.current_health = self.game.data_manager.get_setting("player_current_health")
+      self.game.player.direction = self.game.data_manager.get_setting("player_direction")
+      self.game.player.x = self.game.data_manager.get_setting("player_x")
+      self.game.player.y = self.game.data_manager.get_setting("player_y")
 
-    saved_inventory = self.game.data_manager.get_setting("player_inventory", [])
-    self.game.player.inventory = {}
-    
-    for index, saved_item in enumerate(saved_inventory):
-      self.game.player.inventory[index] = saved_item
+      saved_inventory = self.game.data_manager.get_setting("player_inventory", [])
+      self.game.player.inventory = {}
+      
+      for index, saved_item in enumerate(saved_inventory):
+        self.game.player.inventory[index] = saved_item
+      
+    except Exception as e:
+      self.menu = "select_menu"
+      print(f"Error loading game data: {e}")
     
   def update_slider_value(self, element_id, value): # ts needs to be changed
     if element_id == "volume_slider":
@@ -251,7 +256,7 @@ class Environment:
     )
     
     self.game.ui.create_ui(
-      x=self.game.screen_width / 2.6, y=125, width=200, height=20,
+      x=self.game.screen_width / 2.6, y=150, width=200, height=20,
       element_id="volume_text", label="Volume",
       font=self.fonts["fantasy"],
     )
