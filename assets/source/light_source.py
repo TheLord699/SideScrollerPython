@@ -66,7 +66,7 @@ class LightSource:
         if key in self.light_mask_cache:
             return self.light_mask_cache[key]
 
-        if len(self.light_mask_cache) > self.max_cache_size:
+        if len(self.light_mask_cache) > self.max_cache_size: # might remove later
             self.light_mask_cache.clear()
 
         # black magic bullshit
@@ -154,63 +154,6 @@ class LightSource:
         
         if mask:
             self.light_surface.blit(mask, (left, top), special_flags=pg.BLEND_ADD)
-                
-    def screen_transition(self, colour=(0, 0, 0), duration=60): # will move to environment class, reason its here is because old version of function utilised the lighting surfaces
-        if not getattr(self.game.environment, "transition", False): # reminder: gonna have to tweak when port over to environment class, because lambda function(maybe multi threading?)
-            return
-
-        clock = pg.time.Clock()
-        sw, sh = self.game.screen_width, self.game.screen_height
-        center = (sw // 2, sh // 2)
-
-        steps = 30
-        zoom_in_steps = steps // 2
-        zoom_out_steps = steps // 2
-        step_time = max(1, duration // steps)
-
-        snapshot = self.game.screen.copy()
-
-        def pixelate_surface(surface, pixel_factor=16):
-            if pixel_factor <= 1:
-                return surface
-            
-            small_size = (max(1, surface.get_width() // pixel_factor), max(1, surface.get_height() // pixel_factor))
-            small = pg.transform.smoothscale(surface, small_size)
-            return pg.transform.scale(small, surface.get_size())
-
-        for i in range(zoom_in_steps + 1):
-            progress = i / zoom_in_steps
-            scale = 1 + 2 * progress
-            pixel_factor = 1 + int(progress * 30)
-            
-            new_w = max(1, int(sw * scale))
-            new_h = max(1, int(sh * scale))
-            scaled = pg.transform.scale(snapshot, (new_w, new_h))
-            pixelated = pixelate_surface(scaled, pixel_factor)
-            rect = pixelated.get_rect(center=center)
-
-            self.game.screen.fill(colour)
-            self.game.screen.blit(pixelated, rect)
-            pg.display.flip()
-            clock.tick(1000 // step_time)
-
-        for i in range(zoom_out_steps + 1):
-            progress = i / zoom_out_steps
-            scale = 3 - 2 * progress
-            pixel_factor = 1 + int((1 - progress) * 30)
-            
-            new_w = max(1, int(sw * scale))
-            new_h = max(1, int(sh * scale))
-            scaled = pg.transform.scale(snapshot, (new_w, new_h))
-            pixelated = pixelate_surface(scaled, pixel_factor)
-            rect = pixelated.get_rect(center=center)
-
-            self.game.screen.fill(colour)
-            self.game.screen.blit(pixelated, rect)
-            pg.display.flip()
-            clock.tick(1000 // step_time)
-
-        self.game.environment.transition = False
 
     def render(self):
         self.light_surface.fill((0, 0, 0, 255))
@@ -247,8 +190,9 @@ class LightSource:
         self.active_lights.clear()
 
     def update(self):
-        self.screen_transition()
-        if self.game.environment.lighting:
-            self.clear_moving_lights()
-            self.handle_lights()
-            self.render()
+        if not self.game.environment.lighting:
+            return
+        
+        self.clear_moving_lights()
+        self.handle_lights()
+        self.render()
