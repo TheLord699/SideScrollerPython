@@ -433,15 +433,10 @@ class Player:
         
         for tag in expired_tags:
             self.pickup_tags.remove(tag)
-            if hasattr(self.game.ui, "fade_out"):
-                self.game.ui.fade_out(tag["element_id"], duration=0.5)
-                self.game.ui.fade_out(tag["text_id"], duration=0.5)
-                
-            else:
-                self.game.ui.remove_ui_element(tag["element_id"])
-                self.game.ui.remove_ui_element(tag["text_id"])
+            self.game.ui.remove_ui_element(tag["element_id"])
+            self.game.ui.remove_ui_element(tag["text_id"])
         
-        if expired_tags and not hasattr(self.game.ui, "fade_out"):
+        if expired_tags:
             self.update_tag_positions()
 
     def remove_oldest_tag(self):
@@ -453,36 +448,31 @@ class Player:
     def update_tag_positions(self):
         for index, tag in enumerate(self.pickup_tags):
             y_pos = 50 + index * 40
+
+            self.game.ui.remove_ui_element(tag["element_id"])
+            self.game.ui.remove_ui_element(tag["text_id"])
+            self.game.ui.create_ui(
+                sprite_sheet_path="item_sheet",
+                image_id=self.item_info["items"][tag["name"]]["index"],
+                x=10,
+                y=y_pos,
+                sprite_width=16,
+                sprite_height=16,
+                width=30,
+                height=30,
+                element_id=tag["element_id"],
+                render_order=2
+            )
             
-            if hasattr(self.game.ui, 'update_ui_element_position'):
-                self.game.ui.update_ui_element_position(tag["element_id"], 10, y_pos)
-                self.game.ui.update_ui_element_position(tag["text_id"], 60, y_pos + 15)
-                
-            else:
-                self.game.ui.remove_ui_element(tag["element_id"])
-                self.game.ui.remove_ui_element(tag["text_id"])
-                self.game.ui.create_ui(
-                    sprite_sheet_path="item_sheet",
-                    image_id=self.item_info["items"][tag["name"]]["index"],
-                    x=10,
-                    y=y_pos,
-                    sprite_width=16,
-                    sprite_height=16,
-                    width=30,
-                    height=30,
-                    element_id=tag["element_id"],
-                    render_order=2
-                )
-                
-                self.game.ui.create_ui(
-                    x=60,
-                    y=y_pos + 15,
-                    font_size=10,
-                    font=self.game.environment.fonts["fantasy"],
-                    element_id=tag["text_id"],
-                    render_order=2,
-                    label=tag["name"]
-                )
+            self.game.ui.create_ui(
+                x=60,
+                y=y_pos + 15,
+                font_size=10,
+                font=self.game.environment.fonts["fantasy"],
+                element_id=tag["text_id"],
+                render_order=2,
+                label=tag["name"]
+            )
                 
     def render_item_info(self, id): # doesnt update amount in real time
         if hasattr(self, "last_rendered_item") and self.last_rendered_item:
