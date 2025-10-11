@@ -66,6 +66,9 @@ class Player:
         self.invinsibility_duration = 900 # 600
         self.last_damage_time = -self.invinsibility_duration * 2 
         
+        self.pickup_tags = []
+        self.max_tags = 3
+            
         self.last_step_time = 0 
         self.step_interval = 300
         self.actual_horizontal_movement = False
@@ -382,6 +385,105 @@ class Player:
             render_order=1
         )
         
+    def add_pickup_tag(self, item_name):
+        if len(self.pickup_tags) >= self.max_tags:
+            self.remove_oldest_tag()
+        
+        element_id = f"pickup_tag_{len(self.pickup_tags)}_{pg.time.get_ticks()}"
+        text_id = f"pickup_text_{len(self.pickup_tags)}_{pg.time.get_ticks()}"
+        
+        self.game.ui.create_ui(
+            sprite_sheet_path="item_sheet",
+            image_id=self.item_info["items"][item_name]["index"],
+            x=10,
+            y=50,
+            sprite_width=16,
+            sprite_height=16,
+            width=30,
+            height=30,
+            element_id=element_id,
+            render_order=2
+        )
+        
+        self.game.ui.create_ui(
+            x=70,
+            y=65,
+            font_size=10,
+            font=self.game.environment.fonts["fantasy"],
+            element_id=text_id,
+            render_order=2,
+            label=item_name
+        )
+        
+        self.pickup_tags.insert(0, {
+            "name": item_name,
+            "element_id": element_id,
+            "text_id": text_id,
+            "creation_time": self.game.environment.current_time
+        })
+        
+        self.update_tag_positions()
+
+    def update_pickup_tags(self):
+        if not self.pickup_tags:
+            return
+        
+        current_time = self.game.environment.current_time
+        expired_tags = [tag for tag in self.pickup_tags if current_time - tag["creation_time"] >= 3000]
+        
+        for tag in expired_tags:
+            self.pickup_tags.remove(tag)
+            if hasattr(self.game.ui, "fade_out"):
+                self.game.ui.fade_out(tag["element_id"], duration=0.5)
+                self.game.ui.fade_out(tag["text_id"], duration=0.5)
+                
+            else:
+                self.game.ui.remove_ui_element(tag["element_id"])
+                self.game.ui.remove_ui_element(tag["text_id"])
+        
+        if expired_tags and not hasattr(self.game.ui, "fade_out"):
+            self.update_tag_positions()
+
+    def remove_oldest_tag(self):
+        if self.pickup_tags:
+            oldest = self.pickup_tags.pop()
+            self.game.ui.remove_ui_element(oldest["element_id"])
+            self.game.ui.remove_ui_element(oldest["text_id"])
+
+    def update_tag_positions(self):
+        for index, tag in enumerate(self.pickup_tags):
+            y_pos = 50 + index * 40
+            
+            if hasattr(self.game.ui, 'update_ui_element_position'):
+                self.game.ui.update_ui_element_position(tag["element_id"], 10, y_pos)
+                self.game.ui.update_ui_element_position(tag["text_id"], 60, y_pos + 15)
+                
+            else:
+                self.game.ui.remove_ui_element(tag["element_id"])
+                self.game.ui.remove_ui_element(tag["text_id"])
+                self.game.ui.create_ui(
+                    sprite_sheet_path="item_sheet",
+                    image_id=self.item_info["items"][tag["name"]]["index"],
+                    x=10,
+                    y=y_pos,
+                    sprite_width=16,
+                    sprite_height=16,
+                    width=30,
+                    height=30,
+                    element_id=tag["element_id"],
+                    render_order=2
+                )
+                
+                self.game.ui.create_ui(
+                    x=60,
+                    y=y_pos + 15,
+                    font_size=10,
+                    font=self.game.environment.fonts["fantasy"],
+                    element_id=tag["text_id"],
+                    render_order=2,
+                    label=tag["name"]
+                )
+                
     def render_item_info(self, id): # doesnt update amount in real time
         if hasattr(self, "last_rendered_item") and self.last_rendered_item:
             self.game.ui.remove_ui_element(self.last_rendered_item)
@@ -589,6 +691,7 @@ class Player:
                 if self.interact_radius.colliderect(entity_hitbox):
                     if len(self.inventory) < self.max_inventory_slots:
                         self.add_item_to_inventory({**entity})
+                        self.add_pickup_tag(entity["name"])
                         
                         self.game.entities.entities.remove(entity)
                         
@@ -1269,6 +1372,7 @@ class Player:
             self.animate()
             self.update_attack_hitbox()
             self.render_inventory()
+            self.update_pickup_tags()
             self.render_item_mouse()
             self.render_health()
             self.render_dialogue()

@@ -256,7 +256,7 @@ class Environment:
     )
     
     self.game.ui.create_ui(
-      x=self.game.screen_width / 2.6, y=150, width=200, height=20,
+      x=self.game.screen_width / 2, y=150,
       element_id="volume_text", label="Volume",
       font=self.fonts["fantasy"],
     )
