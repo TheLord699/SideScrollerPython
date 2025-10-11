@@ -33,7 +33,7 @@ Do immediately:
 
 -fix entity ground collision code(it prevents the entities from jumping)
 
-
+-might need to seperate more visual ui player stuff from player script, like inventory and item pickup info
 
 
 
