@@ -872,6 +872,7 @@ class Player:
         mouse_buttons = pg.mouse.get_pressed()
         self.joystick = self.game.environment.joystick
 
+        controller = {}
         if self.joystick:
             controller = {
                 "left_x": self.joystick.get_axis(0) if abs(self.joystick.get_axis(0)) > 0.1 else 0,
