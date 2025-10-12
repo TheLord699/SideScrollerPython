@@ -392,11 +392,15 @@ class Player:
         element_id = f"pickup_tag_{len(self.pickup_tags)}_{pg.time.get_ticks()}"
         text_id = f"pickup_text_{len(self.pickup_tags)}_{pg.time.get_ticks()}"
         
+        screen_width = self.game.screen.get_width()
+        x_pos = screen_width - 100
+        y_pos = 20
+        
         self.game.ui.create_ui(
             sprite_sheet_path="item_sheet",
             image_id=self.item_info["items"][item_name]["index"],
-            x=10,
-            y=50,
+            x=x_pos,
+            y=y_pos,
             sprite_width=16,
             sprite_height=16,
             width=30,
@@ -406,8 +410,8 @@ class Player:
         )
         
         self.game.ui.create_ui(
-            x=70,
-            y=65,
+            x=x_pos + 50,
+            y=y_pos + 15,
             font_size=10,
             font=self.game.environment.fonts["fantasy"],
             element_id=text_id,
@@ -446,15 +450,19 @@ class Player:
             self.game.ui.remove_ui_element(oldest["text_id"])
 
     def update_tag_positions(self):
+        screen_width = self.game.screen.get_width()
+        x_pos = screen_width - 100
+        start_y = 20
+        
         for index, tag in enumerate(self.pickup_tags):
-            y_pos = 50 + index * 40
+            y_pos = start_y + index * 35
 
             self.game.ui.remove_ui_element(tag["element_id"])
             self.game.ui.remove_ui_element(tag["text_id"])
             self.game.ui.create_ui(
                 sprite_sheet_path="item_sheet",
                 image_id=self.item_info["items"][tag["name"]]["index"],
-                x=10,
+                x=x_pos,
                 y=y_pos,
                 sprite_width=16,
                 sprite_height=16,
@@ -465,7 +473,7 @@ class Player:
             )
             
             self.game.ui.create_ui(
-                x=60,
+                x=x_pos + 50,
                 y=y_pos + 15,
                 font_size=10,
                 font=self.game.environment.fonts["fantasy"],
