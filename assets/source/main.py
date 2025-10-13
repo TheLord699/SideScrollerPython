@@ -1,5 +1,3 @@
-# Copyright (c) 2025 TheLawd
-# Licensed under the MIT License
 import pygame as pg
 import psutil
 import os
