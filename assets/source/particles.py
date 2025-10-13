@@ -12,7 +12,7 @@ class Particles:
         
         self.max_particles = game.environment.max_particles
 
-        self.tile_hitboxes_np = np.array([[rect.x, rect.y, rect.width, rect.height] for rect in self.game.map.tile_hitboxes]) if hasattr(self.game.map, "tile_hitboxes") else np.empty((0, 4))
+        self.tile_hitboxes = np.array([[rect.x, rect.y, rect.width, rect.height] for rect in self.game.map.tile_hitboxes]) if hasattr(self.game.map, "tile_hitboxes") else np.empty((0, 4))
 
     def get_particle_from_pool(self):
         return self.pool.pop() if self.pool else {}
@@ -64,7 +64,7 @@ class Particles:
         for tile_hitbox, tile_id in nearby_tiles:
             if particle_rect.colliderect(tile_hitbox):
                 max_search = 100
-                hitboxes = self.tile_hitboxes_np
+                hitboxes = self.tile_hitboxes
 
                 if hitboxes.ndim != 2 or hitboxes.shape[1] != 4:
                     return pos
