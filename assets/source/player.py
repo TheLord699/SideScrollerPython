@@ -454,11 +454,13 @@ class Player:
         x_pos = screen_width - 100
         start_y = 20
         
-        for index, tag in enumerate(self.pickup_tags):
-            y_pos = start_y + index * 35
-
+        for tag in self.pickup_tags:
             self.game.ui.remove_ui_element(tag["element_id"])
             self.game.ui.remove_ui_element(tag["text_id"])
+        
+        for index, tag in enumerate(self.pickup_tags):
+            y_pos = start_y + index * 35
+            
             self.game.ui.create_ui(
                 sprite_sheet_path="item_sheet",
                 image_id=self.item_info["items"][tag["name"]]["index"],
@@ -481,7 +483,7 @@ class Player:
                 render_order=2,
                 label=tag["name"]
             )
-                
+                    
     def render_item_info(self, id): # doesnt update amount in real time
         if hasattr(self, "last_rendered_item") and self.last_rendered_item:
             self.game.ui.remove_ui_element(self.last_rendered_item)
