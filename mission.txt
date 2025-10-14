@@ -35,6 +35,8 @@ Do immediately:
 
 -might need to seperate more visual ui player stuff from player script, like inventory and item pickup info
 
+-fix tag pickup/delete conflict
+
 
 
 
