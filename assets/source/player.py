@@ -1230,9 +1230,34 @@ class Player:
 
         attack_sound = random.choice(self.sounds["attack"])
         attack_sound["sound"].play()
+    
+    def create_projectile(self, *args, **kwargs):
+        if args:
+            rect = pg.Rect(*args)
             
-    def update_projectiles(self): # not in use currently
-        self.active_projectile_ids = [id for id in self.active_projectile_ids if not self.is_projectile_done(id)]
+        else:
+            x = kwargs.get("x", 0)
+            y = kwargs.get("y", 0)
+            width = kwargs.get("width", 10)
+            height = kwargs.get("height", 10)
+            rect = pg.Rect(x, y, width, height)
+
+        projectile = {
+            "rect": rect,
+            "hitbox": rect.copy(),
+            "speed": kwargs.get("speed", 0),
+            "direction": pg.Vector2(kwargs.get("direction", (0, 0))),
+            "lifetime": kwargs.get("lifetime", 1000),
+            "weight": kwargs.get("weight", 1.0),
+            "is_stationary": kwargs.get("is_stationary", False)
+        }
+
+        for key, value in kwargs.items():
+            if key not in projectile:
+                projectile[key] = value
+
+        self.active_projectile_ids.append(projectile)
+        return projectile
 
     def update_attack_hitbox(self):
         if not self.attacking:

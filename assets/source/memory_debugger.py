@@ -18,6 +18,7 @@ class MemoryDebugger:
         self.dragging_scrollbar = False
         self.drag_offset_y = 0
         self.drag_start_scroll = 0
+        self.scroll_x_amount = 0
 
         self.menu_state = "main"
         self.selected_storage = None
@@ -396,6 +397,14 @@ class MemoryDebugger:
                 
             elif event.key == pg.K_DOWN:
                 self.handle_scroll("down")
+            
+            elif event.key == pg.K_LEFT:
+                self.scroll_x_amount += 50
+                
+            elif event.key == pg.K_RIGHT:
+                self.scroll_x_amount -= 50
+            
+            self.scroll_x_amount = -max(-min(self.scroll_x_amount, 200), 0)
 
     def visible_lines(self):
         panel_height = min(400, self.game.screen_height - 40)
@@ -685,7 +694,7 @@ class MemoryDebugger:
                         color = (150, 200, 255)
 
                     text_surf = self.font.render(text, True, color)
-                    panel.blit(text_surf, (10, 10 + i * 18))
+                    panel.blit(text_surf, (10 + self.scroll_x_amount, 10 + i * 18))
 
         elif self.menu_state == "size_group":
             group_surfaces = self.get_current_group_surfaces()
@@ -736,7 +745,7 @@ class MemoryDebugger:
                 surf = surfaces[idx]
                 info_text = f"Surface {idx} size: {surf.get_width()}x{surf.get_height()}"
                 text_surf = self.font.render(info_text, True, (200, 200, 255))
-                panel.blit(text_surf, (10, 30 + i * 18))
+                panel.blit(text_surf, (10 + self.scroll_x_amount, 30 + i * 18))
 
         elif self.menu_state == "object_info":
             info = self.get_object_info()
@@ -751,7 +760,7 @@ class MemoryDebugger:
                     break
                 
                 text_surf = self.font.render(info[idx], True, (200, 255, 200))
-                panel.blit(text_surf, (10, 30 + i * 18))
+                panel.blit(text_surf, (10 + self.scroll_x_amount, 30 + i * 18))
 
         if max_scroll > 0:
             pg.draw.rect(panel, (100, 100, 100), (scrollbar_x, 0, 8, panel_height))
