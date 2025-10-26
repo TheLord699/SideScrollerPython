@@ -3,6 +3,7 @@ import psutil
 import os
 
 from background import Background 
+from foreground import Foreground
 from game import Environment
 from player import Player
 from entities import Entities
@@ -29,7 +30,7 @@ class Game:
 
     self.clock = pg.time.Clock()
 
-    self.version = "0.4.5-dev"
+    self.version = "0.5.0-dev"
     icon = pg.image.load("assets/sprites/misc/bug.png")
 
     self.screen_width, self.screen_height = 800, 600
@@ -52,6 +53,7 @@ class Game:
     self.player = Player(self)
     self.entities = Entities(self)
     self.background = Background(self)
+    self.foreground = Foreground(self)
     self.particles = Particles(self)
     self.lighting = LightSource(self)
     self.memory_debugger = MemoryDebugger(self)
@@ -70,6 +72,7 @@ class Game:
     self.player.update()
     self.particles.update()
     self.lighting.update()
+    self.foreground.update()
     self.ui.update()
 
     # testing lights

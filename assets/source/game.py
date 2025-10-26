@@ -21,7 +21,7 @@ class Environment:
     self.menu = "main"
     self.last_menu = None
     
-    self.menu_background_loaded = False
+    self.menu_background_foreground_loaded = False
     self.transition = False
         
     self.current_time = None
@@ -89,6 +89,7 @@ class Environment:
     self.game.data_manager.set_setting("volume", self.volume)
     self.game.data_manager.set_setting("show_indicators", self.game.entities.show_indicators)
     self.game.data_manager.set_setting("enable_particles", self.game.particles.enable_particles)
+    self.game.data_manager.set_setting("enable_foreground", self.game.foreground.enable_foreground)
     self.game.data_manager.set_setting("player_max_health", self.game.player.max_health)
     self.game.data_manager.set_setting("player_current_health", self.game.player.current_health)
     self.game.data_manager.set_setting("player_direction", self.game.player.direction)
@@ -116,6 +117,7 @@ class Environment:
       self.volume = self.game.data_manager.get_setting("volume")
       self.game.entities.show_indicators = self.game.data_manager.get_setting("show_indicators")
       self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
+      self.game.foreground.enable_foreground = self.game.data_manager.get_setting("enable_foreground")
       self.game.player.max_health = self.game.data_manager.get_setting("player_max_health")
       self.game.player.current_health = self.game.data_manager.get_setting("player_current_health")
       self.game.player.direction = self.game.data_manager.get_setting("player_direction")
@@ -139,7 +141,7 @@ class Environment:
   def main_menu(self):
     self.lighting = False
     self.handle_music("main")
-    self.load_background("assets/maps/LayerTest")
+    self.load_background_foreground("assets/maps/LayerTest")
     
     self.game.ui.create_ui(
       x=-40, y=-30, sprite_width=95, sprite_height=32, 
@@ -233,63 +235,77 @@ class Environment:
       hover_range=3.5,
       render_order=0
     )
-  
-  def settings_menu(self):   
-    self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[0, 0],
-      x=self.game.screen_width / 7, y=500, sprite_width=32, sprite_height=32, 
-      centered=True, width=100, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      element_id="back_button",
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      callback=self.change_menu("main"),
-      hover_range=3.5,
-      render_order=0
-    )
-    self.game.ui.create_ui(
-      x=self.game.screen_width / 2.6, y=200, width=200, height=20, is_slider=True,
-      min_value=0.0, max_value=1.1, initial_value=self.volume,
-      step_size=0.01, element_id="volume_slider", 
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      variable=lambda value: self.update_slider_value("volume_slider", value),
-    )
     
-    self.game.ui.create_ui(
-      x=self.game.screen_width / 2, y=150,
-      element_id="volume_text", label="Volume",
-      font=self.fonts["fantasy"],
-    )
-    self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=325, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      dynamic_value=lambda: "Indicators: On" if self.game.entities.show_indicators else "Indicators: Off",
-      font=self.fonts["fantasy"],
-      font_size=16,
-      element_id="indicator_button",
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      callback=lambda: (setattr(self.game.entities, "show_indicators", not self.game.entities.show_indicators)),
-      hover_range=3.5,
-      render_order=0
-    )
-    self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=450, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      dynamic_value=lambda: "Particles: On" if self.game.particles.enable_particles else "Particles: Off",
-      font=self.fonts["fantasy"],
-      font_size=16,
-      element_id="particle_button",
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      callback=lambda: (setattr(self.game.particles, "enable_particles", not self.game.particles.enable_particles)),
-      hover_range=3.5,
-      render_order=0
-    )
+  def settings_menu(self):   
+      self.game.ui.create_ui(
+        sprite_sheet_path="ui_sheet", image_id=[0, 0],
+        x=self.game.screen_width / 7, y=500, sprite_width=32, sprite_height=32, 
+        centered=True, width=100, height=100,
+        alpha=True, is_button=True,
+        scale_multiplier=1.1,
+        element_id="back_button",
+        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+        callback=self.change_menu("main"),
+        hover_range=3.5,
+        render_order=0
+      )
+      self.game.ui.create_ui(
+        x=self.game.screen_width / 2.6, y=170, width=200, height=20, is_slider=True,
+        min_value=0.0, max_value=1.1, initial_value=self.volume,
+        step_size=0.01, element_id="volume_slider", 
+        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+        variable=lambda value: self.update_slider_value("volume_slider", value),
+      )
+      self.game.ui.create_ui(
+        x=self.game.screen_width / 2, y=120,
+        element_id="volume_text", label="Volume",
+        font=self.fonts["fantasy"],
+      )
+      self.game.ui.create_ui(
+        sprite_sheet_path="ui_sheet", image_id=[33, 0],
+        x=self.game.screen_width / 2, y=270, sprite_width=95, sprite_height=32, 
+        centered=True, width=200, height=100,
+        alpha=True, is_button=True,
+        scale_multiplier=1.1,
+        dynamic_value=lambda: "Indicators: On" if self.game.entities.show_indicators else "Indicators: Off",
+        font=self.fonts["fantasy"],
+        font_size=16,
+        element_id="indicator_button",
+        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+        callback=lambda: (setattr(self.game.entities, "show_indicators", not self.game.entities.show_indicators)),
+        hover_range=3.5,
+        render_order=0
+      )
+      self.game.ui.create_ui(
+        sprite_sheet_path="ui_sheet", image_id=[33, 0],
+        x=self.game.screen_width / 2, y=395, sprite_width=95, sprite_height=32, 
+        centered=True, width=200, height=100,
+        alpha=True, is_button=True,
+        scale_multiplier=1.1,
+        dynamic_value=lambda: "Particles: On" if self.game.particles.enable_particles else "Particles: Off",
+        font=self.fonts["fantasy"],
+        font_size=16,
+        element_id="particle_button",
+        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+        callback=lambda: (setattr(self.game.particles, "enable_particles", not self.game.particles.enable_particles)),
+        hover_range=3.5,
+        render_order=0
+      )
+      self.game.ui.create_ui(
+        sprite_sheet_path="ui_sheet", image_id=[33, 0],
+        x=self.game.screen_width / 2, y=520, sprite_width=95, sprite_height=32, 
+        centered=True, width=200, height=100,
+        alpha=True, is_button=True,
+        scale_multiplier=1.1,
+        dynamic_value=lambda: "Foreground: On" if self.game.foreground.enable_foreground else "Foreground: Off",
+        font=self.fonts["fantasy"],
+        font_size=16,
+        element_id="foreground_button",
+        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+        callback=lambda: (setattr(self.game.foreground, "enable_foreground", not self.game.foreground.enable_foreground)),
+        hover_range=3.5,
+        render_order=0
+      )
 
   def death_menu(self):
     self.game.ui.create_ui(
@@ -325,7 +341,7 @@ class Environment:
       self.handle_music("TestMap")
       #self.lighting = True
       self.load_map("TestMap")
-      self.load_background("assets/maps/LayerTest")
+      self.load_background_foreground("assets/maps/LayerTest")
       
       self.game.entities.reset()
       self.game.entities.create_entity("item", "Red Gem", 0, 500)
@@ -347,17 +363,18 @@ class Environment:
       self.menu_functions[self.menu]()
     self.last_menu = self.menu
 
-  def load_background(self, map_path):
-    if not self.menu_background_loaded:
+  def load_background_foreground(self, map_path):
+    if not self.menu_background_foreground_loaded:
       self.game.background.load(map_path)
-      self.menu_background_loaded = True
+      self.game.foreground.load(map_path)
+      self.menu_background_foreground_loaded = True
 
   def reset(self):
     if self.menu == "death":
       return 
 
     if self.menu in {"play", "main"} and self.last_menu not in {"settings", "select_menu"}:
-      self.menu_background_loaded = False
+      self.menu_background_foreground_loaded = False
       pg.mixer.stop()
 
     self.clear_ui()
