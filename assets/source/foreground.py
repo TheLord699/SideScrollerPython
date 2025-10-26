@@ -107,17 +107,16 @@ class Foreground:
             self.cam_y = self.game.player.cam_y
 
     def update_layers(self):
-        current_time = pg.time.get_ticks() * 0.001  # Current time in seconds
+        current_time = pg.time.get_ticks() * 0.001
         for fg in self.layers:
             if fg["type"] == "screen_overlay":
-                # Use actual time for smooth animation
                 fg["time"] = current_time
                 fg["offset_x"] += fg["scroll_x"]
                 fg["offset_y"] += fg["scroll_y"]
 
-                # Calculate bobbing offset using time for smooth animation
                 if fg["bob_amount"] > 0:
                     fg["bob_offset"] = math.sin(fg["time"] * fg["bob_speed"]) * fg["bob_amount"]
+                    
                 else:
                     fg["bob_offset"] = 0
 
@@ -137,7 +136,6 @@ class Foreground:
                 if "down" in directions:
                     fg["y"] += move_y
 
-                # Use modulo to prevent floating-point accumulation
                 if "horizontal" in fg["repeat_directions"]:
                     fg["offset_x"] %= fg["width"]
                     
@@ -163,45 +161,41 @@ class Foreground:
         repeat_horizontal = "horizontal" in fg["repeat_directions"]
         repeat_vertical = "vertical" in fg["repeat_directions"]
 
-        # Calculate the starting position with integer precision to avoid seams
         if repeat_horizontal:
-            # Use integer division to ensure perfect alignment
             start_x = -int(fg["offset_x"]) % width - width
+            
         else:
             start_x = int(fg["x"] - self.cam_x)
 
         if repeat_vertical:
-            # Use integer division to ensure perfect alignment
             start_y = -int(fg["offset_y"]) % height - height
+            
         else:
-            # Apply bobbing offset to the Y position for non-repeating layers
             start_y = int(fg["y"] + fg["bob_offset"] - self.cam_y)
 
-        # Calculate the number of tiles needed to cover the screen
         if repeat_horizontal:
             tiles_x = (self.game.screen_width // width) + 3
+        
         else:
             tiles_x = 1
 
         if repeat_vertical:
             tiles_y = (self.game.screen_height // height) + 3
+            
         else:
             tiles_y = 1
 
-        # Render with integer positions to avoid floating-point artifacts
         for x in range(tiles_x):
             for y in range(tiles_y):
                 draw_x = start_x + x * width
                 
-                # Apply bobbing to vertical position for repeating layers
                 if repeat_vertical:
                     draw_y = start_y + y * height + int(fg["bob_offset"])
+                    
                 else:
                     draw_y = start_y + y * height
                 
-                # Only draw if visible on screen
-                if (draw_x + width > 0 and draw_x < self.game.screen_width and 
-                    draw_y + height > 0 and draw_y < self.game.screen_height):
+                if (draw_x + width > 0 and draw_x < self.game.screen_width and draw_y + height > 0 and draw_y < self.game.screen_height):
                     self.game.screen.blit(alpha_image, (draw_x, draw_y))
 
     def render_world_effect(self, fg):
