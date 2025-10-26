@@ -7,14 +7,12 @@ import random
 class Foreground:
     def __init__(self, game):
         self.game = game
-        
         self.enable_foreground = False
         self.load_settings()
 
     def load_settings(self):
         self.cam_x = 0
         self.cam_y = 0
-        
         self.layers = []
 
     def load(self, map_path):
@@ -42,10 +40,9 @@ class Foreground:
                         original_width, original_height = image_surface.get_size()
                         width = fg_data.get("width", original_width)
                         height = fg_data.get("height", original_height)
-
                         if (width, height) != (original_width, original_height):
                             image_surface = pg.transform.scale(image_surface, (width, height))
-        
+                            
                     else:
                         print(f"Image file not found: {image_path}")
 
@@ -63,7 +60,8 @@ class Foreground:
                         layer.update({
                             "scroll_x": fg_data.get("scroll_speed_x", 0),
                             "scroll_y": fg_data.get("scroll_speed_y", 0),
-                            "loop": fg_data.get("loop", True),
+                            "repeat_directions": fg_data.get("repeat_directions", []),
+                            "move_directions": fg_data.get("move_directions", []),
                             "opacity": fg_data.get("opacity", 1.0),
                             "bob_amount": fg_data.get("bob_amount", 8),
                             "bob_speed": fg_data.get("bob_speed", 1.0),
@@ -109,24 +107,42 @@ class Foreground:
             self.cam_y = self.game.player.cam_y
 
     def update_layers(self):
-        dt = self.game.dt if hasattr(self.game, "dt") else 1
-        current_time = pg.time.get_ticks() * 0.001
-
+        current_time = pg.time.get_ticks() * 0.001  # Current time in seconds
         for fg in self.layers:
             if fg["type"] == "screen_overlay":
-                fg["time"] += dt
-                fg["offset_x"] += fg["scroll_x"] * dt
-                fg["offset_y"] += fg["scroll_y"] * dt
+                # Use actual time for smooth animation
+                fg["time"] = current_time
+                fg["offset_x"] += fg["scroll_x"]
+                fg["offset_y"] += fg["scroll_y"]
 
-                if fg["loop"]:
-                    fg["offset_x"] %= fg["width"]
-                    fg["offset_y"] %= fg["height"]
-
+                # Calculate bobbing offset using time for smooth animation
                 if fg["bob_amount"] > 0:
                     fg["bob_offset"] = math.sin(fg["time"] * fg["bob_speed"]) * fg["bob_amount"]
-        
                 else:
                     fg["bob_offset"] = 0
+
+                move_x = fg["scroll_x"]
+                move_y = fg["scroll_y"]
+                directions = fg.get("move_directions", [])
+
+                if "left" in directions:
+                    fg["x"] -= move_x
+                    
+                if "right" in directions:
+                    fg["x"] += move_x
+                    
+                if "up" in directions:
+                    fg["y"] -= move_y
+                    
+                if "down" in directions:
+                    fg["y"] += move_y
+
+                # Use modulo to prevent floating-point accumulation
+                if "horizontal" in fg["repeat_directions"]:
+                    fg["offset_x"] %= fg["width"]
+                    
+                if "vertical" in fg["repeat_directions"]:
+                    fg["offset_y"] %= fg["height"]
 
             elif fg["type"] == "world":
                 for p in fg["particles"]:
@@ -134,47 +150,59 @@ class Foreground:
                     p["x"] += math.cos(p["angle"]) * p["speed"]
                     p["y"] += math.sin(p["angle"]) * p["speed"]
 
-    def render(self):
-        for fg in self.layers:
-            if not fg["image"]:
-                continue
-
-            if fg["type"] == "screen_overlay":
-                self.render_screen_overlay(fg)
-
-            elif fg["type"] == "world":
-                self.render_world_effect(fg)
-
     def render_screen_overlay(self, fg):
         image = fg["image"]
         if not image:
             return
 
         width, height = fg["width"], fg["height"]
-        offset_x, offset_y = fg["offset_x"], fg["offset_y"]
-        fog_y = fg["y"] + fg["bob_offset"]
 
-        # Apply opacity
         alpha_image = image.copy()
-        alpha_value = int(fg["opacity"] * 255)
-        alpha_image.set_alpha(alpha_value)
+        alpha_image.set_alpha(int(fg["opacity"] * 255))
 
-        # Wrap offsets precisely
-        if fg["loop"]:
-            offset_x = math.fmod(offset_x, width)
-            offset_y = math.fmod(offset_y, height)
+        repeat_horizontal = "horizontal" in fg["repeat_directions"]
+        repeat_vertical = "vertical" in fg["repeat_directions"]
 
-        start_x = -offset_x
-        start_y = -offset_y
+        # Calculate the starting position with integer precision to avoid seams
+        if repeat_horizontal:
+            # Use integer division to ensure perfect alignment
+            start_x = -int(fg["offset_x"]) % width - width
+        else:
+            start_x = int(fg["x"] - self.cam_x)
 
-        tiles_x = self.game.screen_width // width + 2
-        tiles_y = self.game.screen_height // height + 2
+        if repeat_vertical:
+            # Use integer division to ensure perfect alignment
+            start_y = -int(fg["offset_y"]) % height - height
+        else:
+            # Apply bobbing offset to the Y position for non-repeating layers
+            start_y = int(fg["y"] + fg["bob_offset"] - self.cam_y)
 
+        # Calculate the number of tiles needed to cover the screen
+        if repeat_horizontal:
+            tiles_x = (self.game.screen_width // width) + 3
+        else:
+            tiles_x = 1
+
+        if repeat_vertical:
+            tiles_y = (self.game.screen_height // height) + 3
+        else:
+            tiles_y = 1
+
+        # Render with integer positions to avoid floating-point artifacts
         for x in range(tiles_x):
             for y in range(tiles_y):
-                draw_x = int(start_x + x * width)
-                draw_y = int(start_y + y * height + fog_y)
-                self.game.screen.blit(alpha_image, (draw_x, draw_y))
+                draw_x = start_x + x * width
+                
+                # Apply bobbing to vertical position for repeating layers
+                if repeat_vertical:
+                    draw_y = start_y + y * height + int(fg["bob_offset"])
+                else:
+                    draw_y = start_y + y * height
+                
+                # Only draw if visible on screen
+                if (draw_x + width > 0 and draw_x < self.game.screen_width and 
+                    draw_y + height > 0 and draw_y < self.game.screen_height):
+                    self.game.screen.blit(alpha_image, (draw_x, draw_y))
 
     def render_world_effect(self, fg):
         image = fg["image"]
@@ -182,8 +210,8 @@ class Foreground:
             return
 
         for p in fg["particles"]:
-            render_x = p["x"] - self.cam_x
-            render_y = p["y"] - self.cam_y
+            render_x = int(p["x"] - self.cam_x)
+            render_y = int(p["y"] - self.cam_y)
 
             glow = 150 + int(105 * math.sin(pg.time.get_ticks() * 0.002 + p["x"]))
             glow_image = image.copy()
@@ -191,10 +219,21 @@ class Foreground:
 
             self.game.screen.blit(glow_image, (render_x, render_y))
 
+    def render(self):
+        for fg in self.layers:
+            if not fg["image"]:
+                continue
+            
+            if fg["type"] == "screen_overlay":
+                self.render_screen_overlay(fg)
+                
+            elif fg["type"] == "world":
+                self.render_world_effect(fg)
+
     def update(self):
         if not self.enable_foreground:
             return
-
+        
         self.update_camera()
         self.update_layers()
         self.render()
