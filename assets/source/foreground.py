@@ -56,7 +56,7 @@ class Foreground:
                         "image": image_surface
                     }
 
-                    if layer_type == "screen_overlay":
+                    if layer_type == "overlay":
                         layer.update({
                             "scroll_x": fg_data.get("scroll_speed_x", 0),
                             "scroll_y": fg_data.get("scroll_speed_y", 0),
@@ -69,6 +69,22 @@ class Foreground:
                             "offset_y": 0,
                             "time": 0,
                             "bob_offset": 0
+                        })
+
+                    elif layer_type == "scroll_overlay":
+                        layer.update({
+                            "scroll_x": fg_data.get("scroll_speed_x", 0),
+                            "scroll_y": fg_data.get("scroll_speed_y", 0),
+                            "repeat_directions": fg_data.get("repeat_directions", []),
+                            "move_directions": fg_data.get("move_directions", []),
+                            "opacity": fg_data.get("opacity", 1.0),
+                            "bob_amount": fg_data.get("bob_amount", 8),
+                            "bob_speed": fg_data.get("bob_speed", 1.0),
+                            "offset_x": 0,
+                            "offset_y": 0,
+                            "time": 0,
+                            "bob_offset": 0,
+                            "camera_scroll_factor": fg_data.get("camera_scroll_factor", 0.5)
                         })
 
                     elif layer_type == "world":
@@ -109,8 +125,42 @@ class Foreground:
     def update_layers(self):
         current_time = pg.time.get_ticks() * 0.001
         for fg in self.layers:
-            if fg["type"] == "screen_overlay":
+            if fg["type"] == "overlay":
                 fg["time"] = current_time
+                fg["offset_x"] += fg["scroll_x"]
+                fg["offset_y"] += fg["scroll_y"]
+
+                if fg["bob_amount"] > 0:
+                    fg["bob_offset"] = math.sin(fg["time"] * fg["bob_speed"]) * fg["bob_amount"]
+                    
+                else:
+                    fg["bob_offset"] = 0
+
+                move_x = fg["scroll_x"]
+                move_y = fg["scroll_y"]
+                directions = fg.get("move_directions", [])
+
+                if "left" in directions:
+                    fg["x"] -= move_x
+                    
+                if "right" in directions:
+                    fg["x"] += move_x
+                    
+                if "up" in directions:
+                    fg["y"] -= move_y
+                    
+                if "down" in directions:
+                    fg["y"] += move_y
+
+                if "horizontal" in fg["repeat_directions"]:
+                    fg["offset_x"] %= fg["width"]
+                    
+                if "vertical" in fg["repeat_directions"]:
+                    fg["offset_y"] %= fg["height"]
+
+            elif fg["type"] == "scroll_overlay":
+                fg["time"] = current_time
+                
                 fg["offset_x"] += fg["scroll_x"]
                 fg["offset_y"] += fg["scroll_y"]
 
@@ -148,7 +198,7 @@ class Foreground:
                     p["x"] += math.cos(p["angle"]) * p["speed"]
                     p["y"] += math.sin(p["angle"]) * p["speed"]
 
-    def render_screen_overlay(self, fg):
+    def render_overlay(self, fg):
         image = fg["image"]
         if not image:
             return
@@ -198,6 +248,59 @@ class Foreground:
                 if (draw_x + width > 0 and draw_x < self.game.screen_width and draw_y + height > 0 and draw_y < self.game.screen_height):
                     self.game.screen.blit(alpha_image, (draw_x, draw_y))
 
+    def render_scroll_overlay(self, fg):
+        image = fg["image"]
+        if not image:
+            return
+
+        width, height = fg["width"], fg["height"]
+        camera_scroll_factor = fg.get("camera_scroll_factor", 0.5)
+
+        alpha_image = image.copy()
+        alpha_image.set_alpha(int(fg["opacity"] * 255))
+
+        repeat_horizontal = "horizontal" in fg["repeat_directions"]
+        repeat_vertical = "vertical" in fg["repeat_directions"]
+
+        camera_offset_x = int(self.cam_x * camera_scroll_factor)
+        camera_offset_y = int(self.cam_y * camera_scroll_factor)
+
+        if repeat_horizontal:
+            start_x = -int(fg["offset_x"] + camera_offset_x) % width - width
+            
+        else:
+            start_x = int(fg["x"] + camera_offset_x)
+
+        if repeat_vertical:
+            start_y = -int(fg["offset_y"] + camera_offset_y) % height - height
+            
+        else:
+            start_y = int(fg["y"] + fg["bob_offset"] + camera_offset_y)
+
+        if repeat_horizontal:
+            tiles_x = (self.game.screen_width // width) + 3
+            
+        else:
+            tiles_x = 1
+
+        if repeat_vertical:
+            tiles_y = (self.game.screen_height // height) + 3
+            
+        else:
+            tiles_y = 1
+
+        for x in range(tiles_x):
+            for y in range(tiles_y):
+                draw_x = start_x + x * width
+                if repeat_vertical:
+                    draw_y = start_y + y * height + int(fg["bob_offset"])
+                else:
+                    draw_y = start_y + y * height
+                
+                if (draw_x + width > 0 and draw_x < self.game.screen_width and 
+                    draw_y + height > 0 and draw_y < self.game.screen_height):
+                    self.game.screen.blit(alpha_image, (draw_x, draw_y))
+
     def render_world_effect(self, fg):
         image = fg["image"]
         if not image:
@@ -218,8 +321,11 @@ class Foreground:
             if not fg["image"]:
                 continue
             
-            if fg["type"] == "screen_overlay":
-                self.render_screen_overlay(fg)
+            if fg["type"] == "overlay":
+                self.render_overlay(fg)
+                
+            elif fg["type"] == "scroll_overlay":
+                self.render_scroll_overlay(fg)
                 
             elif fg["type"] == "world":
                 self.render_world_effect(fg)
