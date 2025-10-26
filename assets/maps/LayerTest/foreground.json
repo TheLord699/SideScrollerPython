@@ -1,0 +1,17 @@
+{
+    "1": {
+        "type": "screen_overlay",
+        "x": 0,
+        "y": 0,
+        "width": 800,
+        "height": 500,
+        "layer": 1,
+        "scroll_speed_x": 0.2,
+        "scroll_speed_y": 0,
+        "bob_amount": 100,
+        "bob_speed": 0.002,
+        "loop": true,
+        "opacity": 0.1,
+        "image": "assets/sprites/maps/foregrounds/fog1.png"
+    }
+}
