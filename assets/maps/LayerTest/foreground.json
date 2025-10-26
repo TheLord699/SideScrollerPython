@@ -4,7 +4,7 @@
         "x": 0,
         "y": 0,
         "width": 800,
-        "height": 200,
+        "height": 400,
         "layer": 1,
         "scroll_speed_x": 0.2,
         "scroll_speed_y": 0,
@@ -12,7 +12,7 @@
         "bob_speed": 0.1,
         "repeat_directions":["horizontal", "vertical"],
         "move_directions":["left"],
-        "opacity": 0.1,
+        "opacity": 0.05,
         "image": "assets/sprites/maps/foregrounds/fog1.png"
     }
 }
