@@ -87,8 +87,6 @@ class Player:
         self.state_frames = {
             "idle": {"frames": 6, "speed": 0.15},
             "walking": {"frames": 8, "speed": 0.2},
-            "attacking1": {"frames": 6}, # Gonna need to change when weapon system fully implemented
-            "attacking2": {"frames": 6},
             "jump": {"frames": 3, "speed": 0.15},
             "hurt": {"frames": 4, "speed": 0.10}, # 0.10
             "death": {"frames": 4, "speed": 0.15},
@@ -189,6 +187,80 @@ class Player:
                 
                 self.frames[state].append(frame_image)
                 self.flipped_frames[state].append(flipped_image)
+    
+    def load_weapon_animations(self):
+        if self.equipped_weapon not in self.weapon_info:
+            return
+        
+        weapon_data = self.weapon_info[self.equipped_weapon]
+        first_sequence_state = f"attacking{self.equipped_weapon}1"
+        
+        if first_sequence_state in self.frames and self.frames[first_sequence_state]:
+            return
+        
+        for sequence in range(1, weapon_data.get("sequence", 1) + 1):
+            state_name = f"attacking{self.equipped_weapon}{sequence}"
+            frames_count = weapon_data["frames"][sequence - 1]
+            
+            self.frames[state_name] = []
+            self.flipped_frames[state_name] = []
+            
+            sheet_paths = [
+                f"assets/sprites/player/weapons/attacking_{self.equipped_weapon}{sequence}.png",
+                f"assets/sprites/player/weapons/{self.equipped_weapon}_attack{sequence}.png",
+                f"assets/sprites/player/weapons/{self.equipped_weapon}{sequence}.png"
+            ]
+            
+            sheet = None
+            for sheet_path in sheet_paths:
+                try:
+                    sheet = pg.image.load(sheet_path).convert_alpha()
+                    #print(f"Successfully loaded weapon animation: {sheet_path}")
+                    break
+                
+                except:
+                    continue
+            
+            if sheet is None:
+                fallback_paths = [
+                    f"assets/sprites/player/attacking_animation.png",
+                    f"assets/sprites/player/attacking{sequence}_animation.png"
+                ]
+                
+                for fallback_path in fallback_paths:
+                    try:
+                        sheet = pg.image.load(fallback_path).convert_alpha()
+                        print(f"Using fallback animation: {fallback_path}")
+                        break
+                    
+                    except:
+                        continue
+            
+            if sheet is None:
+                print(f"Failed to load any animation for {state_name}")
+                continue
+            
+            scaled_width = self.sheet_width * self.scale_factor
+            scaled_height = self.sheet_height * self.scale_factor
+            
+            for frame_index in range(frames_count):
+                frame_rect = pg.Rect(
+                    frame_index * self.sheet_width,
+                    0,
+                    self.sheet_width,
+                    self.sheet_height
+                )
+                
+                frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
+                frame_image.blit(sheet, (0, 0), frame_rect)
+                frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
+                
+                flipped_image = pg.transform.flip(frame_image, True, False)
+                
+                self.frames[state_name].append(frame_image)
+                self.flipped_frames[state_name].append(flipped_image)
+        
+        print(f"Loaded animations for {self.equipped_weapon}")
 
     def update_state(self):     
         for sound_group in self.sounds.values():
@@ -928,7 +1000,7 @@ class Player:
             return
         
         if self.attacking:
-            self.current_state = f"attacking{self.attack_sequence}"
+            self.current_state = f"attacking{self.equipped_weapon}{self.attack_sequence}"
             
         elif self.vel_x != 0:
             self.current_state = "walking"
@@ -944,31 +1016,34 @@ class Player:
 
     def advance_frame(self):
         if self.current_state.startswith("attacking"):
-            if self.equipped_weapon not in self.weapon_info: # this is dumb(maybe should make current weapon speed part of current state speed?)
+            weapon_data = self.weapon_info.get(self.equipped_weapon)
+            if not weapon_data:
                 self.attacking = False
                 return
-                
-            weapon_data = self.weapon_info[self.equipped_weapon]
+
             frame_delay = int(1 / weapon_data["speed"])
+            frames_for_attack = weapon_data["frames"][self.attack_sequence - 1]
             
         else:
             frame_delay = int(1 / self.state_frames[self.current_state]["speed"])
-            
-        self.animation_timer += 1
+            frames_for_attack = self.state_frames[self.current_state]["frames"]
 
+        self.animation_timer += 1
         if self.animation_timer < frame_delay:
             return
 
         self.animation_timer = 0
-        self.current_frame = (self.current_frame + 1) % len(self.frames[self.current_state])
 
-        if self.current_state.startswith("attacking") and self.current_frame == len(self.frames[self.current_state]) - 1:
-            self.attacking = False
-            
-            max_sequence = weapon_data.get("sequence", 1)
-            self.attack_sequence = (self.attack_sequence % max_sequence) + 1
-            
-            self.active_melee_ids.clear()
+        self.current_frame = (self.current_frame + 1) % frames_for_attack
+
+        if self.current_state.startswith("attacking"):
+            if self.current_frame == frames_for_attack - 1:
+                self.attacking = False
+
+                max_sequence = weapon_data.get("sequence", 1)
+                self.attack_sequence = (self.attack_sequence % max_sequence) + 1
+
+                self.active_melee_ids.clear()
 
     def handle_controls(self):
         keys = pg.key.get_pressed()
@@ -1419,6 +1494,7 @@ class Player:
             self.render()
             self.render_hitboxes()
             self.handle_free_cam()
+            self.load_weapon_animations()
             
         else:
             if hasattr(self, "settings_loaded"):
