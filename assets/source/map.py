@@ -277,8 +277,8 @@ class Map:
         
         screen_rect = self.game.screen.get_rect()
 
-        font_small = pg.font.SysFont('Arial', 10)
-        font_medium = pg.font.SysFont('Arial', 12)
+        font_small = pg.font.SysFont("Arial", 10)
+        font_medium = pg.font.SysFont("Arial", 12)
 
         cell_size = self.grid_cell_size
         offset_x = self.grid_offset_x - self.cam_x
@@ -325,7 +325,9 @@ class Map:
                     pg.draw.rect(self.game.screen, (0, 255, 0), rect, 2)
 
                     text = font_medium.render(str(tile_id), True, (255, 255, 255))
-                    self.game.screen.blit(text, (rect.x + 2, rect.y + 2))
+                    text_width = text.get_width()
+                    
+                    self.game.screen.blit(text, (rect.right - text_width, rect.y + 2))
 
             search_area = hitbox.inflate(padding * 2, padding * 2)
             search_rect = pg.Rect(

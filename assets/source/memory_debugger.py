@@ -292,7 +292,7 @@ class MemoryDebugger:
                     self.drag_start_scroll = self.scroll_offsets[self.menu_state]
                     return
 
-                if panel_x <= mx <= panel_x + panel_width and panel_y <= my <= panel_y + panel_height:
+                if panel_x <= mx <= panel_x + panel_width and panel_y <= my <= panel_y + panel_height: # some sort of issue when clicking really far scrolled down
                     rel_x = mx - panel_x
                     rel_y = my - panel_y
                     
@@ -397,6 +397,9 @@ class MemoryDebugger:
                 
             elif event.key == pg.K_DOWN:
                 self.handle_scroll("down")
+            
+            elif event.key == pg.K_0:
+                self.scroll_x_amount = 0
             
             elif event.key == pg.K_LEFT:
                 self.scroll_x_amount += 50
@@ -523,7 +526,8 @@ class MemoryDebugger:
             ('Player', self.game.player),
             ('Entities', self.game.entities),
             ('Background', self.game.background),
-            ('Particles', self.game.particles)
+            ('Particles', self.game.particles),
+            ('Foreground', self.game.foreground),
         ]
 
         def find_surfaces(obj):
@@ -581,7 +585,9 @@ class MemoryDebugger:
     def get_memory_info(self):
         info = []
         info.append("=== MEMORY DEBUGGER ===")
-        info.append("Press ` or TAB for terminal. Scroll with mouse or keys. Press ESC to close.\n")
+        info.append("Press ` or TAB for terminal. Press the 0 key to reset horizontal scroll.")
+        info.append("Scroll with mouse or arrow keys. Press ESC to close.\n")
+        info.append("")
         
         ram_info = self.get_ram_usage()
         if ram_info:
