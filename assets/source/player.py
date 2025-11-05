@@ -190,6 +190,11 @@ class Player:
     
     def load_weapon_animations(self):
         if self.equipped_weapon not in self.weapon_info:
+            for state in list(self.frames.keys()):
+                if state.startswith("attacking"):
+                    del self.frames[state]
+                    del self.flipped_frames[state]
+                    
             return
         
         weapon_data = self.weapon_info[self.equipped_weapon]
@@ -215,7 +220,6 @@ class Player:
             for sheet_path in sheet_paths:
                 try:
                     sheet = pg.image.load(sheet_path).convert_alpha()
-                    #print(f"Successfully loaded weapon animation: {sheet_path}")
                     break
                 
                 except:
