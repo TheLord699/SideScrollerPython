@@ -32,6 +32,7 @@ class Map:
         
         self.tile_sheets = []
         self.all_tile_surfaces = []
+        
         self.tile_attributes = {}
         self.non_empty_cells = set()
 
