@@ -282,132 +282,133 @@ class MemoryDebugger:
         scroll_ratio = self.scroll_offsets[self.menu_state] / max(1, max_scroll)
         scrollbar_y = panel_y + scroll_ratio * (panel_height - scrollbar_height)
 
-        if event.type == pg.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                mx, my = event.pos
-                
-                if scrollbar_x <= mx <= scrollbar_x + 8 and scrollbar_y <= my <= scrollbar_y + scrollbar_height:
-                    self.dragging_scrollbar = True
-                    self.drag_offset_y = my - scrollbar_y
-                    self.drag_start_scroll = self.scroll_offsets[self.menu_state]
-                    return
+        match event.type:
+            case pg.MOUSEBUTTONDOWN:
+                if event.button == 4:
+                    self.handle_scroll("up")
 
-                if panel_x <= mx <= panel_x + panel_width and panel_y <= my <= panel_y + panel_height: # some sort of issue when clicking really far scrolled down
-                    rel_x = mx - panel_x
-                    rel_y = my - panel_y
-                    
-                    if self.menu_state == "main":
-                        clicked_line = rel_y // 18 + self.scroll_offsets[self.menu_state]
+                elif event.button == 5:
+                    self.handle_scroll("down")
 
-                        objects_start = None
-                        for idx, line in enumerate(self.memory_info):
-                            if line.strip() == "Game Objects Count:":
-                                objects_start = idx
-                                break
-                            
-                        if objects_start and objects_start + 1 <= clicked_line <= objects_start + 4:
-                            self.selected_object = self.memory_info[clicked_line].strip().split(":")[0].strip()
-                            self.menu_state = "object_info"
+                elif event.button == 3:
+                    if self.menu_state != "main":
+                        self.menu_state = "main"
+                        self.selected_group = None
+                        self.selected_storage = None
+                        self.selected_object = None
+                        self.scroll_offsets[self.menu_state] = 0
+
+                if event.button == 1:
+                    mx, my = event.pos
+
+                    if scrollbar_x <= mx <= scrollbar_x + 8 and scrollbar_y <= my <= scrollbar_y + scrollbar_height:
+                        self.dragging_scrollbar = True
+                        self.drag_offset_y = my - scrollbar_y
+                        self.drag_start_scroll = self.scroll_offsets[self.menu_state]
+                        return
+
+                    if panel_x <= mx <= panel_x + panel_width and panel_y <= my <= panel_y + panel_height: # some sort of issue when clicking really far scrolled down
+                        rel_x = mx - panel_x
+                        rel_y = my - panel_y
+
+                        if self.menu_state == "main":
+                            clicked_line = rel_y // 18 + self.scroll_offsets[self.menu_state]
+
+                            objects_start = None
+                            for idx, line in enumerate(self.memory_info):
+                                if line.strip() == "Game Objects Count:":
+                                    objects_start = idx
+                                    break
+
+                            if objects_start and objects_start + 1 <= clicked_line <= objects_start + 4:
+                                self.selected_object = self.memory_info[clicked_line].strip().split(":")[0].strip()
+                                self.menu_state = "object_info"
+                                self.scroll_offsets[self.menu_state] = 0
+                                return
+
+                            size_dist_start = None
+                            for idx, line in enumerate(self.memory_info):
+                                if line.strip() == "Image Size Distribution:":
+                                    size_dist_start = idx
+                                    break
+
+                            if size_dist_start and size_dist_start < clicked_line < size_dist_start + 12:
+                                index = clicked_line - (size_dist_start + 1)
+                                size_groups = self.collect_size_groups()
+                                size_keys = sorted(size_groups.keys(), key=lambda k: len(size_groups[k]), reverse=True)
+                                if index < len(size_keys):
+                                    self.selected_group = size_keys[index]
+                                    self.menu_state = "size_group"
+                                    self.scroll_offsets[self.menu_state] = 0
+                                    self.preview_cache.clear()
+                                    return
+
+                            storage_start = None
+                            for idx, line in enumerate(self.memory_info):
+                                if line.strip() == "Storage Locations:":
+                                    storage_start = idx
+                                    break
+
+                            if storage_start and storage_start < clicked_line < storage_start + 100:
+                                index = clicked_line - (storage_start + 1)
+                                storage_locations = self.collect_storage_locations()
+                                storage_keys = list(storage_locations.keys())
+                                if 0 <= index < len(storage_keys):
+                                    self.selected_storage = storage_keys[index]
+                                    self.menu_state = "storage_location"
+                                    self.scroll_offsets[self.menu_state] = 0
+                                    self.preview_cache.clear()
+                                    return
+
+            case pg.MOUSEBUTTONUP:
+                if event.button == 1:
+                    self.dragging_scrollbar = False
+
+            case pg.MOUSEMOTION:
+                if self.dragging_scrollbar:
+                    my = event.pos[1]
+                    relative_y = my - panel_y - self.drag_offset_y
+                    relative_y = max(0, min(relative_y, panel_height - scrollbar_height))
+
+                    if max_scroll > 0:
+                        scroll_ratio = relative_y / (panel_height - scrollbar_height)
+                        self.scroll_offsets[self.menu_state] = int(scroll_ratio * max_scroll)
+
+            case pg.KEYDOWN:
+                match event.key:
+                    case pg.K_ESCAPE:
+                        if self.terminal_active:
+                            self.toggle_terminal()
+
+                        elif self.menu_state != "main":
+                            self.menu_state = "main"
+                            self.selected_group = None
+                            self.selected_storage = None
+                            self.selected_object = None
                             self.scroll_offsets[self.menu_state] = 0
-                            return
 
-                        size_dist_start = None
-                        for idx, line in enumerate(self.memory_info):
-                            if line.strip() == "Image Size Distribution:":
-                                size_dist_start = idx
-                                break
-                            
-                        if size_dist_start and size_dist_start < clicked_line < size_dist_start + 12:
-                            index = clicked_line - (size_dist_start + 1)
-                            size_groups = self.collect_size_groups()
-                            size_keys = sorted(size_groups.keys(), key=lambda k: len(size_groups[k]), reverse=True)
-                            if index < len(size_keys):
-                                self.selected_group = size_keys[index]
-                                self.menu_state = "size_group"
-                                self.scroll_offsets[self.menu_state] = 0
-                                self.preview_cache.clear()
-                                return
+                        else:
+                            self.toggle()
 
-                        storage_start = None
-                        for idx, line in enumerate(self.memory_info):
-                            if line.strip() == "Storage Locations:":
-                                storage_start = idx
-                                break
-                            
-                        if storage_start and storage_start < clicked_line < storage_start + 100:
-                            index = clicked_line - (storage_start + 1)
-                            storage_locations = self.collect_storage_locations()
-                            storage_keys = list(storage_locations.keys())
-                            if 0 <= index < len(storage_keys):
-                                self.selected_storage = storage_keys[index]
-                                self.menu_state = "storage_location"
-                                self.scroll_offsets[self.menu_state] = 0
-                                self.preview_cache.clear()
-                                return
+                    case pg.K_BACKQUOTE | pg.K_TAB:
+                        self.toggle_terminal()
 
-        elif event.type == pg.MOUSEBUTTONUP:
-            if event.button == 1:
-                self.dragging_scrollbar = False
+                    case pg.K_UP:
+                        self.handle_scroll("up")
 
-        elif event.type == pg.MOUSEMOTION:
-            if self.dragging_scrollbar:
-                my = event.pos[1]
-                relative_y = my - panel_y - self.drag_offset_y
-                relative_y = max(0, min(relative_y, panel_height - scrollbar_height))
-                
-                if max_scroll > 0:
-                    scroll_ratio = relative_y / (panel_height - scrollbar_height)
-                    self.scroll_offsets[self.menu_state] = int(scroll_ratio * max_scroll)
+                    case pg.K_DOWN:
+                        self.handle_scroll("down")
 
-        if event.type == pg.MOUSEBUTTONDOWN:
-            if event.button == 4:
-                self.handle_scroll("up")
-                
-            elif event.button == 5:
-                self.handle_scroll("down")
-                
-            elif event.button == 3:
-                if self.menu_state != "main":
-                    self.menu_state = "main"
-                    self.selected_group = None
-                    self.selected_storage = None
-                    self.selected_object = None
-                    self.scroll_offsets[self.menu_state] = 0
+                    case pg.K_0:
+                        self.scroll_x_amount = 0
 
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_ESCAPE:
-                if self.terminal_active:
-                    self.toggle_terminal()
-                    
-                elif self.menu_state != "main":
-                    self.menu_state = "main"
-                    self.selected_group = None
-                    self.selected_storage = None
-                    self.selected_object = None
-                    self.scroll_offsets[self.menu_state] = 0
-                    
-                else:
-                    self.toggle()
-                    
-            elif event.key == pg.K_BACKQUOTE or event.key == pg.K_TAB:
-                self.toggle_terminal()
-                
-            elif event.key == pg.K_UP:
-                self.handle_scroll("up")
-                
-            elif event.key == pg.K_DOWN:
-                self.handle_scroll("down")
-            
-            elif event.key == pg.K_0:
-                self.scroll_x_amount = 0
-            
-            elif event.key == pg.K_LEFT:
-                self.scroll_x_amount += 50
-                
-            elif event.key == pg.K_RIGHT:
-                self.scroll_x_amount -= 50
-            
-            self.scroll_x_amount = -max(-min(self.scroll_x_amount, 200), 0)
+                    case pg.K_LEFT:
+                        self.scroll_x_amount += 50
+
+                    case pg.K_RIGHT:
+                        self.scroll_x_amount -= 50
+
+                self.scroll_x_amount = -max(-min(self.scroll_x_amount, 200), 0)
 
     def visible_lines(self):
         panel_height = min(400, self.game.screen_height - 40)
@@ -512,6 +513,7 @@ class MemoryDebugger:
             info.append("")
             for i, particle in enumerate(getattr(self.game.particles, 'particles', [])[:20]):
                 info.append(f"Particle {i}: {str(particle)}")
+
         return info
 
     def collect_all_surfaces(self):
@@ -707,6 +709,11 @@ class MemoryDebugger:
             panel_title = f"Images of size {self.selected_group} (ESC or Right Click to go back)"
             title_surf = self.font.render(panel_title, True, (255, 255, 255))
             panel.blit(title_surf, (10, 10))
+
+            amount = str(len(self.get_current_group_surfaces()))
+
+            amount_surf = self.font.render(f"Amount: {amount}", True, (255, 255, 255))
+            panel.blit(amount_surf, (500, 10))
 
             y_offset = 40
             thumb_size = 64
