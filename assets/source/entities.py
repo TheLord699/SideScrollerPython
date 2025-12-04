@@ -218,8 +218,16 @@ class Entities:
 
         if entity["entity_type"] in {"npc", "enemy"}:
             if entity["health"] <= 0:
+                #self.drop_item(entity) # Issue where dropped items arent just items in the code, so they have extra attributes that they shouldnt have
+                # also loads the items tile sheet again?
                 self.death_particles(entity)
                 self.entities.remove(entity)
+    
+    def drop_item(self, entity):
+        items = ["Red Gem", "Potion", "Gold"]
+        item = random.choices(items, weights=[0.2, 0.5, 0.3], k=1)[0]
+        
+        self.game.entities.create_entity("item", item, entity["x"], entity["y"])
     
     def update_animation(self, entity):
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
