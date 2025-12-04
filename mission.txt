@@ -24,6 +24,9 @@
 
 -want to add a shop
 
+-need to rewrite image loading to load from sprite class and sound in a sound class, so that they're centralized and less prone to memory leaks, I also 
+have rewrite all objects/entities to inherit or relate to an ECS so that i dont have to keep rewriting core components like collisions, animations and rendering in general.
+
 
 Do immediately:
 
