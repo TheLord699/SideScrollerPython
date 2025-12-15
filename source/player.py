@@ -77,7 +77,7 @@ class Player:
         self.dialogue_with = None
 
         self.in_map = False
-        self.map_scale_factor = 1
+        self.map_scale_factor = 5
         self.map_offset_x = 0
         self.map_offset_y = 0
         self.map_dragging = False
