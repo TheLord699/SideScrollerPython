@@ -1,7 +1,6 @@
 import pygame as pg
 import numpy as np
 import random
-import json
 import math
 import os
 
@@ -76,6 +75,12 @@ class Player:
         self.in_dialogue = False
         self.dialogue_index = 0
         self.dialogue_with = None
+
+        self.in_map = False
+        self.map_scale_factor = 5
+        self.map_offset_x = 0
+        self.map_offset_y = 0
+        self.map_dragging = False
             
         self.current_state = "idle"
         self.direction = "right"
@@ -190,11 +195,6 @@ class Player:
     
     def load_weapon_animations(self):
         if self.equipped_weapon not in self.weapon_info:
-            for state in list(self.frames.keys()):
-                if state.startswith("attacking"):
-                    del self.frames[state]
-                    del self.flipped_frames[state]
-                    
             return
         
         weapon_data = self.weapon_info[self.equipped_weapon]
@@ -220,6 +220,7 @@ class Player:
             for sheet_path in sheet_paths:
                 try:
                     sheet = pg.image.load(sheet_path).convert_alpha()
+                    #print(f"Successfully loaded weapon animation: {sheet_path}")
                     break
                 
                 except:
@@ -280,7 +281,7 @@ class Player:
                     volume = sound_dict["volume"]
                     sound.set_volume(self.game.environment.volume / 10 * volume)
 
-        self.current_health = math.floor(self.current_health * 2) / 2  
+        self.current_health = math.floor(self.current_health * 2) / 2  # rounds to nearest half heart
         self.current_health = min(self.current_health, self.max_health)
 
         self.x += self.vel_x
@@ -1071,7 +1072,7 @@ class Player:
 
             if self.joystick.get_numhats() > 0:
                 controller["dpad"] = self.joystick.get_hat(0)
-                
+
             else:
                 controller["dpad"] = (0, 0)
 
@@ -1080,19 +1081,22 @@ class Player:
 
         if self.in_inventory:
             self.handle_inventory_controls(keys, controller)
-            
+
         else:
             self.handle_normal_controls(keys, mouse_buttons, controller)
+
+        if self.in_map:
+            self.handle_map_controls(mouse_buttons)
 
         self.handle_events(controller)
 
     def handle_inventory_controls(self, keys, controller):
         if not getattr(self, "sliding", False):
             self.vel_x = 0
-            
+
         if keys[pg.K_q] or (self.joystick and controller.get("X")):
             self.drop_item()
-        
+
         if keys[pg.K_e] or (self.joystick and controller.get("A")):
             self.consume_item()
 
@@ -1107,68 +1111,106 @@ class Player:
     def handle_movement(self, keys, controller):
         left_input = keys[pg.K_a] or (self.joystick and controller.get("left_x") < -0.5)
         right_input = keys[pg.K_d] or (self.joystick and controller.get("left_x") > 0.5)
-        
+
         if getattr(self, "sliding", False):
             if left_input and not right_input and not self.blocked_horizontally:
                 self.vel_x = -self.speed
                 self.direction = "left"
-                
+
             elif right_input and not left_input and not self.blocked_horizontally:
                 self.vel_x = self.speed
                 self.direction = "right"
-                
+
         else:
             if left_input and right_input:
                 self.vel_x = 0
-                
+
             elif left_input and not self.blocked_horizontally:
                 self.vel_x = -self.speed
                 self.direction = "left"
-                
+
             elif right_input and not self.blocked_horizontally:
                 self.vel_x = self.speed
                 self.direction = "right"
-                
+
             else:
                 self.vel_x = 0
 
     def handle_actions(self, keys, mouse_buttons, controller):
-        jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
-        if jump_input and self.on_ground:
-            self.jump()
-        
-        interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
-        if interact_input:
-            self.interact_with_entity()
-        
-        attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
-        if attack_input and self.current_state != "hurt":
-            self.start_attack()
-        
-        if mouse_buttons[0] and self.current_state != "hurt":
-            # self.shoot_ray((self.x - self.cam_x, self.y - self.cam_y), pg.mouse.get_pos())
-            pass
-        
-        pause_input = keys[pg.K_ESCAPE] or (self.joystick and controller.get("start"))
-        if pause_input:
-            pass
+            jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
+            if jump_input and self.on_ground:
+                self.jump()
+
+            interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
+            if interact_input:
+                self.interact_with_entity()
+
+            attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
+            if attack_input and self.current_state != "hurt":
+                self.start_attack()
+
+            if mouse_buttons[0] and self.current_state != "hurt":
+                pass
+
+            pause_input = keys[pg.K_ESCAPE] or (self.joystick and controller.get("start"))
+            if pause_input:
+                pass
+
+    def handle_map_controls(self, mouse_buttons):
+        mouse_pos = pg.mouse.get_pos()
+
+        for event in self.game.events:
+            if event.type == pg.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    self.map_dragging = True
+                    self.drag_start_pos = mouse_pos
+                    self.drag_start_offset = (self.map_offset_x, self.map_offset_y)
+
+                if event.button == 4:
+                    mouse_world_x = (mouse_pos[0] - self.game.screen_width // 2 - self.map_offset_x) / self.map_scale_factor
+                    mouse_world_y = (mouse_pos[1] - self.game.screen_height // 2 - self.map_offset_y) / self.map_scale_factor
+
+                    self.map_scale_factor = min(int(self.map_scale_factor) + 1, 10)
+
+                    self.map_offset_x = mouse_pos[0] - self.game.screen_width // 2 - mouse_world_x * self.map_scale_factor
+                    self.map_offset_y = mouse_pos[1] - self.game.screen_height // 2 - mouse_world_y * self.map_scale_factor
+
+                elif event.button == 5:
+                    mouse_world_x = (mouse_pos[0] - self.game.screen_width // 2 - self.map_offset_x) / self.map_scale_factor
+                    mouse_world_y = (mouse_pos[1] - self.game.screen_height // 2 - self.map_offset_y) / self.map_scale_factor
+
+                    self.map_scale_factor = max(int(self.map_scale_factor) - 1, 1)
+
+                    self.map_offset_x = mouse_pos[0] - self.game.screen_width // 2 - mouse_world_x * self.map_scale_factor
+                    self.map_offset_y = mouse_pos[1] - self.game.screen_height // 2 - mouse_world_y * self.map_scale_factor
+
+            elif event.type == pg.MOUSEBUTTONUP:
+                if event.button == 1:
+                    self.map_dragging = False
+
+            elif event.type == pg.MOUSEMOTION:
+                if self.map_dragging:
+                    dx = mouse_pos[0] - self.drag_start_pos[0]
+                    dy = mouse_pos[1] - self.drag_start_pos[1]
+                    self.map_offset_x = self.drag_start_offset[0] + dx
+                    self.map_offset_y = self.drag_start_offset[1] + dy
 
     def handle_events(self, controller):
         for event in self.game.events:
             match event.type:
                 case pg.KEYDOWN | pg.JOYBUTTONDOWN:
                     self.handle_button_down(event, controller)
-                    
+
                 case pg.KEYUP | pg.JOYBUTTONUP:
                     self.handle_button_up(event)
 
     def handle_button_down(self, event, controller):
         button_pressed = event.type == pg.JOYBUTTONDOWN
         button = event.button if button_pressed else None
-        
+
         if self.in_dialogue:
             self.handle_dialogue_input(event, button_pressed, button)
-            
+
         else:
             self.handle_gameplay_input(event, button_pressed, button)
 
@@ -1183,20 +1225,30 @@ class Player:
 
                 talk_sound = random.choice(self.sounds["talking"])
                 talk_sound["sound"].play()
-                
+
             else:
                 self.dialogue_just_opened = False
 
     def handle_gameplay_input(self, event, button_pressed, button):
         if (event.type == pg.KEYDOWN and event.key == pg.K_i) or (button_pressed and button == 6):
             self.in_inventory = not self.in_inventory
-            
+
             if self.in_inventory:
                 self.sounds["inventory"]["open"]["sound"].play()
-                
+
             else:
                 self.sounds["inventory"]["close"]["sound"].play()
-        
+
+        if (event.type == pg.KEYDOWN and event.key == pg.K_t) or (button_pressed and button == 5):
+            self.in_map = not self.in_map
+            print(self.in_map)
+
+            if self.in_map:
+                self.sounds["inventory"]["open"]["sound"].play()
+
+            else:
+                self.sounds["inventory"]["close"]["sound"].play()
+
         if (event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT) or (button_pressed and button == 4):
             if not self.in_inventory:
                 self.dash()
@@ -1251,6 +1303,7 @@ class Player:
 
     def dash(self):
         current_time = pg.time.get_ticks()
+
         if hasattr(self, "last_dash_time") and current_time - self.last_dash_time < 500:
             return
 
@@ -1383,13 +1436,13 @@ class Player:
         # can change the target here
         if self.free_cam:
             return
-        
+
         target_cam_x = self.x - self.game.screen_width / 2
         target_cam_y = self.y - self.game.screen_height / 1.5 # 1.5
 
         self.cam_x += (target_cam_x - self.cam_x) * self.camera_smoothing_factor
         self.cam_y += (target_cam_y - self.cam_y) * self.camera_smoothing_factor
-        
+
         self.cam_x = max(min(self.cam_x, target_cam_x + self.game.screen_width / 4), target_cam_x - self.game.screen_width / 4)
         self.cam_y = max(min(self.cam_y, target_cam_y + self.game.screen_height / 4), target_cam_y - self.game.screen_height / 7)
 
@@ -1453,7 +1506,143 @@ class Player:
         
         self.x -= normalized_direction[0] * force_magnitude
         self.y -= normalized_direction[1] * force_magnitude
-    
+
+
+    def render_map(self):
+        if not self.in_map:
+            self.game.ui.remove_ui_element("map_bg")
+
+            element_indices_to_remove = []
+            for element_index, ui_element in enumerate(self.game.ui.ui_elements):
+                element_id = ui_element.get("id")
+                if isinstance(element_id, str) and element_id.startswith("map_tile_"):
+                    element_indices_to_remove.append(element_index)
+
+            for element_index in reversed(element_indices_to_remove):
+                self.game.ui.ui_elements.pop(element_index)
+
+            return
+
+        element_lookup = {}
+        for ui_element in self.game.ui.ui_elements:
+            element_id = ui_element.get("id")
+
+            if element_id:
+                element_lookup[element_id] = ui_element
+
+        if "map_bg" not in element_lookup:
+            overlay_surface = pg.Surface((self.game.screen_width, self.game.screen_height), pg.SRCALPHA)
+            overlay_surface.fill((0, 0, 0, 150))
+
+            background_element = {
+                "id": "map_bg",
+                "original_image": overlay_surface,
+                "image": overlay_surface.copy(),
+                "rect": overlay_surface.get_rect(topleft=(0, 0)),
+                "render_order": 2,
+                "alpha": True,
+                "is_button": False
+            }
+
+            self.game.ui.ui_elements.append(background_element)
+            element_lookup["map_bg"] = background_element
+
+        tile_pixel_size = max(1, int(self.map_scale_factor))
+        center_pixel_x = self.game.screen_width // 2 + self.map_offset_x
+        center_pixel_y = self.game.screen_height // 2 + self.map_offset_y
+
+        map_tiles = self.game.map.tiles
+        existing_map_tile_elements = {element_key: element_value for element_key, element_value in element_lookup.items() if isinstance(element_key, str) and element_key.startswith("map_tile_")}
+        expected_tile_ids = {f"map_tile_{tile_index}" for tile_index in range(len(map_tiles))}
+
+        for tile_element_key in list(existing_map_tile_elements.keys()):
+            if tile_element_key not in expected_tile_ids:
+                self.game.ui.ui_elements = [ui_element for ui_element in self.game.ui.ui_elements if ui_element.get("id") != tile_element_key]
+                del element_lookup[tile_element_key]
+
+        for tile_index, current_tile in enumerate(map_tiles):
+            current_element_id = f"map_tile_{tile_index}"
+
+            if current_element_id in element_lookup:
+                self.update_map_tile(element_lookup[current_element_id], current_tile, center_pixel_x, center_pixel_y, tile_pixel_size)
+
+            else:
+                self.create_map_tile(current_tile, tile_index, current_element_id, center_pixel_x, center_pixel_y, tile_pixel_size)
+
+    def create_map_tile(self, tile_data, tile_index, element_id, center_pixel_x, center_pixel_y, tile_pixel_size):
+        tile_surface = self.get_tile_surface(tile_data, tile_pixel_size)
+        if not tile_surface:
+            return
+
+        tile_pixel_x = center_pixel_x + tile_data.get("x", 0) * tile_pixel_size
+        tile_pixel_y = center_pixel_y + tile_data.get("y", 0) * tile_pixel_size
+
+        new_tile_element = {
+            "id": element_id,
+            "original_image": tile_surface,
+            "image": tile_surface.copy(),
+            "rect": tile_surface.get_rect(center=(tile_pixel_x, tile_pixel_y)),
+            "render_order": 3 + tile_data.get("layer", 0),
+            "alpha": True,
+            "is_button": False,
+            "centered": True,
+            "x": tile_pixel_x,
+            "y": tile_pixel_y,
+            "width": tile_pixel_size,
+            "height": tile_pixel_size,
+            "direction": tile_data.get("direction", 0),
+            "layer": tile_data.get("layer", 0)
+        }
+
+        self.game.ui.ui_elements.append(new_tile_element)
+
+    def update_map_tile(self, element_data, tile_data, center_pixel_x, center_pixel_y, tile_pixel_size):
+        tile_pixel_x = center_pixel_x + tile_data.get("x", 0) * tile_pixel_size
+        tile_pixel_y = center_pixel_y + tile_data.get("y", 0) * tile_pixel_size
+
+        current_element_width = element_data.get("width")
+        current_element_height = element_data.get("height")
+        current_element_direction = element_data.get("direction", 0)
+        tile_direction = tile_data.get("direction", 0)
+
+        if (element_data.get("x") != tile_pixel_x or
+                element_data.get("y") != tile_pixel_y or
+                current_element_width != tile_pixel_size or
+                current_element_height != tile_pixel_size or
+                current_element_direction != tile_direction):
+
+            tile_surface = self.get_tile_surface(tile_data, tile_pixel_size)
+            if tile_surface:
+                element_data["original_image"] = tile_surface
+                element_data["image"] = tile_surface.copy()
+
+            element_data["x"] = tile_pixel_x
+            element_data["y"] = tile_pixel_y
+            element_data["width"] = tile_pixel_size
+            element_data["height"] = tile_pixel_size
+            element_data["direction"] = tile_direction
+            element_data["layer"] = tile_data.get("layer", 0)
+            element_data["rect"] = element_data["original_image"].get_rect(center=(tile_pixel_x, tile_pixel_y))
+
+    def get_tile_surface(self, tile_data, tile_pixel_size):
+        sheet_index = tile_data.get("tilesheet", 0)
+        if sheet_index >= len(self.game.map.all_tile_surfaces):
+            return None
+
+        tilesheet = self.game.map.all_tile_surfaces[sheet_index]
+        tile_id = tile_data.get("id")
+        if tile_id is None or tile_id >= len(tilesheet["surfaces"]):
+            return None
+
+        tile_image = tilesheet["surfaces"][tile_id]
+        tile_direction = tile_data.get("direction", 0)
+
+        if tile_direction:
+            tile_image = pg.transform.rotate(tile_image, tile_direction)
+
+        return pg.transform.scale(tile_image, (tile_pixel_size, tile_pixel_size))
+    #{'x': 20, 'y': 62, 'id': 3, 'direction': 0, 'layer': 0, 'hitbox': True} Tile format
+
     def handle_free_cam(self):
         if not self.free_cam:
             return
@@ -1491,6 +1680,7 @@ class Player:
             self.animate()
             self.update_attack_hitbox()
             self.render_inventory()
+            self.render_map()
             self.update_pickup_tags()
             self.render_item_mouse()
             self.render_health()
@@ -1499,7 +1689,7 @@ class Player:
             self.render_hitboxes()
             self.handle_free_cam()
             self.load_weapon_animations()
-            
+
         else:
             if hasattr(self, "settings_loaded"):
                 del self.settings_loaded
