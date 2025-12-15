@@ -1231,23 +1231,24 @@ class Player:
 
     def handle_gameplay_input(self, event, button_pressed, button):
         if (event.type == pg.KEYDOWN and event.key == pg.K_i) or (button_pressed and button == 6):
-            self.in_inventory = not self.in_inventory
+            if not self.in_map:
+                self.in_inventory = not self.in_inventory
 
-            if self.in_inventory:
-                self.sounds["inventory"]["open"]["sound"].play()
+                if self.in_inventory:
+                    self.sounds["inventory"]["open"]["sound"].play()
 
-            else:
-                self.sounds["inventory"]["close"]["sound"].play()
+                else:
+                    self.sounds["inventory"]["close"]["sound"].play()
 
         if (event.type == pg.KEYDOWN and event.key == pg.K_t) or (button_pressed and button == 5):
-            self.in_map = not self.in_map
-            print(self.in_map)
+            if not self.in_inventory:
+                self.in_map = not self.in_map
 
-            if self.in_map:
-                self.sounds["inventory"]["open"]["sound"].play()
+                if self.in_map:
+                    self.sounds["inventory"]["open"]["sound"].play()
 
-            else:
-                self.sounds["inventory"]["close"]["sound"].play()
+                else:
+                    self.sounds["inventory"]["close"]["sound"].play()
 
         if (event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT) or (button_pressed and button == 4):
             if not self.in_inventory:
