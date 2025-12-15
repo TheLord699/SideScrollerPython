@@ -35,8 +35,9 @@ class Game:
 
     self.screen_width, self.screen_height = 800, 600
     self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.RESIZABLE | pg.SCALED)
-    
+
     self.debugging = False # will remove later
+    self.show_fps = False
 
     pg.display.set_caption(f"SideScroller {self.version}")
     pg.display.set_icon(icon)
@@ -83,7 +84,6 @@ class Game:
     self.lighting.update()
     self.foreground.update()
     self.ui.update()
-
     # testing lights
     if self.environment.lighting:
       player_light = (
@@ -169,7 +169,8 @@ class Game:
     
       # testing
       self.memory_debugger.render() # will remove later
-      #self.render_fps()
+      if self.show_fps:
+        self.render_fps()
 
       pg.display.flip()
       self.clock.tick(self.environment.fps)
