@@ -7,32 +7,31 @@ import random
 class Map:
     def __init__(self, game):
         self.game = game
-        
+
         self.tiles = []
         self.tile_hitboxes = []
         self.tile_id = []
-        
+
         self.grid = []
-        
+
         self.grid_width = 0
         self.grid_height = 0
-        
+
         self.grid_cell_size = 0
         self.grid_offset_x = 0
         self.grid_offset_y = 0
-        
+
         self.map_scale = self.game.environment.scale
         self.base_tile_size = 16
         self.visual_tile_size = self.base_tile_size * self.map_scale
-        
+
         self.cam_x = 0
         self.cam_y = 0
-        
+
         self.tile_dimension = 0
-        
+
         self.tile_sheets = []
         self.all_tile_surfaces = []
-        
         self.tile_attributes = {}
         self.non_empty_cells = set()
 
@@ -47,16 +46,16 @@ class Map:
         try:
             with open(map_info_file, "r") as file:
                 map_data = json.load(file)
-                
+
             try:
                 self.tile_sheets = map_data["tilesheets"]
-                
+
             except:
                 self.tile_sheets = [{
                     "path": map_data.get("tile_sheet_path", ""),
                     "tile_dimension": map_data.get("tile_dimension", 0)
                 }]
-                
+
             self.tiles = map_data.get("tiles", [])
             self.tile_dimension = self.tile_sheets[0]["tile_dimension"] if self.tile_sheets else 0
 
@@ -66,7 +65,7 @@ class Map:
                     with open(attributes_file, "r") as file:
                         attributes_data = json.load(file)
                     self.tile_attributes = {int(k): v for k, v in attributes_data.items()}
-                    
+
                 except Exception as e:
                     print(f"Warning: Failed to load tile attributes - {e}")
 
@@ -95,15 +94,15 @@ class Map:
                 sheet_surfaces = []
 
                 scale_factor = self.visual_tile_size / tile_size
-                
+
                 for y in range(0, sheet_height, tile_size):
                     for x in range(0, sheet_width, tile_size):
                         tile = tilesheet_img.subsurface((x, y, tile_size, tile_size))
-                        tile = pg.transform.scale(tile, 
+                        tile = pg.transform.scale(tile,
                             (int(tile_size * scale_factor), int(tile_size * scale_factor)))
-                        
+
                         sheet_surfaces.append(tile)
-                
+
                 all_surfaces.append({
                     "surfaces": sheet_surfaces,
                     "tile_size": tile_size,
@@ -135,10 +134,10 @@ class Map:
                 tilesheet_idx = tile.get("tilesheet", 0)
                 if tilesheet_idx < len(self.all_tile_surfaces):
                     visual_size = self.all_tile_surfaces[tilesheet_idx]["visual_size"]
-                    
+
                 else:
                     visual_size = self.visual_tile_size
-                
+
                 tile_x = tile["x"] * visual_size
                 tile_y = tile["y"] * visual_size
 
@@ -206,7 +205,7 @@ class Map:
             for col in range(min_col, max_col + 1):
                 if (row, col) not in self.non_empty_cells:
                     continue
-                
+
                 for tile_idx in self.grid[row * self.grid_width + col]:
                     tile_hitbox = self.tile_hitboxes[tile_idx]
                     if search_area.colliderect(tile_hitbox):
@@ -217,65 +216,65 @@ class Map:
     def render(self):
         current_time = time.time()
         screen_width, screen_height = self.game.screen_width, self.game.screen_height
-        
+
         min_x = self.cam_x
         min_y = self.cam_y
         max_x = min_x + screen_width
         max_y = min_y + screen_height
-        
+
         render_batches = {}
-        
+
         for tile in self.tiles:
             tilesheet_idx = tile.get("tilesheet", 0)
             if tilesheet_idx >= len(self.all_tile_surfaces):
                 continue
-                
+
             visual_size = self.all_tile_surfaces[tilesheet_idx]["visual_size"]
             tx = tile["x"] * visual_size
             ty = tile["y"] * visual_size
-            
-            if (tx + visual_size < min_x or tx > max_x or 
+
+            if (tx + visual_size < min_x or tx > max_x or
                 ty + visual_size < min_y or ty > max_y):
                 continue
-                
+
             if "animation" in tile:
                 anim = tile["animation"]
                 frames = anim["frames"]
                 speed = anim.get("speed", 0.1)
                 frame_idx = int((current_time % (len(frames) * speed)) / speed)
                 tile_id = frames[frame_idx]
-                
+
             else:
                 tile_id = tile["id"]
-                
+
             tile_surfaces = self.all_tile_surfaces[tilesheet_idx]["surfaces"]
             if tile_id >= len(tile_surfaces):
                 continue
-                
+
             batch_key = (tile["layer"], tilesheet_idx)
-            
+
             if batch_key not in render_batches:
                 render_batches[batch_key] = []
-                
+
             render_batches[batch_key].append((
                 tile_surfaces[tile_id],
                 (tx - self.cam_x, ty - self.cam_y),
                 tile.get("direction", 0)
             ))
-        
+
         for (layer, tilesheet_idx), batch in sorted(render_batches.items()):
             for surface, pos, direction in batch:
                 if direction != 0:
                     img = pg.transform.rotate(surface, direction)
                     self.game.screen.blit(img, pos)
-                    
+
                 else:
                     self.game.screen.blit(surface, pos)
 
     def render_debug(self, hitbox=None, padding=15):
         if not self.game.debugging:
             return
-        
+
         screen_rect = self.game.screen.get_rect()
 
         font_small = pg.font.SysFont("Arial", 10)
@@ -327,7 +326,7 @@ class Map:
 
                     text = font_medium.render(str(tile_id), True, (255, 255, 255))
                     text_width = text.get_width()
-                    
+
                     self.game.screen.blit(text, (rect.right - text_width, rect.y + 2))
 
             search_area = hitbox.inflate(padding * 2, padding * 2)
@@ -354,9 +353,10 @@ class Map:
             if hasattr(self.game, "player") and self.game.player:
                 self.cam_x = int(self.game.player.cam_x)
                 self.cam_y = int(self.game.player.cam_y)
-                
+
             else:
-                self.handle_camera_movement()
-                
+                #self.handle_camera_movement()
+                pass
+
             self.render()
             self.render_debug(self.game.player.hitbox)

@@ -22,7 +22,7 @@ class Entities:
         self.load_settings()
 
     def load_entity_info(self):
-        with open('assets/settings/entities.json', 'r') as f:
+        with open("assets/settings/entities.json", "r") as f:
             self.entity_info = json.load(f)
 
     def load_tilesheet(self, path, tile_width, tile_height):
@@ -87,7 +87,7 @@ class Entities:
         if actor_name in self.entity_info["actors"]:
             return self.entity_info["actors"][actor_name]
         return None
-    
+
     def create_entity(self, entity_type, name, x, y):
         template_func = {
             "item": self.item,
@@ -95,20 +95,20 @@ class Entities:
             "npc": self.npc,
             "actor": self.actor
         }.get(entity_type)
-        
+
         if not template_func:
             raise ValueError(f"Invalid entity type: {entity_type}")
-            
+
         template = template_func(name)
         if not template:
-            raise ValueError(f"{entity_type} '{name}' not found in entity definitions")
-        
+            raise ValueError(f"{entity_type} {name} not found in entity definitions")
+
         if template.get("tile_sheet"):
             self.load_tilesheet(template["tile_sheet"][0], template["tile_sheet"][1], template["tile_sheet"][2])
-        
+
         index_key = tuple(template.get("index")) if isinstance(template.get("index"), list) else template.get("index")
         image = self.item_sprites.get(index_key, self.game.environment.missing_texture.copy())
-        
+
         entity = {
             "entity_type": entity_type,
             "type": template.get("type"),
@@ -141,10 +141,10 @@ class Entities:
 
         if entity["states"]:
             self.setup_entity_animations(entity)
-            
+
         if entity_type == "item":
             entity.update({"quantity": template.get("quantity", 1)})
-            
+
         elif entity_type in ("npc", "enemy"):
             entity.update({
                 "behavior": template.get("behavior", "idle"),
@@ -154,15 +154,16 @@ class Entities:
                 "attack_damage": template.get("attack_damage", 10),
                 "ai_timer": 0,
                 "ai_direction": 0,
-                "damage_effect": 0
+                "damage_effect": 0,
+                "drop": "random",
             })
-            
+
             if entity_type == "enemy":
                 entity.update({
                     "abilities": template.get("entity_abilities"),
                     "attack_timer": 0
                 })
-                
+
         elif entity_type == "actor":
             entity.update({
                 "abilities": template.get("entity_abilities")
@@ -172,7 +173,7 @@ class Entities:
             entity["message"] = template["message"]
 
         self.entities.append(entity)
-        
+
         return entity
 
     def setup_entity_animations(self, entity):
@@ -218,16 +219,10 @@ class Entities:
 
         if entity["entity_type"] in {"npc", "enemy"}:
             if entity["health"] <= 0:
-                #self.drop_item(entity) # Issue where dropped items arent just items in the code, so they have extra attributes that they shouldnt have
-                # also loads the items tile sheet again?
+                if entity["drop"] == "random":
+                    self.drop_item(entity)
                 self.death_particles(entity)
                 self.entities.remove(entity)
-    
-    def drop_item(self, entity):
-        items = ["Red Gem", "Potion", "Gold"]
-        item = random.choices(items, weights=[0.2, 0.5, 0.3], k=1)[0]
-        
-        self.game.entities.create_entity("item", item, entity["x"], entity["y"])
     
     def update_animation(self, entity):
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
@@ -300,6 +295,12 @@ class Entities:
                 fade=True,
                 image_size=(radius * 3, radius * 3),
             )
+
+    def drop_item(self, entity):
+        items = ["Gold", "Potion"]
+        item = random.choice(items)
+
+        self.create_entity("item", item, entity["x"], entity["y"])
             
     def death_particles(self, entity, amount=13):
         for particles in range(amount):
@@ -320,6 +321,7 @@ class Entities:
                 fade=True,
                 image=smoke_img,
                 image_size=(radius * 4, radius * 4),
+                rotate=True
             )
 
     def update_collision(self, entity):
@@ -352,7 +354,7 @@ class Entities:
             #damage = tile_attrs.get("damage", 0)
             
             if entity_hitbox.colliderect(tile_hitbox) or ground_check.colliderect(tile_hitbox):
-                #if damage and entity["entity_type"] != "actor":
+                #if damage and entity["entity_type"] not in {"actor", "item"}:
                     #entity["health"] -= damage
                     #entity["damage_effect"] = 1
                 
@@ -506,7 +508,7 @@ class Entities:
 
         if "last_health" not in entity or entity["last_health"] != entity["health"] or "health_text" not in entity:
             entity["last_health"] = entity["health"]
-            entity["health_text"] = self.health_font.render(f"{int(entity['health'])}/{int(entity['max_health'])}", True, (255, 255, 255))
+            entity["health_text"] = self.health_font.render(f"{int(entity["health"])}/{int(entity["max_health"])}", True, (255, 255, 255))
 
         text_surface = entity["health_text"]
         text_rect = text_surface.get_rect(center=(bar_x + bar_width // 2, bar_y - 6))
@@ -746,9 +748,9 @@ class Entities:
         for entity in self.entities[:]:
             if entity["entity_type"] in ["npc", "enemy"]:
                 self.game.ai.update_ai(entity)
+            self.apply_horizontal_movement(entity)
             self.update_collision(entity)
             self.apply_gravity(entity)
-            self.apply_horizontal_movement(entity)
             self.update_animation(entity)
             self.update_entity(entity)
             self.render(entity)

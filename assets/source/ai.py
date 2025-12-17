@@ -91,63 +91,63 @@ class AISystem:
 
     def ai_aggressive(self, entity):
         player = self.game.player
-        
+
         if player.current_health <= 0:
             self.ai_wander(entity)
             return
-        
+
         dx = player.x - entity["x"]
         dy = player.y - entity["y"]
-        
+
         distance_sq = dx * dx + dy * dy
-        
+
         aggro_range = entity.get("aggro_range", 300)
-        
+
         if distance_sq < aggro_range * aggro_range:
             new_dir = 1 if dx > 0 else -1
-            
-            if ("ai_direction" not in entity or 
-                new_dir != entity["ai_direction"] or 
+
+            if ("ai_direction" not in entity or
+                new_dir != entity["ai_direction"] or
                 self.check_wall_collision(entity) or
                 not self.check_floor_ahead(entity)):
                 entity["ai_direction"] = new_dir
-            
+
             if self.check_floor_ahead(entity):
                 move_speed = entity.get("move_speed", 1) * 1.5
                 entity["vel_x"] = entity["ai_direction"] * move_speed
-                
+
             else:
                 entity["vel_x"] = 0
-            
+
             if dy < -50 and entity.get("on_ground", False):
                 entity["vel_y"] = -entity.get("jump_force", 10)
-                
+
             if distance_sq < 50 * 50:
                 self.ai_attack(entity)
-                
+
         else:
             self.ai_wander(entity)
-            
+
     def ai_friendly(self, entity):
         player = self.game.player
         dx = player.x - entity["x"]
         distance = abs(dx)
-        
+
         if distance > 100:
             new_dir = 1 if dx > 0 else -1
-            
-            if ("ai_direction" not in entity or 
-                new_dir != entity["ai_direction"] or 
+
+            if ("ai_direction" not in entity or
+                new_dir != entity["ai_direction"] or
                 self.check_wall_collision(entity) or
                 not self.check_floor_ahead(entity)):
                 entity["ai_direction"] = new_dir
-            
+
             if self.check_floor_ahead(entity):
                 entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1)
-                
+
             else:
                 entity["vel_x"] = 0
-            
+
         else:
             entity["vel_x"] = 0
 
@@ -158,14 +158,14 @@ class AISystem:
         if entity["attack_timer"] <= 0:
             entity["attack_timer"] = 30
             direction = entity.get("ai_direction", 1)
-            
+
             hitbox_width = 30
             hitbox_height = 30
             attack_distance = 20
-            
+
             attack_x = entity["x"] + (attack_distance * direction)
             attack_y = entity["y"] - 10
-            
+
             attack_rect = pg.Rect(
                 attack_x - hitbox_width // 2,
                 attack_y - hitbox_height // 2,
@@ -175,14 +175,14 @@ class AISystem:
 
             if attack_rect.colliderect(self.game.player.hitbox):
                 self.game.player.take_damage(entity.get("attack_damage", 10))
-                
+
         else:
             entity["attack_timer"] -= 1
-        
+
     def update_ai(self, entity):
         screen_width = self.game.screen_width
         screen_height = self.game.screen_height
-        
+
         # need to make take account entire entity size to stop ais updating off screen(line 231 in entities has answer)
         if (self.game.player.cam_x <= entity["x"] <= self.game.player.cam_x + screen_width and self.game.player.cam_y <= entity["y"] <= self.game.player.cam_y + screen_height):
             if "behavior" in entity:

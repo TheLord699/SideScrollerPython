@@ -20,7 +20,7 @@ class Particles:
     def recycle_particle(self, particle):
         self.pool.append(particle)
 
-    def generate(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30, image=None, image_size=None, fade=False, gravity=0.0, floor_behavior=None, friction=None):
+    def generate(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30, image=None, image_size=None, fade=False, gravity=0.0, floor_behavior=None, friction=None, rotate=False):
         if not self.enable_particles:
             return
             
@@ -41,6 +41,7 @@ class Particles:
             "gravity": gravity,
             "friction": friction,
             "floor_behavior": floor_behavior,
+            "rotate": rotate,
         })
 
         if image:
@@ -153,6 +154,12 @@ class Particles:
             if particle["fade"]:
                 alpha = max(0, 255 * (1 - particle["age"] / particle["lifespan"]))
                 img.set_alpha(alpha)
+
+            if particle["rotate"]:
+                rotation = random.choice(["left", "right"])
+                rotation_amount = random.randint(-10, 10)
+                if rotation == "right":
+                    img = pg.transform.rotate(img, rotation_amount)
                 
             surface.blit(img, screen_pos)
             

@@ -336,7 +336,7 @@ class Environment:
     self.current_track = None
 
   def start_game(self):
-    if getattr(self, "current_map", None) != self.maps["TestMap"]: 
+    if getattr(self, "current_map", None) != self.maps["TestMap"]:
       # will load from json
       self.handle_music("TestMap")
       #self.lighting = True
@@ -386,11 +386,12 @@ class Environment:
     self.game.ui.ui_elements.clear()
     #self.game.ui.clear_all_cache()
     
-  def load_map(self, map_name): 
+  def load_map(self, map_name):
     self.current_map = self.maps[map_name]
     self.game.map.load(self.current_map)
 
   def change_menu(self, new_menu):
+    #self.game.map.tile_hitboxes = []
     return lambda: setattr(self, "menu", new_menu)
 
   def update(self):
