@@ -11,6 +11,8 @@ everything would be painful.
 
 Note: All assets are from itch.io
 
+Also use pygame-ce not pygame
+
 ------------------------------------------------------------
 🚀 Features / Systems
 ------------------------------------------------------------

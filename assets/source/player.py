@@ -409,7 +409,7 @@ class Player:
                 centered=True, width=60, height=60, 
                 alpha=True, 
                 element_id=heart,
-                render_order=1
+                render_order=-15
             )
         
         self.previous_health = self.current_health
@@ -1540,7 +1540,7 @@ class Player:
                 "original_image": overlay_surface,
                 "image": overlay_surface.copy(),
                 "rect": overlay_surface.get_rect(topleft=(0, 0)),
-                "render_order": 2,
+                "render_order": -10,
                 "alpha": True,
                 "is_button": False
             }

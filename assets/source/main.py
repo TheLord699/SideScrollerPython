@@ -36,7 +36,8 @@ class Game:
     self.screen_width, self.screen_height = 800, 600
     self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.RESIZABLE | pg.SCALED)
 
-    self.debugging = False # will remove later
+    # will remove later
+    self.debugging = False
     self.show_fps = False
 
     pg.display.set_caption(f"SideScroller {self.version}")
