@@ -88,43 +88,46 @@ class AISystem:
     def reset_wander_timer(self, entity):
         entity["ai_timer"] = random.randint(60, 180)
         entity["ai_direction"] = random.choice([-1, 0, 1])
-
+        
     def ai_aggressive(self, entity):
         player = self.game.player
-        
+
         if player.current_health <= 0:
             self.ai_wander(entity)
             return
-        
+
         dx = player.x - entity["x"]
         dy = player.y - entity["y"]
-        
         distance_sq = dx * dx + dy * dy
-        
+
         aggro_range = entity.get("aggro_range", 300)
-        
+
         if distance_sq < aggro_range * aggro_range:
-            new_dir = 1 if dx > 0 else -1
-            
-            if ("ai_direction" not in entity or 
-                new_dir != entity["ai_direction"] or 
-                self.check_wall_collision(entity) or
-                not self.check_floor_ahead(entity)):
-                entity["ai_direction"] = new_dir
-            
-            if self.check_floor_ahead(entity):
-                move_speed = entity.get("move_speed", 1) * 1.5
-                entity["vel_x"] = entity["ai_direction"] * move_speed
-                
-            else:
+            if abs(dx) < 35:
                 entity["vel_x"] = 0
-            
+
+            else:
+                new_dir = 1 if dx > 0 else -1
+
+                if ("ai_direction" not in entity or
+                        new_dir != entity["ai_direction"] or
+                        self.check_wall_collision(entity) or
+                        not self.check_floor_ahead(entity)):
+                    entity["ai_direction"] = new_dir
+
+                if self.check_floor_ahead(entity):
+                    move_speed = entity.get("move_speed", 1) * 1.5
+                    entity["vel_x"] = entity["ai_direction"] * move_speed
+
+                else:
+                    entity["vel_x"] = 0
+
             if dy < -50 and entity.get("on_ground", False):
                 entity["vel_y"] = -entity.get("jump_force", 10)
-                
+
             if distance_sq < 50 * 50:
                 self.ai_attack(entity)
-                
+
         else:
             self.ai_wander(entity)
             
