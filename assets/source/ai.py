@@ -183,8 +183,8 @@ class AISystem:
         screen_width = self.game.screen_width
         screen_height = self.game.screen_height
         
-        if (self.game.player.cam_x <= entity["x"] <= self.game.player.cam_x + screen_width and 
-            self.game.player.cam_y <= entity["y"] <= self.game.player.cam_y + screen_height):
+        # need to make take account entire entity size to stop ais updating off screen(line 231 in entities has answer)
+        if (self.game.player.cam_x <= entity["x"] <= self.game.player.cam_x + screen_width and self.game.player.cam_y <= entity["y"] <= self.game.player.cam_y + screen_height):
             if "behavior" in entity:
                 behavior = entity["behavior"]
                 if behavior in self.behaviors:
