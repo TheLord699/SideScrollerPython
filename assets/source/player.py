@@ -711,6 +711,7 @@ class Player:
 
                 self.game.ui.remove_ui_element("dialogue_boarder")
                 self.game.ui.remove_ui_element("dialogue_name")
+                #self.game.ui.remove_ui_element("dialogue_image")
 
                 for sound in self.sounds["talking"]:
                     sound["sound"].stop()
@@ -739,6 +740,25 @@ class Player:
                     is_dialogue=True,
                     typing_speed=25
                 )
+                """""
+                self.game.ui.create_ui(
+                    sprite_sheet_path="fox_npc", 
+                    image_id=[0, 0],
+                    x=self.game.screen_width / 1.25, 
+                    y=self.game.screen_height / 2,
+                    sprite_width=32, 
+                    sprite_height=32,
+                    centered=True, 
+                    width=300, 
+                    height=300,
+                    alpha=True, 
+                    is_button=False,
+                    element_id="dialogue_image",
+                    scale_multiplier=1,
+                    font_size=20,
+                    render_order=4,
+                )
+                """
 
                 self.game.ui.create_ui(
                     sprite_sheet_path="ui_sheet",
