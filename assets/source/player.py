@@ -88,6 +88,11 @@ class Player:
         self.map_offset_x = 0
         self.map_offset_y = 0
         self.map_dragging = False
+
+        self.coyote_time = 8
+        self.coyote_timer = 0
+        self.jump_buffer_time = 3
+        self.jump_buffer_timer = 0
             
         self.current_state = "idle"
         self.direction = "right"
@@ -227,7 +232,6 @@ class Player:
             for sheet_path in sheet_paths:
                 try:
                     sheet = pg.image.load(sheet_path).convert_alpha()
-                    #print(f"Successfully loaded weapon animation: {sheet_path}")
                     break
                 
                 except:
@@ -359,13 +363,14 @@ class Player:
             
             self.game.foreground.add_screen_effect("hurt", intensity=0.7, duration=20)
             
+            self.shake_camera(intensity=8, duration=25)
+            
             if self.current_health < 0.5:
                 self.death()
                 hurt_sound = random.choice(self.sounds["hit"])
                 hurt_sound["sound"].play()
                 
             else:
-                self.shake_camera(intensity=8, duration=25)
                 self.current_state = "hurt"
                 self.current_frame = 0
                 self.animation_timer = 0
@@ -722,7 +727,6 @@ class Player:
 
                 self.game.ui.remove_ui_element("dialogue_boarder")
                 self.game.ui.remove_ui_element("dialogue_name")
-                #self.game.ui.remove_ui_element("dialogue_image")
 
                 for sound in self.sounds["talking"]:
                     sound["sound"].stop()
@@ -751,25 +755,6 @@ class Player:
                     is_dialogue=True,
                     typing_speed=25
                 )
-                """""
-                self.game.ui.create_ui(
-                    sprite_sheet_path="fox_npc", 
-                    image_id=[0, 0],
-                    x=self.game.screen_width / 1.25, 
-                    y=self.game.screen_height / 2,
-                    sprite_width=32, 
-                    sprite_height=32,
-                    centered=True, 
-                    width=300, 
-                    height=300,
-                    alpha=True, 
-                    is_button=False,
-                    element_id="dialogue_image",
-                    scale_multiplier=1,
-                    font_size=20,
-                    render_order=4,
-                )
-                """
 
                 self.game.ui.create_ui(
                     sprite_sheet_path="ui_sheet",
@@ -879,6 +864,7 @@ class Player:
         consume_sound["sound"].play()
 
     def jump(self):
+        self.coyote_timer = 0
         self.vel_y = -self.jump_strength
         jump_sound = random.choice(self.sounds["jump"])
         jump_sound["sound"].play()
@@ -988,6 +974,7 @@ class Player:
                 damage = tile_attributes.get("damage", 0)
 
                 if swimmable:
+                    #self.current_state = "swimming"
                     self.vel_y *= 0.8  # temp fix for swimming
                     self.on_ground = True
                     continue
@@ -1008,6 +995,18 @@ class Player:
                     self.vel_y = 0
                     self.on_ground = True
                     break
+
+        if self.on_ground:
+            self.coyote_timer = self.coyote_time
+            
+        elif self.coyote_timer > 0:
+            self.coyote_timer -= 1
+
+        if self.jump_buffer_timer > 0:
+            self.jump_buffer_timer -= 1
+            
+            if self.coyote_timer > 0:
+                self.jump()
 
     def animate(self):
         previous_state = self.current_state
@@ -1168,24 +1167,39 @@ class Player:
                 self.vel_x = 0
 
     def handle_actions(self, keys, mouse_buttons, controller):
-            jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
-            if jump_input and self.on_ground:
-                self.jump()
+        jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
+        jump_just_pressed = False
+        
+        for event in self.game.events:
+            if event.type == pg.KEYDOWN and event.key == pg.K_w:
+                jump_just_pressed = True
+                
+            elif self.joystick and event.type == pg.JOYBUTTONDOWN and event.button == 0:
+                jump_just_pressed = True
+        
+        if not hasattr(self, "previous_jump_input"):
+            self.previous_jump_input = False
+        
+        jump_just_pressed = jump_input and not self.previous_jump_input
+        self.previous_jump_input = jump_input
+        
+        if jump_just_pressed:
+            self.jump_buffer_timer = self.jump_buffer_time
 
-            interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
-            if interact_input and not self.in_map:
-                self.interact_with_entity()
+        interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
+        if interact_input and not self.in_map:
+            self.interact_with_entity()
 
-            attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
-            if attack_input and self.current_state != "hurt":
-                self.start_attack()
+        attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
+        if attack_input and self.current_state != "hurt":
+            self.start_attack()
 
-            if mouse_buttons[0] and self.current_state != "hurt":
-                pass
+        if mouse_buttons[0] and self.current_state != "hurt":
+            pass
 
-            pause_input = keys[pg.K_ESCAPE] or (self.joystick and controller.get("start"))
-            if pause_input:
-                pass
+        pause_input = keys[pg.K_ESCAPE] or (self.joystick and controller.get("start"))
+        if pause_input:
+            pass
 
     def handle_map_controls(self, mouse_buttons):
         mouse_pos = pg.mouse.get_pos()
@@ -1317,8 +1331,6 @@ class Player:
             white_image.fill((255, 255, 255, opacity), special_flags=pg.BLEND_RGBA_MULT)
 
             flip_offset = 14 if self.direction == "right" else 0
-            #screen_x = ghost_x + self.hitbox_width / 2 - flip_offset - self.cam_x
-            #screen_y = ghost_y + self.hitbox_height / 8 - self.cam_y
 
             lifespan = 15 + (num_ghosts - i - 1) * 2
 
