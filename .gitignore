@@ -34,9 +34,21 @@ Thumbs.db
 # Logs
 *.log
 
-# PyInstaller
+# Nuitka / PyInstaller build outputs
 build/
 dist/
+*.spec
+__pycache__/
+*.pyc
+
+# Nuitka temporary files
+*.build/
+*.dist/
+*.onefile-build/
+
+# PyInstaller temporary files
+*.pyz
+*.pyz.manifest
 
 # Database files
 *.db
