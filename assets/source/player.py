@@ -91,8 +91,6 @@ class Player:
 
         self.coyote_time = 8
         self.coyote_timer = 0
-        self.jump_buffer_time = 3
-        self.jump_buffer_timer = 0
             
         self.current_state = "idle"
         self.direction = "right"
@@ -974,7 +972,6 @@ class Player:
                 damage = tile_attributes.get("damage", 0)
 
                 if swimmable:
-                    #self.current_state = "swimming"
                     self.vel_y *= 0.8  # temp fix for swimming
                     self.on_ground = True
                     continue
@@ -1001,12 +998,6 @@ class Player:
             
         elif self.coyote_timer > 0:
             self.coyote_timer -= 1
-
-        if self.jump_buffer_timer > 0:
-            self.jump_buffer_timer -= 1
-            
-            if self.coyote_timer > 0:
-                self.jump()
 
     def animate(self):
         previous_state = self.current_state
@@ -1168,23 +1159,8 @@ class Player:
 
     def handle_actions(self, keys, mouse_buttons, controller):
         jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
-        jump_just_pressed = False
-        
-        for event in self.game.events:
-            if event.type == pg.KEYDOWN and event.key == pg.K_w:
-                jump_just_pressed = True
-                
-            elif self.joystick and event.type == pg.JOYBUTTONDOWN and event.button == 0:
-                jump_just_pressed = True
-        
-        if not hasattr(self, "previous_jump_input"):
-            self.previous_jump_input = False
-        
-        jump_just_pressed = jump_input and not self.previous_jump_input
-        self.previous_jump_input = jump_input
-        
-        if jump_just_pressed:
-            self.jump_buffer_timer = self.jump_buffer_time
+        if jump_input and self.coyote_timer > 0:
+            self.jump()
 
         interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
         if interact_input and not self.in_map:
@@ -1193,9 +1169,6 @@ class Player:
         attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
         if attack_input and self.current_state != "hurt":
             self.start_attack()
-
-        if mouse_buttons[0] and self.current_state != "hurt":
-            pass
 
         pause_input = keys[pg.K_ESCAPE] or (self.joystick and controller.get("start"))
         if pause_input:
