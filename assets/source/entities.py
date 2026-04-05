@@ -8,6 +8,8 @@ class Entities:
     def __init__(self, game):
         self.game = game
         
+        self.tilesheet_cache = {} 
+        
         self.show_indicators = True
         self.sounds = {
             "hit": [
@@ -22,9 +24,9 @@ class Entities:
             2: pg.image.load("assets/sprites/particles/smoke2.png").convert_alpha(),
         }
            
-        
         random.seed(self.game.environment.seed)
         
+        self.load_entity_info()
         self.load_settings()
 
     def load_entity_info(self):
@@ -32,8 +34,11 @@ class Entities:
             self.entity_info = json.load(f)
 
     def load_tilesheet(self, path, tile_width, tile_height):
-        self.tilesheet = None
-        self.item_sprites.clear()
+        cache_key = (path, tile_width, tile_height)
+        if cache_key in self.tilesheet_cache:
+            self.item_sprites = self.tilesheet_cache[cache_key].copy()
+            self.tilesheet = path
+            return
 
         if not path or not os.path.exists(path):
             print(f"Tilesheet not found: {path}")
@@ -41,13 +46,17 @@ class Entities:
 
         self.tilesheet = pg.image.load(path).convert_alpha()
         sheet_width, sheet_height = self.tilesheet.get_size()
+        new_sprites = {}
 
         for row in range(sheet_height // tile_height):
             for col in range(sheet_width // tile_width):
                 rect = pg.Rect(col * tile_width, row * tile_height, tile_width, tile_height)
                 sprite = self.tilesheet.subsurface(rect).copy()
                 key = (row, col)
-                self.item_sprites[key] = sprite
+                new_sprites[key] = sprite
+
+        self.tilesheet_cache[cache_key] = new_sprites.copy()
+        self.item_sprites = new_sprites
 
     def load_settings(self):
         self.x = 0
@@ -66,11 +75,8 @@ class Entities:
         self.scale = self.game.environment.scale 
         
         self.entities = []
-        self.entity_info = {}
         self.item_sprites = {}
-        
-        self.load_entity_info()
-
+    
     def reset(self):
         self.entities.clear()
 
