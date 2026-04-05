@@ -9,6 +9,8 @@ from helper_methods import load_json
 class Player:
     def __init__(self, game):
         self.game = game
+        
+        self.enable_cam_mouse = False
            
         self.load_settings()
         
@@ -350,12 +352,15 @@ class Player:
             self.current_health -= damage
             self.last_damage_time = self.game.environment.current_time
             
+            self.game.foreground.add_screen_effect("hurt", intensity=0.7, duration=20)
+            
             if self.current_health < 0.5:
                 self.death()
                 hurt_sound = random.choice(self.sounds["hit"])
                 hurt_sound["sound"].play()
                 
             else:
+                self.shake_camera(intensity=8, duration=25)
                 self.current_state = "hurt"
                 self.current_frame = 0
                 self.animation_timer = 0
@@ -371,6 +376,7 @@ class Player:
         self.attacking = False
         self.in_inventory = False
         self.in_dialogue = False
+        self.in_map = False
         self.dialogue_with = None
         self.game.ui.remove_ui_element("dialogue_boarder")
         self.game.ui.remove_ui_element("dialogue_name")
@@ -1162,7 +1168,7 @@ class Player:
                 self.jump()
 
             interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
-            if interact_input:
+            if interact_input and not self.in_map:
                 self.interact_with_entity()
 
             attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
@@ -1425,7 +1431,7 @@ class Player:
         self.attack_hitbox.centery = self.hitbox.centery
 
     def render(self):
-        self.flip_offset = {'left': 1.4, 'right': 0} # weird temp fix
+        self.flip_offset = {"left": 1.4, "right": 0} # weird temp fix
         self.foot_alignment = 3
         
         if (self.current_state not in self.frames or 
@@ -1452,20 +1458,58 @@ class Player:
         sprite_y = hb_cy - cam_y + self.foot_alignment - img_h // 2
 
         self.game.screen.blit(image, (sprite_x, sprite_y))
+        
+    def shake_camera(self, intensity, duration):
+        self.shake_intensity = intensity
+        self.shake_duration = duration
+        self.shake_timer = duration
+
+    def update_camera_shake(self):
+        if hasattr(self, "shake_timer") and self.shake_timer > 0:
+            decay = self.shake_timer / self.shake_duration
+            
+            current_intensity = self.shake_intensity * decay
+            
+            time = pg.time.get_ticks() / 100
+            angle_x = time * 15
+            angle_y = time * 13
+            
+            offset_x = math.sin(angle_x) * current_intensity
+            offset_y = math.sin(angle_y) * current_intensity
+            
+            offset_x += (random.random() - 0.5) * current_intensity * 0.5
+            offset_y += (random.random() - 0.5) * current_intensity * 0.5
+            
+            self.shake_timer -= 1
+            
+            return (offset_x, offset_y)
+        
+        return (0, 0)
 
     def update_camera(self):
-        # can change the target here
         if self.free_cam:
             return
+        
+        if self.enable_cam_mouse:
+            mouse_dist_from_player_x = (pg.mouse.get_pos()[0] + self.cam_x) - self.x
+            mouse_dist_from_player_y = (pg.mouse.get_pos()[1] + self.cam_y) - self.y
+        
+            target_cam_x = self.x - self.game.screen_width / 2 + mouse_dist_from_player_x * 0.1
+            target_cam_y = self.y - self.game.screen_height / 1.5 + mouse_dist_from_player_y * 0.1
+        
+        else:
+            target_cam_x = self.x - self.game.screen_width / 2
+            target_cam_y = self.y - self.game.screen_height / 1.5
 
-        target_cam_x = self.x - self.game.screen_width / 2
-        target_cam_y = self.y - self.game.screen_height / 1.5 # 1.5
+        base_cam_x = self.cam_x + (target_cam_x - self.cam_x) * self.camera_smoothing_factor
+        base_cam_y = self.cam_y + (target_cam_y - self.cam_y) * self.camera_smoothing_factor
 
-        self.cam_x += (target_cam_x - self.cam_x) * self.camera_smoothing_factor
-        self.cam_y += (target_cam_y - self.cam_y) * self.camera_smoothing_factor
+        base_cam_x = max(min(base_cam_x, target_cam_x + self.game.screen_width / 4), target_cam_x - self.game.screen_width / 4)
+        base_cam_y = max(min(base_cam_y, target_cam_y + self.game.screen_height / 4), target_cam_y - self.game.screen_height / 7)
 
-        self.cam_x = max(min(self.cam_x, target_cam_x + self.game.screen_width / 4), target_cam_x - self.game.screen_width / 4)
-        self.cam_y = max(min(self.cam_y, target_cam_y + self.game.screen_height / 4), target_cam_y - self.game.screen_height / 7)
+        shake_offset_x, shake_offset_y = self.update_camera_shake()
+        self.cam_x = int(base_cam_x + shake_offset_x)
+        self.cam_y = int(base_cam_y + shake_offset_y)
 
     def render_hitboxes(self):
         if not self.game.debugging:
@@ -1532,63 +1576,78 @@ class Player:
     def render_map(self):
         if not self.in_map:
             self.game.ui.remove_ui_element("map_bg")
-
-            element_indices_to_remove = []
-            for element_index, ui_element in enumerate(self.game.ui.ui_elements):
-                element_id = ui_element.get("id")
-                if isinstance(element_id, str) and element_id.startswith("map_tile_"):
-                    element_indices_to_remove.append(element_index)
-
-            for element_index in reversed(element_indices_to_remove):
-                self.game.ui.ui_elements.pop(element_index)
-
+            self.map_surface = None
             return
 
-        element_lookup = {}
-        for ui_element in self.game.ui.ui_elements:
-            element_id = ui_element.get("id")
-
-            if element_id:
-                element_lookup[element_id] = ui_element
-
-        if "map_bg" not in element_lookup:
-            overlay_surface = pg.Surface((self.game.screen_width, self.game.screen_height), pg.SRCALPHA)
-            overlay_surface.fill((0, 0, 0, 150))
-
-            background_element = {
+        if not hasattr(self, "map_surface") or self.map_surface is None:
+            self.map_surface = pg.Surface((self.game.screen_width, self.game.screen_height), pg.SRCALPHA)
+        
+        self.map_surface.fill((0, 0, 0, 0))
+        
+        overlay_surface = pg.Surface((self.game.screen_width, self.game.screen_height), pg.SRCALPHA)
+        overlay_surface.fill((0, 0, 0, 150))
+        self.map_surface.blit(overlay_surface, (0, 0))
+        
+        tile_pixel_size = max(1, int(self.map_scale_factor))
+        center_pixel_x = self.game.screen_width // 2 + self.map_offset_x
+        center_pixel_y = self.game.screen_height // 2 + self.map_offset_y
+        
+        visible_margin = 50
+        min_pixel_x = -visible_margin
+        max_pixel_x = self.game.screen_width + visible_margin
+        min_pixel_y = -visible_margin
+        max_pixel_y = self.game.screen_height + visible_margin
+        
+        map_tiles = self.game.map.tiles
+        cached_tiles = getattr(self, "cached_tile_surfaces", {})
+        
+        for tile_index, current_tile in enumerate(map_tiles):
+            tile_pixel_x = center_pixel_x + current_tile.get("x", 0) * tile_pixel_size
+            tile_pixel_y = center_pixel_y + current_tile.get("y", 0) * tile_pixel_size
+            
+            if not (min_pixel_x <= tile_pixel_x <= max_pixel_x and min_pixel_y <= tile_pixel_y <= max_pixel_y):
+                continue
+            
+            cache_key = (current_tile.get("tilesheet", 0), current_tile.get("id"), current_tile.get("direction", 0), tile_pixel_size)
+            
+            if cache_key not in cached_tiles:
+                tile_surface = self.get_tile_surface(current_tile, tile_pixel_size)
+                if tile_surface:
+                    cached_tiles[cache_key] = tile_surface
+                    
+                else:
+                    continue
+            
+            tile_surface = cached_tiles[cache_key]
+            
+            tile_rect = tile_surface.get_rect(center=(tile_pixel_x, tile_pixel_y))
+            self.map_surface.blit(tile_surface, tile_rect)
+        
+        map_bg_element = None
+        
+        for element in self.game.ui.ui_elements:
+            if element.get("id") == "map_bg":
+                map_bg_element = element
+                break
+        
+        if map_bg_element:
+            map_bg_element["original_image"] = self.map_surface
+            map_bg_element["image"] = self.map_surface
+            
+        else:
+            map_bg_element = {
                 "id": "map_bg",
-                "original_image": overlay_surface,
-                "image": overlay_surface.copy(),
-                "rect": overlay_surface.get_rect(topleft=(0, 0)),
+                "original_image": self.map_surface,
+                "image": self.map_surface,
+                "rect": self.map_surface.get_rect(topleft=(0, 0)),
                 "render_order": -10,
                 "alpha": True,
                 "is_button": False
             }
-
-            self.game.ui.ui_elements.append(background_element)
-            element_lookup["map_bg"] = background_element
-
-        tile_pixel_size = max(1, int(self.map_scale_factor))
-        center_pixel_x = self.game.screen_width // 2 + self.map_offset_x
-        center_pixel_y = self.game.screen_height // 2 + self.map_offset_y
-
-        map_tiles = self.game.map.tiles
-        existing_map_tile_elements = {element_key: element_value for element_key, element_value in element_lookup.items() if isinstance(element_key, str) and element_key.startswith("map_tile_")}
-        expected_tile_ids = {f"map_tile_{tile_index}" for tile_index in range(len(map_tiles))}
-
-        for tile_element_key in list(existing_map_tile_elements.keys()):
-            if tile_element_key not in expected_tile_ids:
-                self.game.ui.ui_elements = [ui_element for ui_element in self.game.ui.ui_elements if ui_element.get("id") != tile_element_key]
-                del element_lookup[tile_element_key]
-
-        for tile_index, current_tile in enumerate(map_tiles):
-            current_element_id = f"map_tile_{tile_index}"
-
-            if current_element_id in element_lookup:
-                self.update_map_tile(element_lookup[current_element_id], current_tile, center_pixel_x, center_pixel_y, tile_pixel_size)
-
-            else:
-                self.create_map_tile(current_tile, tile_index, current_element_id, center_pixel_x, center_pixel_y, tile_pixel_size)
+            self.game.ui.ui_elements.append(map_bg_element)
+        
+        if len(cached_tiles) > 1000:
+            self.cached_tile_surfaces = {}
 
     def create_map_tile(self, tile_data, tile_index, element_id, center_pixel_x, center_pixel_y, tile_pixel_size):
         tile_surface = self.get_tile_surface(tile_data, tile_pixel_size)
@@ -1661,8 +1720,12 @@ class Player:
         if tile_direction:
             tile_image = pg.transform.rotate(tile_image, tile_direction)
 
-        return pg.transform.scale(tile_image, (tile_pixel_size, tile_pixel_size))
-    #{'x': 20, 'y': 62, 'id': 3, 'direction': 0, 'layer': 0, 'hitbox': True} Tile format
+        if tile_image.get_size() != (tile_pixel_size, tile_pixel_size):
+            tile_image = pg.transform.scale(tile_image, (tile_pixel_size, tile_pixel_size))
+        
+        return tile_image
+    
+    #{"x": 20, "y": 62, "id": 3, "direction": 0, "layer": 0, "hitbox": True} Tile format
 
     def handle_free_cam(self):
         if not self.free_cam:

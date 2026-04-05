@@ -43,6 +43,8 @@ Save: G
 
 Movement: WASD
 
+Open Map: T
+
 Dash: Shift
 
 Inventory: I

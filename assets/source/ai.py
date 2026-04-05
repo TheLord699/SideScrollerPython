@@ -2,7 +2,7 @@ import pygame as pg
 import random
 import math
 
-class AISystem:
+class AISystem: # gonna rewrite so each enemy has own script nut this class will handle those scripts and also have some shared functions for them
     def __init__(self, game):
         self.game = game
         

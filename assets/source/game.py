@@ -90,6 +90,7 @@ class Environment:
     self.game.data_manager.set_setting("show_indicators", self.game.entities.show_indicators)
     self.game.data_manager.set_setting("enable_particles", self.game.particles.enable_particles)
     self.game.data_manager.set_setting("enable_foreground", self.game.foreground.enable_foreground)
+    self.game.data_manager.set_setting("enable_cam_mouse", self.game.player.enable_cam_mouse)
     self.game.data_manager.set_setting("player_max_health", self.game.player.max_health)
     self.game.data_manager.set_setting("player_current_health", self.game.player.current_health)
     self.game.data_manager.set_setting("player_direction", self.game.player.direction)
@@ -118,6 +119,7 @@ class Environment:
       self.game.entities.show_indicators = self.game.data_manager.get_setting("show_indicators")
       self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
       self.game.foreground.enable_foreground = self.game.data_manager.get_setting("enable_foreground")
+      self.game.player.enable_cam_mouse = self.game.data_manager.get_setting("enable_cam_mouse")
       self.game.player.max_health = self.game.data_manager.get_setting("player_max_health")
       self.game.player.current_health = self.game.data_manager.get_setting("player_current_health")
       self.game.player.direction = self.game.data_manager.get_setting("player_direction")
@@ -263,7 +265,7 @@ class Environment:
       )
       self.game.ui.create_ui(
         sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2, y=270, sprite_width=95, sprite_height=32, 
+        x=self.game.screen_width / 2 + 120, y=270, sprite_width=95, sprite_height=32, 
         centered=True, width=200, height=100,
         alpha=True, is_button=True,
         scale_multiplier=1.1,
@@ -278,7 +280,7 @@ class Environment:
       )
       self.game.ui.create_ui(
         sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2, y=395, sprite_width=95, sprite_height=32, 
+        x=self.game.screen_width / 2 - 110, y=270, sprite_width=95, sprite_height=32, 
         centered=True, width=200, height=100,
         alpha=True, is_button=True,
         scale_multiplier=1.1,
@@ -293,7 +295,7 @@ class Environment:
       )
       self.game.ui.create_ui(
         sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2, y=520, sprite_width=95, sprite_height=32, 
+        x=self.game.screen_width / 2 - 110, y=395, sprite_width=95, sprite_height=32, 
         centered=True, width=200, height=100,
         alpha=True, is_button=True,
         scale_multiplier=1.1,
@@ -303,6 +305,21 @@ class Environment:
         element_id="foreground_button",
         click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
         callback=lambda: (setattr(self.game.foreground, "enable_foreground", not self.game.foreground.enable_foreground)),
+        hover_range=3.5,
+        render_order=0
+      )
+      self.game.ui.create_ui(
+        sprite_sheet_path="ui_sheet", image_id=[33, 0],
+        x=self.game.screen_width / 2 + 120, y=395, sprite_width=95, sprite_height=32, 
+        centered=True, width=200, height=100,
+        alpha=True, is_button=True,
+        scale_multiplier=1.1,
+        dynamic_value=lambda: "Cam Follow Mouse?: On" if self.game.player.enable_cam_mouse else "Cam Follow Mouse?: Off",
+        font=self.fonts["fantasy"],
+        font_size=16,
+        element_id="cam_follow_mouse_button",
+        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+        callback=lambda: (setattr(self.game.player, "enable_cam_mouse", not self.game.player.enable_cam_mouse)),
         hover_range=3.5,
         render_order=0
       )

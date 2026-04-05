@@ -30,11 +30,11 @@ class Game:
 
     self.clock = pg.time.Clock()
 
-    self.version = "0.5.0-dev"
+    self.version = "0.6.0-dev"
     icon = pg.image.load("assets/sprites/misc/bug.png")
 
     self.screen_width, self.screen_height = 800, 600
-    self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.RESIZABLE | pg.SCALED)
+    self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.RESIZABLE | pg.SCALED, vsync=1)
 
     # will remove later
     self.debugging = False

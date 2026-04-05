@@ -12,7 +12,9 @@ class Particles:
         
         self.max_particles = game.environment.max_particles
 
-        self.tile_hitboxes = np.array([[rect.x, rect.y, rect.width, rect.height] for rect in self.game.map.tile_hitboxes]) if hasattr(self.game.map, "tile_hitboxes") else np.empty((0, 4))
+        self.tile_hitboxes = np.array(
+            [[rect.x, rect.y, rect.width, rect.height] for rect in self.game.map.tile_hitboxes]
+        ) if hasattr(self.game.map, "tile_hitboxes") else np.empty((0, 4))
 
     def get_particle_from_pool(self):
         return self.pool.pop() if self.pool else {}
@@ -20,7 +22,10 @@ class Particles:
     def recycle_particle(self, particle):
         self.pool.append(particle)
 
-    def generate(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30, image=None, image_size=None, fade=False, gravity=0.0, floor_behavior=None, friction=None):
+    def generate(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30,
+                 image=None, image_size=None, fade=False, gravity=0.0,
+                 floor_behavior=None, friction=None):
+
         if not self.enable_particles:
             return
             
@@ -72,15 +77,17 @@ class Particles:
                 for offset in range(1, max_search):
                     new_y = y + offset
                     tx, ty, tw, th = x - radius, new_y - radius, radius * 2, radius * 2
+
                     x_overlap = (hitboxes[:, 0] < tx + tw) & (hitboxes[:, 0] + hitboxes[:, 2] > tx)
                     y_overlap = (hitboxes[:, 1] < ty + th) & (hitboxes[:, 1] + hitboxes[:, 3] > ty)
+
                     if not np.any(x_overlap & y_overlap):
                         return (x, new_y)
 
                 return pos
             
         return pos
-    
+
     def enforce_max(self):
         excess = len(self.particles) - self.max_particles
         
@@ -89,48 +96,61 @@ class Particles:
 
         oldest_indices = sorted(range(len(self.particles)), key=lambda i: self.particles[i]["age"], reverse=True)[:excess]
 
-        for i in oldest_indices:
-            self.recycle_particle(self.particles[i])
+        for indices in oldest_indices:
+            self.recycle_particle(self.particles[indices])
 
         oldest_set = set(oldest_indices)
         self.particles = [p for j, p in enumerate(self.particles) if j not in oldest_set]
 
-    def handle_floor_collision(self, particle):
-        tile_size = self.game.map.tile_dimension * self.game.map.map_scale
+    def handle_tile_collisions(self, particle):
+        radius = particle["radius"]
+        pos = particle["pos"]
+        vel = particle["vel"]
 
-        bottom = particle["pos"].y + particle["radius"]
-        left = particle["pos"].x - particle["radius"]
-        right = particle["pos"].x + particle["radius"]
+        rect = pg.Rect(
+            pos.x - radius,
+            pos.y - radius,
+            radius * 2,
+            radius * 2
+        )
 
-        particle_rect = pg.Rect(left, bottom, right - left, 1)
+        nearby_tiles = self.game.map.get_nearby_tiles(rect)
 
-        nearby_tiles = self.game.map.get_nearby_tiles(particle_rect)
+        pos.x += vel.x
+        rect.x = pos.x - radius
 
-        for tile_hitbox, tile_id in nearby_tiles:
-            tile_top = tile_hitbox.y
-            tile_left = tile_hitbox.x
-            tile_right = tile_hitbox.x + tile_hitbox.width
+        for tile_hitbox, _ in nearby_tiles:
+            if rect.colliderect(tile_hitbox):
+                if vel.x > 0:
+                    pos.x = tile_hitbox.left - radius
+                    
+                elif vel.x < 0:
+                    pos.x = tile_hitbox.right + radius
+                vel.x = 0
+                rect.x = pos.x - radius
 
-            if (right > tile_left and left < tile_right and bottom >= tile_top and particle["vel"].y > 0):
-                particle["pos"].y = tile_top - particle["radius"]
+        pos.y += vel.y
+        rect.y = pos.y - radius
 
-                if particle["floor_behavior"] == "bounce":
-                    particle["vel"].y *= -0.6
+        for tile_hitbox, _ in nearby_tiles:
+            if rect.colliderect(tile_hitbox):
 
-                    if abs(particle["vel"].y) < 0.5:
-                        particle["vel"].y = 0
+                if vel.y > 0:
+                    pos.y = tile_hitbox.top - radius
 
-                elif particle["floor_behavior"] == "stop":
-                    particle["vel"].y = 0
-
-                if particle["friction"] is not None and particle["friction"] > 0:
-                    if abs(particle["vel"].x) < 0.1:
-                        particle["vel"].x = 0
-                        
+                    if particle["floor_behavior"] == "bounce":
+                        vel.y *= -0.6
+                        if abs(vel.y) < 0.5:
+                            vel.y = 0
+                            
                     else:
-                        particle["vel"].x *= (1 - particle["friction"])
-                        
-                return
+                        vel.y = 0
+
+                elif vel.y < 0:
+                    pos.y = tile_hitbox.bottom + radius
+                    vel.y = 0
+
+                rect.y = pos.y - radius
 
     def render_particle(self, surface, particle):
         screen_width, screen_height = self.game.screen_width, self.game.screen_height
@@ -173,39 +193,39 @@ class Particles:
 
         self.enforce_max()
 
-        n = len(self.particles)
-        positions = np.array([particle["pos"] for particle in self.particles], dtype=np.float32)
-        velocities = np.array([particle["vel"] for particle in self.particles], dtype=np.float32)
-        gravities = np.array([particle["gravity"] for particle in self.particles], dtype=np.float32)
-        ages = np.array([particle["age"] for particle in self.particles], dtype=np.int32)
-        lifespans = np.array([particle["lifespan"] for particle in self.particles], dtype=np.int32)
+        velocities = np.array([p["vel"] for p in self.particles], dtype=np.float32)
+        gravities = np.array([p["gravity"] for p in self.particles], dtype=np.float32)
+        ages = np.array([p["age"] for p in self.particles], dtype=np.int32)
 
         velocities[:, 1] += gravities
-        positions += velocities
         ages += 1
 
         for i, particle in enumerate(self.particles):
-            particle["pos"].x, particle["pos"].y = positions[i]
             particle["vel"].x, particle["vel"].y = velocities[i]
             particle["age"] = int(ages[i])
 
             if particle["floor_behavior"]:
-                self.handle_floor_collision(particle)
+                self.handle_tile_collisions(particle)
+                
+            else:
+                particle["pos"] += particle["vel"]
 
             if particle["image"]:
                 particle["rect"].center = particle["pos"]
                 
             else:
-                particle["rect"].topleft = (particle["pos"].x - particle["radius"], particle["pos"].y - particle["radius"])
+                particle["rect"].topleft = (
+                    particle["pos"].x - particle["radius"],
+                    particle["pos"].y - particle["radius"]
+                )
 
         alive_particles = []
-        
+
         for particle in self.particles:
             if particle["age"] >= particle["lifespan"]:
                 self.recycle_particle(particle)
-                
             else:
                 alive_particles.append(particle)
                 self.render_particle(self.game.screen, particle)
-                
+
         self.particles = alive_particles
