@@ -160,6 +160,7 @@
       "move_speed": 1.2,
       "jump_force": 8,
       "aggro_range": 150,
+      "stop_distance": 35,
       "attack_damage": 0.1,
       "states": {
           "idle": {

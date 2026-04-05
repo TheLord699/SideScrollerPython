@@ -151,6 +151,7 @@ class Entities:
                 "move_speed": template.get("move_speed", 1),
                 "jump_force": template.get("jump_force", 10),
                 "aggro_range": template.get("aggro_range", 0),
+                "stop_distance": template.get("stop_distance", 0),
                 "attack_damage": template.get("attack_damage", 10),
                 "ai_timer": 0,
                 "ai_direction": 0,
