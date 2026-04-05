@@ -5,7 +5,7 @@ This is my first attempt at creating a side scroller using Pygame-ce.
 It’s also my first time working on a project of this scale, so expect quirks, experiments,
 and plenty of “could be betters.”  
 
-I went heavy on composition (no inheritance, yucky), and while I did some testing
+I went heavy on composition (inheritance is yucky), and while I did some testing
 with rendering in ModernGL, I decided to stick with Pygame for now since rewriting
 everything would be painful.  
 
