@@ -17,6 +17,12 @@ class Entities:
             ]
         }
         
+        self.smoke_images = { # Ik this is super specific but i dont want to write a particle manager
+            1: pg.image.load("assets/sprites/particles/smoke1.png").convert_alpha(),
+            2: pg.image.load("assets/sprites/particles/smoke2.png").convert_alpha(),
+        }
+           
+        
         random.seed(self.game.environment.seed)
         
         self.load_settings()
@@ -107,7 +113,11 @@ class Entities:
             self.load_tilesheet(template["tile_sheet"][0], template["tile_sheet"][1], template["tile_sheet"][2])
         
         index_key = tuple(template.get("index")) if isinstance(template.get("index"), list) else template.get("index")
-        image = self.item_sprites.get(index_key, self.game.environment.missing_texture.copy())
+        raw_image = self.item_sprites.get(index_key, self.game.environment.missing_texture.copy())
+        
+        target_width = template.get("width", 32)
+        target_height = template.get("height", 32)
+        image = pg.transform.scale(raw_image, (target_width, target_height))
         
         entity = {
             "entity_type": entity_type,
@@ -115,10 +125,10 @@ class Entities:
             "name": name,
             "x": x,
             "y": y,
-            "width": template.get("width", 32),
-            "height": template.get("height", 32),
-            "hitbox_width": template.get("hitbox_width", template.get("width", image.get_width() if image else 32)),
-            "hitbox_height": template.get("hitbox_height", template.get("height", image.get_height() if image else 32)),
+            "width": target_width,
+            "height": target_height,
+            "hitbox_width": template.get("hitbox_width", target_width),
+            "hitbox_height": template.get("hitbox_height", target_height),
             "hitbox_offset_x": template.get("hitbox_offset_x", 0),
             "hitbox_offset_y": template.get("hitbox_offset_y", 0),
             "weight": template.get("weight", 1),
@@ -138,6 +148,10 @@ class Entities:
             "flip_x": False,
             "flip_y": False
         }
+
+        if entity_type == "item" and template.get("damageable", False):
+            entity["damage_image"] = image.copy()
+            entity["damage_image"].fill((255, 0, 0), special_flags=pg.BLEND_ADD)
 
         if entity["states"]:
             self.setup_entity_animations(entity)
@@ -159,15 +173,10 @@ class Entities:
             })
             
             if entity_type == "enemy":
-                entity.update({
-                    "abilities": template.get("entity_abilities"),
-                    "attack_timer": 0
-                })
+                entity.update({"abilities": template.get("entity_abilities"), "attack_timer": 0})
                 
         elif entity_type == "actor":
-            entity.update({
-                "abilities": template.get("entity_abilities")
-            })
+            entity.update({"abilities": template.get("entity_abilities")})
 
         if "message" in template:
             entity["message"] = template["message"]
@@ -178,6 +187,9 @@ class Entities:
 
     def setup_entity_animations(self, entity):
         entity["animation_frames"] = {}
+        
+        target_width = entity["width"]
+        target_height = entity["height"]
         
         for state, state_data in entity["states"].items():
             frames = []
@@ -192,16 +204,28 @@ class Entities:
                 col = start_col + (i % state_data.get("cols", frame_count))
                 key = (row, col)
                 if key in self.item_sprites:
-                    frames.append(self.item_sprites[key])
+                    original = self.item_sprites[key]
+                    scaled = pg.transform.scale(original, (target_width, target_height))
+                    frames.append(scaled)
                     
                 else:
                     print(f"Warning: Missing animation frame {key} for state {state}")
-                    frames.append(entity["image"])
+                    scaled = pg.transform.scale(entity["image"], (target_width, target_height))
+                    frames.append(scaled)
             
-            entity["animation_frames"][state] = {
-                "frames": frames,
-                "speed": animation_speed
-            }
+            entity["animation_frames"][state] = {"frames": frames, "speed": animation_speed}
+        
+        if entity["entity_type"] in {"npc", "enemy", "actor"} and entity.get("states"):
+            entity["damage_frames"] = {}
+            
+            for state_name, state_data in entity["animation_frames"].items():
+                damage_frames = []
+                for frame in state_data["frames"]:
+                    damage_frame = frame.copy()
+                    damage_frame.fill((255, 0, 0), special_flags=pg.BLEND_ADD)
+                    damage_frames.append(damage_frame)
+                    
+                entity["damage_frames"][state_name] = damage_frames
 
     def update_entity(self, entity):
         for sound_group in self.sounds.values():
@@ -308,9 +332,7 @@ class Entities:
             vel_y = random.uniform(-2.0, -3.5)
             
             radius = random.randint(3, 6)
-            
-            image_path = f"assets/sprites/particles/smoke{random.choice([1, 2])}.png"
-            smoke_img = pg.image.load(image_path).convert_alpha()
+            smoke_img = random.choice(list(self.smoke_images.values()))
             
             self.game.particles.generate(
                 pos=(entity["x"] + random.uniform(-2, 2), entity["y"] + random.uniform(-5, 5)),
@@ -592,44 +614,55 @@ class Entities:
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
         screen_width, screen_height = self.game.screen_width, self.game.screen_height
 
-        if entity["image"]:
-            sprite_x = entity["x"] - cam_x - entity["width"] // 2
-            sprite_y = entity["y"] - cam_y - entity["height"] // 2
+        if not entity["image"]:
+            return
+            
+        sprite_x = entity["x"] - cam_x - entity["width"] // 2
+        sprite_y = entity["y"] - cam_y - entity["height"] // 2
 
-            if sprite_x + entity["width"] >= 0 and sprite_x <= screen_width and sprite_y + entity["height"] >= 0 and sprite_y <= screen_height:
-                if entity.get("damage_effect", 0) > 0:
-                    tinted_image = entity["image"].copy()
-                    tinted_image.fill((255, 0, 0), special_flags=pg.BLEND_ADD)
+        if not (sprite_x + entity["width"] >= 0 and sprite_x <= screen_width and sprite_y + entity["height"] >= 0 and sprite_y <= screen_height):
+            return
 
-                    entity["damage_effect"] -= 0.05
-                    if entity["damage_effect"] < 0:
-                        entity["damage_effect"] = 0
-                        
-                else:
-                    tinted_image = entity["image"]
+        current_image = entity["image"]
+        
+        if entity.get("damage_effect", 0) > 0:
+            if entity.get("damage_frames") and entity.get("current_state"):
+                damage_frames = entity["damage_frames"].get(entity["current_state"], [])
+                if damage_frames and entity["animation_frame"] < len(damage_frames):
+                    current_image = damage_frames[entity["animation_frame"]]
+                    
+            elif entity.get("damage_image"):
+                current_image = entity["damage_image"]
+            
+            entity["damage_effect"] -= 0.05
+            if entity["damage_effect"] < 0:
+                entity["damage_effect"] = 0
 
-                scaled_image = pg.transform.scale(tinted_image, (entity["width"], entity["height"]))
-
-                if entity["entity_type"] in {"npc"}:
-                    self.health_bar(entity)
-                    if entity["x"] > self.game.player.x:
-                        scaled_image = pg.transform.flip(scaled_image, True, False)
+        flip_image = False
+        
+        if entity["entity_type"] == "npc":
+            self.health_bar(entity)
+            if entity["x"] > self.game.player.x:
+                flip_image = True
+        
+        elif entity["entity_type"] == "enemy":
+            self.health_bar(entity)
+            if "last_dir" not in entity:
+                entity["last_dir"] = 1
+            
+            if entity["vel_x"] > 0:
+                entity["last_dir"] = 1
                 
-                elif entity["entity_type"] in {"enemy"}:
-                    self.health_bar(entity)
-                    if "last_dir" not in entity:
-                        entity["last_dir"] = 1
-                    
-                    if entity["vel_x"] > 0:
-                        entity["last_dir"] = 1
-                        
-                    elif entity["vel_x"] < 0:
-                        entity["last_dir"] = -1
-                    
-                    if entity["last_dir"] == -1:
-                        scaled_image = pg.transform.flip(scaled_image, True, False)
-
-                self.game.screen.blit(scaled_image, (sprite_x, sprite_y))
+            elif entity["vel_x"] < 0:
+                entity["last_dir"] = -1
+            
+            if entity["last_dir"] == -1:
+                flip_image = True
+        
+        if flip_image:
+            current_image = pg.transform.flip(current_image, True, False)
+        
+        self.game.screen.blit(current_image, (sprite_x, sprite_y))
 
     def mouse_interact(self, entity):
         mouse_x, mouse_y = pg.mouse.get_pos()

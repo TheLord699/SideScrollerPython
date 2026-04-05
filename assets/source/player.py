@@ -11,6 +11,11 @@ class Player:
         self.game = game
         
         self.enable_cam_mouse = False
+        
+        self.smoke_images = { # Ik this is super specific but i dont want to write a particle manager
+            1: pg.image.load("assets/sprites/particles/smoke1.png").convert_alpha(),
+            2: pg.image.load("assets/sprites/particles/smoke2.png").convert_alpha(),
+        }
            
         self.load_settings()
         
@@ -317,7 +322,7 @@ class Player:
                 
                 flip_offset = 14 if self.direction == "right" else 0
 
-                for amount in range(5): # 5
+                for amount in range(5):
                     base_vel_x = random.uniform(0, 0.5)
                     if self.direction == "right":
                         vel_x = -base_vel_x
@@ -330,8 +335,8 @@ class Player:
 
                     vel_y = random.uniform(-0.5, -0.1)
                     radius = random.randint(2, 4)
-                    image_path = f"assets/sprites/particles/smoke{random.choice([1, 2])}.png"
-                    smoke_img = pg.image.load(image_path).convert_alpha()
+                    
+                    smoke_img = self.smoke_images[random.choice([1, 2])]
 
                     self.game.particles.generate(
                         pos=(self.x + self.hitbox_width / 2 - flip_offset + random.uniform(-10, 10), self.y + self.hitbox_height / 2 + random.uniform(0, 5)),
