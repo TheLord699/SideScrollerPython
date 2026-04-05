@@ -88,6 +88,9 @@ class Player:
         self.map_offset_x = 0
         self.map_offset_y = 0
         self.map_dragging = False
+        
+        self.fall_time = 0
+        self.max_fall_time = 500
 
         self.coyote_time = 8
         self.coyote_timer = 0
@@ -992,13 +995,28 @@ class Player:
                     self.vel_y = 0
                     self.on_ground = True
                     break
-
-        if self.on_ground:
-            self.coyote_timer = self.coyote_time
+        
+        if self.on_ground or self.vel_y < 0:
+            if self.on_ground:
+                self.coyote_timer = self.coyote_time
+                
+            self.fall_time = 0
             
-        elif self.coyote_timer > 0:
-            self.coyote_timer -= 1
-
+        else:
+            if self.coyote_timer > 0:
+                self.coyote_timer -= 1
+            
+            if self.fall_time < self.max_fall_time:
+                self.fall_time += 1
+    
+    def update_fall_shake(self):
+        if not self.on_ground and self.fall_time > 150:
+            normalized = min(1.0, (self.fall_time - 150) / (self.max_fall_time - 150))
+            shake_intensity = (normalized ** 2) * 4
+            
+            if self.vel_y > 3:
+                self.shake_camera(intensity=shake_intensity, duration=2)
+            
     def animate(self):
         previous_state = self.current_state
         
@@ -1752,6 +1770,7 @@ class Player:
                 self.handle_controls()
                 
             self.update_state()
+            self.update_fall_shake()
             self.handle_gravity()
             self.update_collision()
             #self.update_projectiles()

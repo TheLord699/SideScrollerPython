@@ -415,14 +415,11 @@ class Entities:
                         if entity["entity_type"] in {"enemy", "npc"} and entity["health"] > 0:
                             entity["health"] -= self.game.player.weapon_info[self.game.player.equipped_weapon]["damage"]
                             entity["damage_effect"] = 1
+                            self.game.player.shake_camera(intensity=3.2, duration=25)
                             self.spawn_hit_particles(entity)
                         
                         if entity.get("abilities") and "pushable" in entity["abilities"]:
-                            direction = pg.Vector2(
-                                entity["x"] - self.game.player.x,
-                                entity["y"] - self.game.player.y
-                            ).normalize()
-                            
+                            direction = pg.Vector2(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y).normalize()
                             push_force = entity.get("push_force", 20) / max(entity["weight"], 0.1)
                             
                             entity["vel_x"] += direction.x * push_force
@@ -521,28 +518,35 @@ class Entities:
         
     def health_bar(self, entity):
         if entity["health"] <= 0 or entity["health"] == entity["max_health"]:
-            return
+            return False
 
         if not hasattr(self, "health_font"):
             self.health_font = pg.font.Font(self.game.environment.fonts["fantasy"], 13)
 
-        health_percentage = entity["health"] / entity["max_health"]
-        bar_width, bar_height = entity["width"], 5
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
-
+        
+        entity_height = entity.get("hitbox_height", entity["height"])
+        bar_width = entity.get("hitbox_width", entity["width"])
+        bar_height = 5
+        
         bar_x = int(entity["x"] - cam_x - bar_width // 2)
-        bar_y = int(entity["y"] - cam_y - entity["height"] // 2 - 10)
+        bar_y = int(entity["y"] - cam_y - entity_height // 2 - 10)
 
-        if "last_health" not in entity or entity["last_health"] != entity["health"] or "health_text" not in entity:
+        if entity.get("last_health") != entity["health"]:
             entity["last_health"] = entity["health"]
             entity["health_text"] = self.health_font.render(f"{int(entity['health'])}/{int(entity['max_health'])}", True, (255, 255, 255))
 
-        text_surface = entity["health_text"]
-        text_rect = text_surface.get_rect(center=(bar_x + bar_width // 2, bar_y - 6))
-        self.game.screen.blit(text_surface, text_rect)
+        if "health_text" in entity:
+            text_surface = entity["health_text"]
+            text_rect = text_surface.get_rect(center=(bar_x + bar_width // 2, bar_y - 6))
+            self.game.screen.blit(text_surface, text_rect)
 
+        health_percentage = entity["health"] / entity["max_health"]
         pg.draw.rect(self.game.screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
-        pg.draw.rect(self.game.screen, (0, 255, 0), (bar_x, bar_y, bar_width * health_percentage, bar_height))
+        if health_percentage > 0:
+            pg.draw.rect(self.game.screen, (0, 255, 0), (bar_x, bar_y, bar_width * health_percentage, bar_height))
+        
+        return True
 
     def entity_indicators(self, entity):
         if not self.show_indicators:
@@ -580,14 +584,46 @@ class Entities:
         dy = entity["y"] - self.game.player.y
         distance_sq = dx * dx + dy * dy
 
-        indicator_radius = self.game.player.interact_radius.width * 2
+        if entity["entity_type"] == "item":
+            indicator_radius = self.game.player.interact_radius.width
+            
+        else:
+            indicator_radius = self.game.player.interact_radius.width * 2
+        
         indicator_radius_sq = indicator_radius * indicator_radius
 
         if distance_sq <= indicator_radius_sq:
             distance = math.sqrt(distance_sq)
             cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+            
+            entity_height = entity.get("hitbox_height", entity["height"])
             screen_x = entity["x"] - cam_x
-            screen_y = entity["y"] - cam_y - entity["height"] - 20
+            
+            health_bar_shown = entity["health"] > 0 and entity["health"] < entity["max_health"]
+            
+            if entity["entity_type"] == "item":
+                screen_y = entity["y"] - cam_y - entity_height // 2 - 10
+                text_y_offset = -8
+                
+            elif entity["entity_type"] == "npc":
+                if health_bar_shown:
+                    screen_y = entity["y"] - cam_y - entity_height // 2 - 35
+                    
+                else:
+                    screen_y = entity["y"] - cam_y - entity_height // 2 - 10
+                text_y_offset = -6
+                
+            elif entity["entity_type"] == "enemy":
+                if health_bar_shown:
+                    screen_y = entity["y"] - cam_y - entity_height // 2 - 40
+                    
+                else:
+                    screen_y = entity["y"] - cam_y - entity_height // 2 - 20
+                text_y_offset = -6
+                
+            else:
+                screen_y = entity["y"] - cam_y - entity_height // 2 - 10
+                text_y_offset = -8
 
             max_opacity, min_opacity = 255, 50
             fade_start = indicator_radius * 0.6
@@ -615,6 +651,30 @@ class Entities:
                 bubble = self.bubble_scales.get(scale, self.bubble_surface)
                 bubble.set_alpha(int(opacity))
                 self.game.screen.blit(bubble, (screen_x - bubble.get_width() // 2, screen_y - bubble.get_height() - 6))
+            
+            elif entity["entity_type"] == "item":
+                if not hasattr(self, "item_font"):
+                    self.item_font = pg.font.Font(self.game.environment.fonts["fantasy"], 11)
+                
+                item_text = entity['name']
+                
+                if not hasattr(self, "item_text_cache"):
+                    self.item_text_cache = {}
+                
+                if item_text not in self.item_text_cache:
+                    self.item_text_cache[item_text] = self.item_font.render(item_text, True, (255, 255, 255))
+                
+                text_surface = self.item_text_cache[item_text]
+                text_rect = text_surface.get_rect(center=(screen_x, screen_y + text_y_offset))
+                
+                padding = 4
+                bg_rect = text_rect.inflate(padding * 2, padding)
+                bg_surface = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
+                bg_surface.fill((0, 0, 0, int(opacity * 0.6)))
+                self.game.screen.blit(bg_surface, (bg_rect.x, bg_rect.y))
+                
+                text_surface.set_alpha(int(opacity))
+                self.game.screen.blit(text_surface, text_rect)
 
     def render(self, entity):
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
@@ -753,7 +813,7 @@ class Entities:
             offset_center = (center_x, center_y)
             pg.draw.line(self.game.screen, (255, 255, 0), original_center, offset_center, 2)
         
-        if entity["entity_type"] in ["enemy"]:
+        if entity["entity_type"] in {"enemy", "item"}:
             aggro_range = entity.get("aggro_range", 300)
             
             detection_surface = pg.Surface((aggro_range*2, aggro_range*2), pg.SRCALPHA)
@@ -784,7 +844,7 @@ class Entities:
                             
     def update(self):
         for entity in self.entities[:]:
-            if entity["entity_type"] in ["npc", "enemy"]:
+            if entity["entity_type"] in {"npc", "enemy"}:
                 self.game.ai.update_ai(entity)
             self.update_collision(entity)
             self.apply_gravity(entity)
