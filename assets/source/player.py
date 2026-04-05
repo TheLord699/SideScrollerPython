@@ -1496,7 +1496,7 @@ class Player:
             self.shake_timer -= 1
             
             return (offset_x, offset_y)
-        
+
         return (0, 0)
 
     def update_camera(self):
@@ -1521,8 +1521,8 @@ class Player:
         base_cam_y = max(min(base_cam_y, target_cam_y + self.game.screen_height / 4), target_cam_y - self.game.screen_height / 7)
 
         shake_offset_x, shake_offset_y = self.update_camera_shake()
-        self.cam_x = int(base_cam_x + shake_offset_x)
-        self.cam_y = int(base_cam_y + shake_offset_y)
+        self.cam_x = base_cam_x + shake_offset_x
+        self.cam_y = base_cam_y + shake_offset_y
 
     def render_hitboxes(self):
         if not self.game.debugging:
@@ -1584,7 +1584,6 @@ class Player:
         
         self.x -= normalized_direction[0] * force_magnitude
         self.y -= normalized_direction[1] * force_magnitude
-
 
     def render_map(self):
         if not self.in_map:
