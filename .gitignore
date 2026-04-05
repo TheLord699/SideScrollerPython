@@ -5,6 +5,7 @@ assets/scripts/__pycache__/
 assets/sounds/Minifantasy_Dungeon_SFX/
 assets/settings/game_data.json
 assets/source/deprecated/
+test_scripts/
 
 # Python cache files
 __pycache__/
