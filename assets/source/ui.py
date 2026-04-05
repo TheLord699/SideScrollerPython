@@ -125,9 +125,9 @@ class UI:
                 full_text = display_label
                 current_text = ""
                 typing_index = 0
-                last_typing_time = pg.time.get_ticks()
+                last_typing_time = self.game.environment.current_time
                 typing_complete = False
-                advance_timer = pg.time.get_ticks()
+                advance_timer = self.game.environment.current_time
                 
             else:
                 full_text = None
@@ -240,7 +240,7 @@ class UI:
         if not element["is_dialogue"] or element["typing_complete"]:
             return
 
-        current_time = pg.time.get_ticks()
+        current_time = self.game.environment.current_time
         
         time_since_last = current_time - element["last_typing_time"]
         time_per_char = 1000 / element["typing_speed"]

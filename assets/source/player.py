@@ -472,8 +472,8 @@ class Player:
         if len(self.pickup_tags) >= self.max_tags:
             self.remove_oldest_tag()
         
-        element_id = f"pickup_tag_{len(self.pickup_tags)}_{pg.time.get_ticks()}"
-        text_id = f"pickup_text_{len(self.pickup_tags)}_{pg.time.get_ticks()}"
+        element_id = f"pickup_tag_{len(self.pickup_tags)}_{self.game.environment.current_time}"
+        text_id = f"pickup_text_{len(self.pickup_tags)}_{self.game.environment.current_time}"
         
         screen_width = self.game.screen.get_width()
         x_pos = screen_width - 100
@@ -1329,7 +1329,7 @@ class Player:
             )
 
     def dash(self):
-        current_time = pg.time.get_ticks()
+        current_time = self.game.environment.current_time
 
         if hasattr(self, "last_dash_time") and current_time - self.last_dash_time < 500:
             return
@@ -1354,8 +1354,13 @@ class Player:
                 self.hitbox_height
             )
 
-            for tile in self.game.map.tile_hitboxes:
-                if temp_hitbox.colliderect(tile):
+            nearby_tiles = self.game.map.get_nearby_tiles(temp_hitbox)
+            
+            for tile_hitbox, tile_id in nearby_tiles:
+                tile_attributes = self.game.map.tile_attributes.get(tile_id, {})
+                swimmable = tile_attributes.get("swimmable", False)
+                
+                if temp_hitbox.colliderect(tile_hitbox) and not swimmable:
                     blocked = True
                     break
 
@@ -1437,7 +1442,7 @@ class Player:
         if (self.current_state not in self.frames or 
             not self.frames[self.current_state] or
             (self.game.environment.current_time - self.last_damage_time < self.invinsibility_duration and 
-            not self.current_state == "death" and (pg.time.get_ticks() // 100) % 2 == 0)):
+            not self.current_state == "death" and (self.game.environment.current_time // 100) % 2 == 0)):
             return
 
         frame_idx = min(self.current_frame, len(self.frames[self.current_state]) - 1)
@@ -1470,7 +1475,7 @@ class Player:
             
             current_intensity = self.shake_intensity * decay
             
-            time = pg.time.get_ticks() / 100
+            time = self.game.environment.current_time / 100
             angle_x = time * 15
             angle_y = time * 13
             

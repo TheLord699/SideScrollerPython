@@ -169,7 +169,7 @@ class Foreground:
             self.cam_y = self.game.player.cam_y
 
     def update_layers(self):
-        current_time = pg.time.get_ticks() * 0.001
+        current_time = self.game.environment.current_time * 0.001
         
         for foreground_layer in self.layers:
             if foreground_layer["type"] == "overlay":
@@ -358,7 +358,7 @@ class Foreground:
             render_x = int(particle["x"] - self.cam_x)
             render_y = int(particle["y"] - self.cam_y)
 
-            glow = 150 + int(105 * math.sin(pg.time.get_ticks() * 0.002 + particle["x"]))
+            glow = 150 + int(105 * math.sin(self.game.environment.current_time * 0.002 + particle["x"]))
             glow_image = image.copy()
             glow_image.fill((glow, glow, glow, 0), special_flags=pg.BLEND_RGBA_ADD)
 

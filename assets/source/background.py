@@ -93,7 +93,7 @@ class Background:
 			self.menu_scrolling = False
 
 	def update_layers(self):
-		current_time = pg.time.get_ticks() * 0.002
+		current_time = self.game.environment.current_time * 0.002
 		
 		for index, bg in enumerate(self.layers):
 			move_speed = bg["move_speed"]
