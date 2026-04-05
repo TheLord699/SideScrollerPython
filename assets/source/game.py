@@ -252,7 +252,7 @@ class Environment:
         render_order=0
       )
       self.game.ui.create_ui(
-        x=self.game.screen_width / 2.6, y=170, width=200, height=20, is_slider=True,
+        x=self.game.screen_width / 2.65, y=170, width=200, height=20, is_slider=True,
         min_value=0.0, max_value=1.1, initial_value=self.volume,
         step_size=0.01, element_id="volume_slider", 
         click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
@@ -265,7 +265,7 @@ class Environment:
       )
       self.game.ui.create_ui(
         sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2 + 120, y=270, sprite_width=95, sprite_height=32, 
+        x=self.game.screen_width / 2 + 110, y=270, sprite_width=95, sprite_height=32, 
         centered=True, width=200, height=100,
         alpha=True, is_button=True,
         scale_multiplier=1.1,
@@ -310,7 +310,7 @@ class Environment:
       )
       self.game.ui.create_ui(
         sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2 + 120, y=395, sprite_width=95, sprite_height=32, 
+        x=self.game.screen_width / 2 + 110, y=395, sprite_width=95, sprite_height=32, 
         centered=True, width=200, height=100,
         alpha=True, is_button=True,
         scale_multiplier=1.1,
