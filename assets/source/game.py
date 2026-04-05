@@ -11,7 +11,7 @@ class Environment:
     self.gravity = 0.5 # 0.5
     self.max_fall_speed = 20 # terminal vel for all entities + player
     self.scale = 3 # 3 (experimental)
-    self.max_particles = 20 # 20
+    self.max_particles = 25 # 20
     
     self.max_darkness = 50 # 50, greater is lighter
     self.lighting = False
