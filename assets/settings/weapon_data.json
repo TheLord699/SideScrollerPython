@@ -16,7 +16,7 @@
     "gravity": 0,
     "piercing": true
   },
-  "bow": {
+  "basic_bow": {
     "type": "ranged",
     "damage": 20,
     "speed": 0.4,
