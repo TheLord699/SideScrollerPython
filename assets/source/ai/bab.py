@@ -12,6 +12,7 @@ def get_player_distance(entity, ai_system):
     player = ai_system.game.player
     delta_x = player.x - entity["x"]
     delta_y = player.y - entity["y"]
+    
     return math.hypot(delta_x, delta_y), delta_x, delta_y
 
 def init_state(entity):

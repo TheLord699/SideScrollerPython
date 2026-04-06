@@ -3,15 +3,29 @@ Side Scroller (Python + Pygame)
 
 This is my first attempt at creating a side scroller using Pygame-ce.
 It’s also my first time working on a project of this scale, so expect quirks, experiments,
-and plenty of “could be betters.”  
+and plenty of “could be betters.”
 
 I went heavy on composition (inheritance is yucky), and while I did some testing
 with rendering in ModernGL, I decided to stick with Pygame for now since rewriting
-everything would be painful.  
+everything would be painful.
+
+I also experimented with building a full ECS (Entity Component System), but decided
+against a traditional implementation. In Python, a true data-oriented ECS introduces
+significant overhead due to object indirection, dynamic lookups, and poor cache locality.
+
+Instead, I opted for a more pragmatic approach:
+
+* Systems are more targeted and explicit (e.g. per-entity-type updates)
+* Data is grouped where it makes sense rather than fully abstracted
+* Focus is on keeping things fast and maintainable within Python’s constraints
+
+So while this isn’t a “pure ECS,” it follows similar ideas where useful, without
+sacrificing performance or readability.
 
 Note: All assets are from itch.io
 
 Also use pygame-ce not pygame
+
 
 ------------------------------------------------------------
 🚀 Features / Systems
