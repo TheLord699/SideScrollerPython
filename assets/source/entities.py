@@ -408,57 +408,6 @@ class Entities:
                         entity["y"] = tile_hitbox.bottom + hitbox_heigth / 2 - offset_y
                         entity["vel_y"] = 0
         
-        if entity["entity_type"] in {"enemy", "npc", "actor"}:
-            if entity_hitbox.colliderect(self.game.player.attack_hitbox):
-                for attack_id in self.game.player.active_melee_ids:
-                    if entity.get("last_hit_id") != attack_id:
-                        if entity["entity_type"] in {"enemy", "npc"} and entity["health"] > 0:
-                            entity["health"] -= self.game.player.weapon_info[self.game.player.equipped_weapon]["damage"]
-                            entity["damage_effect"] = 1
-                            self.game.player.shake_camera(intensity=3.2, duration=25)
-                            self.spawn_hit_particles(entity)
-                        
-                        if entity.get("abilities") and "pushable" in entity["abilities"]:
-                            direction = pg.Vector2(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y).normalize()
-                            push_force = entity.get("push_force", 20) / max(entity["weight"], 0.1)
-                            
-                            entity["vel_x"] += direction.x * push_force
-                            entity["vel_y"] += direction.y * push_force
-                        
-                        if entity["entity_type"] in {"enemy", "npc"}:
-                            for sound in self.sounds["hit"]:
-                                sound["sound"].stop()
-                                
-                            random.choice(self.sounds["hit"])["sound"].play()
-                        
-                        entity["last_hit_id"] = attack_id
-            
-            for attack_id in self.game.player.active_projectile_ids:
-                if (entity.get("last_hit_id") != attack_id and 
-                    entity_hitbox.collidepoint(attack_id["x"], attack_id["y"])):
-                    if entity["entity_type"] in {"enemy", "npc"} and entity["health"] > 0:
-                        entity["health"] -= 10
-                        entity["damage_effect"] = 1
-                    
-                    if entity.get("abilities") and "pushable" in entity["abilities"]:
-                        direction = pg.Vector2(
-                            entity["x"] - attack_id["x"],
-                            entity["y"] - attack_id["y"]
-                        ).normalize()
-                        
-                        push_force = attack_id.get("force", 20) / max(entity["weight"], 0.1)
-                        
-                        entity["vel_x"] += direction.x * push_force
-                        entity["vel_y"] += direction.y * push_force
-                    
-                    if entity["entity_type"] in {"enemy", "npc"}:
-                        for sound in self.sounds["hit"]:
-                            sound["sound"].stop()
-                            
-                        random.choice(self.sounds["hit"])["sound"].play()
-                    
-                    entity["last_hit_id"] = attack_id
-
     def apply_gravity(self, entity):
         if not self.is_on_ground(entity):
             step = round(max(1, entity["vel_y"]))
@@ -476,8 +425,12 @@ class Entities:
     def apply_horizontal_movement(self, entity):
         entity["x"] += entity["vel_x"]
 
+        if entity.get("knockback_timer", 0) > 0:
+            entity["knockback_timer"] -= 1
+            return
+
         if entity.get("on_ground", False): 
-            friction = 0.8 # temporary friction value
+            friction = 0.8
 
             if abs(entity["vel_x"]) > 0.1:
                 entity["vel_x"] *= friction 
@@ -694,6 +647,7 @@ class Entities:
         if entity.get("damage_effect", 0) > 0:
             if entity.get("damage_frames") and entity.get("current_state"):
                 damage_frames = entity["damage_frames"].get(entity["current_state"], [])
+                
                 if damage_frames and entity["animation_frame"] < len(damage_frames):
                     current_image = damage_frames[entity["animation_frame"]]
                     
@@ -713,17 +667,29 @@ class Entities:
         
         elif entity["entity_type"] == "enemy":
             self.health_bar(entity)
-            if "last_dir" not in entity:
-                entity["last_dir"] = 1
             
-            if entity["vel_x"] > 0:
-                entity["last_dir"] = 1
+            if entity.get("force_facing"):
+                if entity["force_facing"] == "left":
+                    flip_image = True
+                    
+                else:
+                    flip_image = False
+                    
+                if entity.get("knockback_timer", 0) <= 0:
+                    del entity["force_facing"]
+                    
+            else:
+                if "last_dir" not in entity:
+                    entity["last_dir"] = 1
                 
-            elif entity["vel_x"] < 0:
-                entity["last_dir"] = -1
-            
-            if entity["last_dir"] == -1:
-                flip_image = True
+                if entity["vel_x"] > 0:
+                    entity["last_dir"] = 1
+                    
+                elif entity["vel_x"] < 0:
+                    entity["last_dir"] = -1
+                
+                if entity["last_dir"] == -1:
+                    flip_image = True
         
         if flip_image:
             current_image = pg.transform.flip(current_image, True, False)

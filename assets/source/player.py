@@ -35,20 +35,18 @@ class Player:
         self.camera_smoothing_factor = 0.1
         self.free_cam = False
 
-        self.scale_factor = self.game.environment.scale 
+        self.scale_factor = self.game.environment.scale
         self.hitbox_width = 5 * self.scale_factor
         self.hitbox_height = 15 * self.scale_factor
-        self.attack_hitbox_width = 17 * self.scale_factor
-        self.attack_hitbox_height = 15 * self.scale_factor
         self.hitbox = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
         self.interact_radius = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
-        self.attack_hitbox = pg.Rect(0, 0, self.attack_hitbox_width, self.attack_hitbox_height)
         self.blocked_horizontally = False
 
         self.attack_timeout = 30
         self.attack_sequence = 1
         self.attack_timer = 0
-        
+        self.current_attack_projectile = None
+
         self.max_inventory_slots = 15
         self.inventory = {}
         self.rendered_inventory_ui_elements = []
@@ -59,26 +57,21 @@ class Player:
         self.selected_slot = None
         self.inventory_changed = False
         self.inventory_cooldown = 0
-        
-        # will remove melee attacks soon and replace with "projectile" based attack, the melee attacks will still visually be melee but will be internally handled as projectiles
-        self.active_projectile_ids = []
-        self.active_melee_ids = []
-        self.current_attack_id = 0
-            
+
         self.max_health = 3
         self.current_health = self.max_health
         self.health_per_row = 10
         self.health_spacing = 35
-        self.invinsibility_duration = 900 # 600
-        self.last_damage_time = -self.invinsibility_duration * 2 
-        
+        self.invinsibility_duration = 900
+        self.last_damage_time = -self.invinsibility_duration * 2
+
         self.pickup_tags = []
         self.max_tags = 3
-            
-        self.last_step_time = 0 
+
+        self.last_step_time = 0
         self.step_interval = 300
         self.actual_horizontal_movement = False
-        
+
         self.in_dialogue = False
         self.dialogue_index = 0
         self.dialogue_with = None
@@ -88,29 +81,28 @@ class Player:
         self.map_offset_x = 0
         self.map_offset_y = 0
         self.map_dragging = False
-        
+
         self.fall_time = 0
         self.max_fall_time = 500
 
         self.coyote_time = 8
         self.coyote_timer = 0
-            
+
         self.current_state = "idle"
         self.direction = "right"
         self.current_frame = 0
         self.animation_timer = 0
         self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
         self.equipped_weapon = "basic_sword"
-        # will load settings from json instead of hard coding dictionaries
         self.state_frames = {
             "idle": {"frames": 6, "speed": 0.15},
             "walking": {"frames": 8, "speed": 0.2},
             "jump": {"frames": 3, "speed": 0.15},
-            "hurt": {"frames": 4, "speed": 0.10}, # 0.10
+            "hurt": {"frames": 4, "speed": 0.10},
             "death": {"frames": 4, "speed": 0.15},
         }
         self.frames = {state: [] for state in self.state_frames}
-        
+
         self.sounds = {
             "jump": [
                 {"sound": pg.mixer.Sound("assets/sounds/player/movement/12_human_jump_2.wav"), "volume": 2.0}
@@ -155,40 +147,40 @@ class Player:
                 {"sound": pg.mixer.Sound("assets/sounds/player/movement/15_human_dash_2.wav"), "volume": 2.0}
             ]
         }
-        
+
         self.attacking = False
         self.on_ground = False
         self.in_inventory = False
         self.just_closed_dialogue = False
-        
+
         random.seed(self.game.environment.seed)
-        
+
         self.item_info = load_json(os.path.join("assets", "settings", "entities.json"))
-        
+
         self.load_frames()
 
     def load_frames(self):
         self.frames = {}
         self.flipped_frames = {}
-        
+
         self.sheet_width = 100
         self.sheet_height = 100
-        
+
         for state, settings in self.state_frames.items():
             self.frames[state] = []
             self.flipped_frames[state] = []
-            
+
             sheet_path = f"assets/sprites/player/{state}_animation.png"
             try:
                 sheet = pg.image.load(sheet_path).convert_alpha()
-                
+
             except:
                 print(f"Failed to load sprite sheet: {sheet_path}")
                 continue
-                
+
             scaled_width = self.sheet_width * self.scale_factor
             scaled_height = self.sheet_height * self.scale_factor
-            
+
             for frame_index in range(settings["frames"]):
                 frame_rect = pg.Rect(
                     frame_index * self.sheet_width,
@@ -196,70 +188,70 @@ class Player:
                     self.sheet_width,
                     self.sheet_height
                 )
-                
+
                 frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
                 frame_image.blit(sheet, (0, 0), frame_rect)
                 frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
-                
+
                 flipped_image = pg.transform.flip(frame_image, True, False)
-                
+
                 self.frames[state].append(frame_image)
                 self.flipped_frames[state].append(flipped_image)
-    
+
     def load_weapon_animations(self):
         if self.equipped_weapon not in self.weapon_info:
             return
-        
+
         weapon_data = self.weapon_info[self.equipped_weapon]
         first_sequence_state = f"attacking{self.equipped_weapon}1"
-        
+
         if first_sequence_state in self.frames and self.frames[first_sequence_state]:
             return
-        
+
         for sequence in range(1, weapon_data.get("sequence", 1) + 1):
             state_name = f"attacking{self.equipped_weapon}{sequence}"
             frames_count = weapon_data["frames"][sequence - 1]
-            
+
             self.frames[state_name] = []
             self.flipped_frames[state_name] = []
-            
+
             sheet_paths = [
                 f"assets/sprites/player/weapons/attacking_{self.equipped_weapon}{sequence}.png",
                 f"assets/sprites/player/weapons/{self.equipped_weapon}_attack{sequence}.png",
                 f"assets/sprites/player/weapons/{self.equipped_weapon}{sequence}.png"
             ]
-            
+
             sheet = None
             for sheet_path in sheet_paths:
                 try:
                     sheet = pg.image.load(sheet_path).convert_alpha()
                     break
-                
+
                 except:
                     continue
-            
+
             if sheet is None:
                 fallback_paths = [
                     f"assets/sprites/player/attacking_animation.png",
                     f"assets/sprites/player/attacking{sequence}_animation.png"
                 ]
-                
+
                 for fallback_path in fallback_paths:
                     try:
                         sheet = pg.image.load(fallback_path).convert_alpha()
                         print(f"Using fallback animation: {fallback_path}")
                         break
-                    
+
                     except:
                         continue
-            
+
             if sheet is None:
                 print(f"Failed to load any animation for {state_name}")
                 continue
-            
+
             scaled_width = self.sheet_width * self.scale_factor
             scaled_height = self.sheet_height * self.scale_factor
-            
+
             for frame_index in range(frames_count):
                 frame_rect = pg.Rect(
                     frame_index * self.sheet_width,
@@ -267,80 +259,80 @@ class Player:
                     self.sheet_width,
                     self.sheet_height
                 )
-                
+
                 frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
                 frame_image.blit(sheet, (0, 0), frame_rect)
                 frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
-                
+
                 flipped_image = pg.transform.flip(frame_image, True, False)
-                
+
                 self.frames[state_name].append(frame_image)
                 self.flipped_frames[state_name].append(flipped_image)
-        
+
         print(f"Loaded animations for {self.equipped_weapon}")
 
-    def update_state(self):     
+    def update_state(self):
         for sound_group in self.sounds.values():
             if isinstance(sound_group, list):
                 for sound_dict in sound_group:
                     sound = sound_dict["sound"]
                     volume = sound_dict["volume"]
                     sound.set_volume(self.game.environment.volume / 10 * volume)
-                        
+
             elif isinstance(sound_group, dict):
                 for sound_key, sound_dict in sound_group.items():
                     sound = sound_dict["sound"]
                     volume = sound_dict["volume"]
                     sound.set_volume(self.game.environment.volume / 10 * volume)
 
-        self.current_health = math.floor(self.current_health * 2) / 2  # rounds to nearest half heart
+        self.current_health = math.floor(self.current_health * 2) / 2
         self.current_health = min(self.current_health, self.max_health)
 
         self.x += self.vel_x
         self.y += self.vel_y
-        
+
         self.attack_timer += 1
-        
+
         if self.current_health < 0:
             self.current_health = 0
-        
+
         if self.vel_y >= self.game.environment.max_fall_speed:
             self.vel_y = self.game.environment.max_fall_speed
 
         if self.attack_timer > self.attack_timeout:
             self.attack_sequence = 1
-        
-        if self.current_state in {"death"} or getattr(self, "sliding", False):   
+
+        if self.current_state in {"death"} or getattr(self, "sliding", False):
             if self.friction <= 0 and self.on_ground:
                 self.friction = 0.3
-                         
+
             self.vel_x -= self.friction * (1 if self.vel_x > 0 else -1 if self.vel_x < 0 else 0)
-                    
+
             if abs(self.vel_x) < 0.5:
                 self.vel_x = 0
-            
+
         if self.actual_horizontal_movement and self.on_ground and not self.current_state in {"death"}:
             if self.game.environment.current_time - self.last_step_time > self.step_interval:
                 walking_sound = random.choice(self.sounds["walking"])
                 walking_sound["sound"].play()
                 self.last_step_time = self.game.environment.current_time
-                
+
                 flip_offset = 14 if self.direction == "right" else 0
 
                 for amount in range(5):
                     base_vel_x = random.uniform(0, 0.5)
                     if self.direction == "right":
                         vel_x = -base_vel_x
-                        
+
                     elif self.direction == "left":
                         vel_x = base_vel_x
-                        
+
                     else:
                         vel_x = random.uniform(-0.5, 0.5)
 
                     vel_y = random.uniform(-0.5, -0.1)
                     radius = random.randint(2, 4)
-                    
+
                     smoke_img = self.smoke_images[random.choice([1, 2])]
 
                     self.game.particles.generate(
@@ -357,30 +349,30 @@ class Player:
     def take_damage(self, damage):
         if self.current_state == "death":
             return
-        
+
         if self.game.environment.current_time - self.last_damage_time >= self.invinsibility_duration:
             self.current_health -= damage
             self.last_damage_time = self.game.environment.current_time
-            
+
             self.game.foreground.add_screen_effect("hurt", intensity=0.7, duration=20)
-            
+
             self.shake_camera(intensity=8, duration=25)
-            
+
             if self.current_health < 0.5:
                 self.death()
                 hurt_sound = random.choice(self.sounds["hit"])
                 hurt_sound["sound"].play()
-                
+
             else:
                 self.current_state = "hurt"
                 self.current_frame = 0
                 self.animation_timer = 0
                 self.attacking = False
                 self.attack_sequence = (self.attack_sequence % 2) + 1
-                self.active_melee_ids.clear()
+                self.current_attack_projectile = None
                 hurt_sound = random.choice(self.sounds["hit"])
                 hurt_sound["sound"].play()
-                    
+
     def death(self):
         self.current_state = "death"
         self.current_frame = 0
@@ -392,7 +384,7 @@ class Player:
         self.game.ui.remove_ui_element("dialogue_boarder")
         self.game.ui.remove_ui_element("dialogue_name")
         self.game.environment.menu = "death"
-    
+
     def render_health(self):
         previous_health = getattr(self, "previous_health", self.current_health)
 
@@ -400,7 +392,6 @@ class Player:
             for health in range(self.max_health):
                 row = health // self.health_per_row
                 col = health % self.health_per_row
-
                 self.game.ui.remove_ui_element(health)
 
         for heart in range(self.max_health):
@@ -409,26 +400,26 @@ class Player:
 
             x_position = self.inventory_x_offset + col * self.health_spacing - 300
             y_position = self.inventory_y_offset + row * self.health_spacing - 220
-            
+
             if heart + 1 <= self.current_health:
                 image_path = [0, 0]
-                
+
             elif heart + 1 - self.current_health == 0.5:
                 image_path = [0, 1]
-                
+
             else:
                 image_path = [0, 2]
 
             self.game.ui.create_ui(
                 sprite_sheet_path="hearts", image_id=image_path,
-                sprite_width=32, sprite_height=32, 
-                x=x_position, y=y_position, 
-                centered=True, width=60, height=60, 
-                alpha=True, 
+                sprite_width=32, sprite_height=32,
+                x=x_position, y=y_position,
+                centered=True, width=60, height=60,
+                alpha=True,
                 element_id=heart,
                 render_order=-15
             )
-        
+
         self.previous_health = self.current_health
 
     def add_item_to_inventory(self, item):
@@ -446,14 +437,14 @@ class Player:
             if index not in self.inventory:
                 self.inventory[index] = item
                 return
-            
+
     def render_item_mouse(self):
         if not self.in_inventory or self.selected_slot is None or self.selected_slot not in self.inventory:
             if hasattr(self, "mouse_item") and self.mouse_item:
                 self.game.ui.remove_ui_element(self.mouse_item)
-                
+
             return
-        
+
         item = self.inventory[self.selected_slot]
         item_name = item["name"]
         item_index = self.item_info["items"][item_name]["index"]
@@ -468,7 +459,7 @@ class Player:
 
         mouse_x, mouse_y = pg.mouse.get_pos()
         self.mouse_item = f"mouse_{item_name}"
-        
+
         self.game.ui.create_ui(
             sprite_sheet_path="item_sheet", image_id=item_index,
             x=mouse_x, y=mouse_y,
@@ -478,18 +469,18 @@ class Player:
             element_id=self.mouse_item,
             render_order=1
         )
-        
+
     def add_pickup_tag(self, item_name):
         if len(self.pickup_tags) >= self.max_tags:
             self.remove_oldest_tag()
-        
+
         element_id = f"pickup_tag_{len(self.pickup_tags)}_{self.game.environment.current_time}"
         text_id = f"pickup_text_{len(self.pickup_tags)}_{self.game.environment.current_time}"
-        
+
         screen_width = self.game.screen.get_width()
         x_pos = screen_width - 100
         y_pos = 20
-        
+
         self.game.ui.create_ui(
             sprite_sheet_path="item_sheet",
             image_id=self.item_info["items"][item_name]["index"],
@@ -502,7 +493,7 @@ class Player:
             element_id=element_id,
             render_order=2
         )
-        
+
         self.game.ui.create_ui(
             x=x_pos + 50,
             y=y_pos + 15,
@@ -512,28 +503,28 @@ class Player:
             render_order=2,
             label=item_name
         )
-        
+
         self.pickup_tags.insert(0, {
             "name": item_name,
             "element_id": element_id,
             "text_id": text_id,
             "creation_time": self.game.environment.current_time
         })
-        
+
         self.update_tag_positions()
 
     def update_pickup_tags(self):
         if not self.pickup_tags:
             return
-        
+
         current_time = self.game.environment.current_time
         expired_tags = [tag for tag in self.pickup_tags if current_time - tag["creation_time"] >= 3000]
-        
+
         for tag in expired_tags:
             self.pickup_tags.remove(tag)
             self.game.ui.remove_ui_element(tag["element_id"])
             self.game.ui.remove_ui_element(tag["text_id"])
-        
+
         if expired_tags:
             self.update_tag_positions()
 
@@ -547,14 +538,14 @@ class Player:
         screen_width = self.game.screen.get_width()
         x_pos = screen_width - 100
         start_y = 20
-        
+
         for tag in self.pickup_tags:
             self.game.ui.remove_ui_element(tag["element_id"])
             self.game.ui.remove_ui_element(tag["text_id"])
-        
+
         for index, tag in enumerate(self.pickup_tags):
             y_pos = start_y + index * 35
-            
+
             self.game.ui.create_ui(
                 sprite_sheet_path="item_sheet",
                 image_id=self.item_info["items"][tag["name"]]["index"],
@@ -567,7 +558,7 @@ class Player:
                 element_id=tag["element_id"],
                 render_order=2
             )
-            
+
             self.game.ui.create_ui(
                 x=x_pos + 50,
                 y=y_pos + 15,
@@ -577,42 +568,42 @@ class Player:
                 render_order=2,
                 label=tag["name"]
             )
-                    
-    def render_item_info(self, id): # doesnt update amount in real time
+
+    def render_item_info(self, id):
         if hasattr(self, "last_rendered_item") and self.last_rendered_item:
             self.game.ui.remove_ui_element(self.last_rendered_item)
             self.game.ui.remove_ui_element("item_info")
-            
+
         if self.selected_slot is not None:
             self.game.ui.create_ui(
                 sprite_sheet_path="item_sheet", image_id=self.item_info["items"][self.inventory[id]["name"]]["index"],
-                x=self.game.screen_width / 5, y=self.game.screen_height / 2.2, sprite_width=16, sprite_height=16, 
+                x=self.game.screen_width / 5, y=self.game.screen_height / 2.2, sprite_width=16, sprite_height=16,
                 centered=True, width=60, height=60,
                 alpha=True,
                 element_id=self.inventory[id]["name"],
                 render_order=0
             )
-            
+
             self.game.ui.create_ui(
                 x=self.game.screen_width / 6, y=self.game.screen_height / 2,
                 centered=True, width=60, height=60,
                 element_id="item_info",
                 render_order=1, font=self.game.environment.fonts["fantasy"],
-                label=f"{self.inventory[id]["name"]} x{self.inventory[id]["quantity"]} Value:{self.inventory[id]["value"]}"
+                label=f"{self.inventory[id]['name']} x{self.inventory[id]['quantity']} Value:{self.inventory[id]['value']}"
             )
             self.rendered_inventory_ui_elements.append(self.inventory[id]["name"])
             self.rendered_inventory_ui_elements.append("item_info")
-        
+
             self.last_rendered_item = self.inventory[id]["name"]
-        
+
     def refresh_inventory(self):
         if self.inventory_changed:
             for element_id in self.rendered_inventory_ui_elements:
                 self.game.ui.remove_ui_element(element_id)
-                
+
             self.rendered_inventory_ui_elements.clear()
             self.inventory_changed = False
-        
+
         for slot in range(self.max_inventory_slots):
             row = slot // self.items_per_row
             col = slot % self.items_per_row
@@ -620,21 +611,21 @@ class Player:
             x_position = self.inventory_x_offset + col * self.item_spacing
             y_position = self.inventory_y_offset + row * self.item_spacing
 
-            slot_element_id = f"slot:{slot}" 
-            
+            slot_element_id = f"slot:{slot}"
+
             self.game.ui.create_ui(
                 sprite_sheet_path="ui_sheet", image_id=[34, 3],
-                x=x_position, y=y_position, sprite_width=32, sprite_height=32, 
+                x=x_position, y=y_position, sprite_width=32, sprite_height=32,
                 centered=True, width=35, height=35,
                 alpha=True, is_button=True,
                 element_id=slot_element_id,
                 scale_multiplier=1,
                 callback=lambda id=slot: (self.on_inventory_click(id), self.render_item_info(id) if id in self.inventory else None),
                 render_order=1
-                )
+            )
 
             self.rendered_inventory_ui_elements.append(slot_element_id)
-    
+
     def render_inventory(self):
         if self.in_inventory:
             self.refresh_inventory()
@@ -644,31 +635,31 @@ class Player:
                 col = item_slot % self.items_per_row
 
                 x_position = self.inventory_x_offset + col * self.item_spacing
-                y_position = self.inventory_y_offset + row * self.item_spacing 
+                y_position = self.inventory_y_offset + row * self.item_spacing
 
-                item_element_id = f"item:{item["name"]}"
+                item_element_id = f"item:{item['name']}"
                 self.game.ui.create_ui(
-                    image_id=self.item_info["items"][item["name"]]["index"], 
+                    image_id=self.item_info["items"][item["name"]]["index"],
                     sprite_sheet_path="item_sheet",
-                    sprite_width=16, sprite_height=16, 
-                    x=x_position, y=y_position, 
-                    centered=True, width=20, height=20, 
-                    alpha=True, is_button=True, 
-                    scale_multiplier=1, 
+                    sprite_width=16, sprite_height=16,
+                    x=x_position, y=y_position,
+                    centered=True, width=20, height=20,
+                    alpha=True, is_button=True,
+                    scale_multiplier=1,
                     element_id=item_element_id,
                     is_hold=False,
                     render_order=1
                 )
 
                 self.rendered_inventory_ui_elements.append(item_element_id)
-                
+
         else:
             for element_id in self.rendered_inventory_ui_elements:
                 self.game.ui.remove_ui_element(element_id)
-                
+
             self.rendered_inventory_ui_elements.clear()
             self.selected_slot = None
-        
+
             if hasattr(self, "last_rendered_item") and self.last_rendered_item:
                 self.last_rendered_item = None
 
@@ -676,31 +667,30 @@ class Player:
         if self.selected_slot is None and slot in self.inventory and (self.game.environment.current_time - self.inventory_cooldown >= 150):
             self.selected_slot = slot
             self.render_item_info(slot)
-            
+
         elif self.selected_slot == slot and (self.game.environment.current_time - self.inventory_cooldown >= 150):
             self.selected_slot = None
-            self.render_inventory() 
-            self.inventory_cooldown = self.game.environment.current_time  
-            
+            self.render_inventory()
+            self.inventory_cooldown = self.game.environment.current_time
+
             drop_sound = random.choice(self.sounds["pickup"])
             drop_sound["sound"].play()
-            
+
         elif self.selected_slot is not None and slot != self.selected_slot and (self.game.environment.current_time - self.inventory_cooldown >= 150):
             if slot in self.inventory:
                 self.inventory[self.selected_slot], self.inventory[slot] = self.inventory[slot], self.inventory[self.selected_slot]
-                
+
             else:
                 self.inventory[slot] = self.inventory.pop(self.selected_slot)
-            
+
             drop_sound = random.choice(self.sounds["pickup"])
             drop_sound["sound"].play()
 
             self.refresh_inventory()
-            self.selected_slot = None  
+            self.selected_slot = None
             self.inventory_changed = True
             self.inventory_cooldown = self.game.environment.current_time
-    
-    # probably shit way of handling hitboxes/updates
+
     def hitbox_set(self):
         self.hitbox = pg.Rect(
             self.x - self.hitbox_width / 2,
@@ -708,15 +698,15 @@ class Player:
             self.hitbox_width,
             self.hitbox_height
         )
-    
+
     def interact_hitbox(self):
         self.interact_radius = pg.Rect(
-            self.x - self.hitbox_width / 2 - 50,  
-            self.y - self.hitbox_height / 2 - 50, 
-            self.hitbox_width + 100,  
-            self.hitbox_height + 100  
+            self.x - self.hitbox_width / 2 - 50,
+            self.y - self.hitbox_height / 2 - 50,
+            self.hitbox_width + 100,
+            self.hitbox_height + 100
         )
-        
+
     def render_dialogue(self):
         if self.in_dialogue and self.dialogue_with:
             messages = self.dialogue_with.get("message", [])
@@ -731,21 +721,21 @@ class Player:
 
                 for sound in self.sounds["talking"]:
                     sound["sound"].stop()
-                    
+
             else:
                 message_text = messages[self.dialogue_index]
 
                 self.game.ui.create_ui(
-                    sprite_sheet_path="ui_sheet", 
+                    sprite_sheet_path="ui_sheet",
                     image_id=[33, 0],
-                    x=self.game.screen_width / 2, 
+                    x=self.game.screen_width / 2,
                     y=self.game.screen_height / 1.15,
-                    sprite_width=95, 
+                    sprite_width=95,
                     sprite_height=32,
-                    centered=True, 
-                    width=300, 
+                    centered=True,
+                    width=300,
                     height=150,
-                    alpha=True, 
+                    alpha=True,
                     is_button=False,
                     element_id="dialogue_boarder",
                     scale_multiplier=1,
@@ -759,14 +749,14 @@ class Player:
 
                 self.game.ui.create_ui(
                     sprite_sheet_path="ui_sheet",
-                    x=self.game.screen_width / 5, 
+                    x=self.game.screen_width / 5,
                     y=self.game.screen_height / 1.5,
-                    sprite_width=95, 
+                    sprite_width=95,
                     sprite_height=32,
-                    centered=True, 
-                    width=300, 
+                    centered=True,
+                    width=300,
                     height=150,
-                    alpha=True, 
+                    alpha=True,
                     is_button=False,
                     element_id="dialogue_name",
                     font_size=15,
@@ -786,26 +776,26 @@ class Player:
                     if len(self.inventory) < self.max_inventory_slots:
                         self.add_item_to_inventory({**entity})
                         self.add_pickup_tag(entity["name"])
-                        
+
                         self.game.entities.entities.remove(entity)
-                        
+
                         for sound in self.sounds["pickup"]:
                             sound["sound"].stop()
-                        
+
                         pickup_sound = random.choice(self.sounds["pickup"])
                         pickup_sound["sound"].play()
-            
+
             if entity["entity_type"] == "npc":
                 if not self.on_ground:
                     return
-                
+
                 entity_hitbox = pg.Rect(entity["x"] - entity["width"] / 2, entity["y"] - entity["height"] / 2, entity["width"], entity["height"])
-                
+
                 if self.interact_radius.colliderect(entity_hitbox):
                     if entity["message"]:
                         if self.just_closed_dialogue:
                             return
-                        
+
                         self.dialogue_with = entity
                         self.dialogue_index = 0
                         self.dialogue_just_opened = True
@@ -813,8 +803,8 @@ class Player:
 
                         if entity["x"] < self.x:
                             self.direction = "left"
-                        
-                        else: 
+
+                        else:
                             self.direction = "right"
 
                         for sound in self.sounds["talking"]:
@@ -822,45 +812,45 @@ class Player:
 
                         talk_sound = random.choice(self.sounds["talking"])
                         talk_sound["sound"].play()
-    
+
     def drop_item(self):
-        if self.selected_slot is None or self.selected_slot not in self.inventory: 
+        if self.selected_slot is None or self.selected_slot not in self.inventory:
             return
-            
+
         item_to_drop = self.inventory[self.selected_slot]
-        
+
         if item_to_drop["quantity"] > 1:
             item_to_drop["quantity"] -= 1
-        
+
         else:
             del self.inventory[self.selected_slot]
-        
+
         self.game.entities.create_entity("item", item_to_drop["name"], self.x, self.y)
-        
+
         self.refresh_inventory()
         self.selected_slot = None
         self.inventory_changed = True
-        
+
         drop_sound = random.choice(self.sounds["pickup"])
         drop_sound["sound"].play()
-    
+
     def consume_item(self):
         if self.selected_slot is None or self.selected_slot not in self.inventory or self.inventory[self.selected_slot]["type"] != "consumable":
             return
-    
+
         item_to_consume = self.inventory[self.selected_slot]
         self.current_health += item_to_consume["health"]
-        
+
         if item_to_consume["quantity"] > 1:
             item_to_consume["quantity"] -= 1
-        
+
         else:
             del self.inventory[self.selected_slot]
-        
+
         self.refresh_inventory()
         self.selected_slot = None
         self.inventory_changed = True
-        
+
         consume_sound = random.choice(self.sounds["consume"])
         consume_sound["sound"].play()
 
@@ -869,12 +859,12 @@ class Player:
         self.vel_y = -self.jump_strength
         jump_sound = random.choice(self.sounds["jump"])
         jump_sound["sound"].play()
-        
+
         flip_offset = 11 if self.direction == "right" else 0
-        
-        for amount in range(7): # 7
-            vel_x = random.uniform(-1.0, 1.0)  
-            vel_y = random.uniform(-1.0, -0.3)  
+
+        for amount in range(7):
+            vel_x = random.uniform(-1.0, 1.0)
+            vel_y = random.uniform(-1.0, -0.3)
 
             radius = random.randint(2, 4)
             image_path = f"assets/sprites/particles/smoke{random.choice([1, 2])}.png"
@@ -893,17 +883,17 @@ class Player:
                 image=smoke_img,
                 image_size=(radius * 2, radius * 2)
             )
-            
+
     def update_collision(self):
         self.hitbox_set()
-        
+
         horizontal_collisions = []
         vertical_collisions = []
 
         self.blocked_horizontally = False
 
         nearby_tiles = self.game.map.get_nearby_tiles(self.hitbox)
-        
+
         for tile_hitbox, tile_id in nearby_tiles:
             tile_attributes = self.game.map.tile_attributes.get(tile_id, {})
 
@@ -916,24 +906,24 @@ class Player:
 
                 if overlap_x < overlap_y:
                     horizontal_collisions.append((tile_hitbox, overlap_x, swimmable, damage))
-                    
+
                 else:
                     vertical_collisions.append((tile_hitbox, overlap_y, swimmable, damage))
 
         if horizontal_collisions:
             tile_hitbox, overlap_x, swimmable, damage = max(horizontal_collisions, key=lambda t: t[1])
             if not swimmable:
-                self.blocked_horizontally = True 
-                
+                self.blocked_horizontally = True
+
                 if damage > 0:
                     self.take_damage(damage)
-                    
+
                 if self.hitbox.centerx < tile_hitbox.centerx:
                     self.x -= overlap_x
-                    
+
                 else:
                     self.x += overlap_x
-                    
+
                 self.vel_x = 0
                 self.hitbox_set()
 
@@ -942,10 +932,10 @@ class Player:
             if not swimmable:
                 if damage > 0:
                     self.take_damage(damage)
-                    
+
                 if self.hitbox.centery < tile_hitbox.centery:
                     self.y -= overlap_y
-                    
+
                 else:
                     self.y += overlap_y
                     self.vel_y += 1 # will set 0 when I fix head collisions
@@ -975,7 +965,7 @@ class Player:
                 damage = tile_attributes.get("damage", 0)
 
                 if swimmable:
-                    self.vel_y *= 0.8  # temp fix for swimming
+                    self.vel_y *= 0.8 # temp fix for swimming
                     self.on_ground = True
                     continue
 
@@ -1087,7 +1077,7 @@ class Player:
                 max_sequence = weapon_data.get("sequence", 1)
                 self.attack_sequence = (self.attack_sequence % max_sequence) + 1
 
-                self.active_melee_ids.clear()
+                self.current_attack_projectile = None
 
     def handle_controls(self):
         keys = pg.key.get_pressed()
@@ -1294,7 +1284,7 @@ class Player:
         if ((event.type == pg.KEYUP and event.key == pg.K_e) or (event.type == pg.JOYBUTTONUP and event.button == 3)):
             if self.just_closed_dialogue:
                 self.just_closed_dialogue = False
-        
+                
     def dash_visuals(self, start_x, distance):
         if distance == 0:
             return
@@ -1388,68 +1378,60 @@ class Player:
             dash_sound = random.choice(self.sounds["dash"])
             dash_sound["sound"].play()
 
-    def start_attack(self): # will make all attacks projectile based using projectile func
+    def start_attack(self):
         if self.attacking or self.equipped_weapon not in self.weapon_info:
             return
-            
+
         self.attacking = True
         self.current_frame = 0
         self.attack_timer = 0
 
-        new_attack_id = self.current_attack_id
-        self.active_melee_ids.append(new_attack_id)
-        self.current_attack_id += 1
+        weapon_data = self.weapon_info[self.equipped_weapon]
+        facing = 1 if self.direction == "right" else -1
+
+        offset_x = weapon_data.get("spawn_offset_x", 30)
+        offset_y = weapon_data.get("spawn_offset_y", 0)
+
+        if weapon_data.get("type") == "melee":
+            
+            def make_follow(player, off_x, off_y):
+                def follow():
+                    follow_facing = 1 if player.direction == "right" else -1
+                    return player.x + follow_facing * off_x, player.y + off_y
+                
+                return follow
+
+            follow_func = make_follow(self, offset_x, offset_y)
+            
+        else:
+            follow_func = None
+
+        self.current_attack_projectile = self.game.projectiles_system.spawn(
+            x=self.x + facing * offset_x,
+            y=self.y + offset_y,
+            width=weapon_data.get("hitbox_width", 34),
+            height=weapon_data.get("hitbox_height", 30),
+            vel_x=facing * weapon_data.get("vel_x", 0),
+            vel_y=weapon_data.get("vel_y", 0),
+            lifetime=weapon_data.get("lifetime", 15),
+            damage=weapon_data.get("damage", 10),
+            push_force=weapon_data.get("push_force", 70),
+            gravity=weapon_data.get("gravity", 0),
+            piercing=weapon_data.get("piercing", False),
+            follow=follow_func,
+            owner="player",
+        )
 
         attack_sound = random.choice(self.sounds["attack"])
         attack_sound["sound"].play()
-    
-    def create_projectile(self, *args, **kwargs):
-        if args:
-            rect = pg.Rect(*args)
-            
-        else:
-            x = kwargs.get("x", 0)
-            y = kwargs.get("y", 0)
-            width = kwargs.get("width", 10)
-            height = kwargs.get("height", 10)
-            rect = pg.Rect(x, y, width, height)
-
-        projectile = {
-            "rect": rect,
-            "hitbox": rect.copy(),
-            "speed": kwargs.get("speed", 0),
-            "direction": pg.Vector2(kwargs.get("direction", (0, 0))),
-            "lifetime": kwargs.get("lifetime", 1000),
-            "weight": kwargs.get("weight", 1.0),
-            "is_stationary": kwargs.get("is_stationary", False)
-        }
-
-        for key, value in kwargs.items():
-            if key not in projectile:
-                projectile[key] = value
-
-        self.active_projectile_ids.append(projectile)
-        return projectile
-
-    def update_attack_hitbox(self):
-        if not self.attacking:
-            return
-        
-        if self.direction == "right":
-            self.attack_hitbox.centerx = self.hitbox.right + self.attack_hitbox_width // 2
-            
-        else:
-            self.attack_hitbox.centerx = self.hitbox.left - self.attack_hitbox_width // 2
-            
-        self.attack_hitbox.centery = self.hitbox.centery
 
     def render(self):
-        self.flip_offset = {"left": 1.4, "right": 0} # weird temp fix
+        self.flip_offset = {"left": 1.4, "right": 0}
         self.foot_alignment = 3
         
-        if (self.current_state not in self.frames or 
+        if (self.current_state not in self.frames or
             not self.frames[self.current_state] or
-            (self.game.environment.current_time - self.last_damage_time < self.invinsibility_duration and 
+            (self.game.environment.current_time - self.last_damage_time < self.invinsibility_duration and
             not self.current_state == "death" and (self.game.environment.current_time // 100) % 2 == 0)):
             return
 
@@ -1539,14 +1521,14 @@ class Player:
             )
         )
 
-        if self.attacking:
-            hitbox_color = (255, 0, 0, 100)
-            hitbox_surface = pg.Surface((self.attack_hitbox_width, self.attack_hitbox_height), pg.SRCALPHA)
-            hitbox_surface.fill(hitbox_color)
-            self.game.screen.blit(
-                hitbox_surface,
-                (self.attack_hitbox.x - self.cam_x, self.attack_hitbox.y - self.cam_y)
-            )
+        for projectile in self.game.projectiles_system.projectiles:
+            if not projectile["alive"] or projectile["owner"] != "player":
+                continue
+            
+            rect = self.game.projectiles_system.get_rect(projectile)
+            hitbox_surface = pg.Surface((rect.width, rect.height), pg.SRCALPHA)
+            hitbox_surface.fill((255, 0, 0, 100))
+            self.game.screen.blit(hitbox_surface, (rect.x - self.cam_x, rect.y - self.cam_y))
 
         hitbox_color = (0, 255, 0, 100)
         hitbox_surface = pg.Surface((self.hitbox_width, self.hitbox_height), pg.SRCALPHA)
@@ -1762,7 +1744,7 @@ class Player:
         if self.game.environment.menu in {"play", "death", "pause"}:
             if not hasattr(self, "settings_loaded") or not self.settings_loaded:
                 self.load_settings()
-                self.settings_loaded = True 
+                self.settings_loaded = True
             
             self.update_camera()
             if not self.game.memory_debugger.show_memory_info:
@@ -1772,10 +1754,8 @@ class Player:
             self.update_fall_shake()
             self.handle_gravity()
             self.update_collision()
-            #self.update_projectiles()
             self.interact_hitbox()
             self.animate()
-            self.update_attack_hitbox()
             self.render_inventory()
             self.render_map()
             self.update_pickup_tags()

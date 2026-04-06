@@ -87,9 +87,13 @@ class AISystem:
         return False
 
     def ai_idle(self, entity):
-        entity["vel_x"] = 0
+        if entity.get("knockback_timer", 0) <= 0:
+            entity["vel_x"] = 0
 
     def ai_wander(self, entity):
+        if entity.get("knockback_timer", 0) > 0:
+            return
+            
         if "ai_timer" not in entity:
             self.reset_wander_timer(entity)
 
@@ -110,11 +114,10 @@ class AISystem:
         if random.random() < 0.01 and entity.get("on_ground", False):
             entity["vel_y"] = -entity.get("jump_force", 10)
 
-    def reset_wander_timer(self, entity):
-        entity["ai_timer"] = random.randint(60, 180)
-        entity["ai_direction"] = random.choice([-1, 0, 1])
-
     def ai_aggressive(self, entity):
+        if entity.get("knockback_timer", 0) > 0:
+            return
+            
         player = self.game.player
 
         if player.current_health <= 0:
@@ -159,6 +162,9 @@ class AISystem:
             self.ai_wander(entity)
 
     def ai_friendly(self, entity):
+        if entity.get("knockback_timer", 0) > 0:
+            return
+            
         player = self.game.player
         dx = player.x - entity["x"]
         distance = abs(dx)
@@ -182,6 +188,10 @@ class AISystem:
                 
         else:
             entity["vel_x"] = 0
+
+    def reset_wander_timer(self, entity):
+        entity["ai_timer"] = random.randint(60, 180)
+        entity["ai_direction"] = random.choice([-1, 0, 1])
 
     def ai_attack(self, entity):
         if "attack_timer" not in entity:
@@ -208,16 +218,23 @@ class AISystem:
             entity["attack_timer"] -= 1
 
     def update_ai(self, entity):
+        if entity.get("knockback_timer", 0) > 0:
+            entity["knockback_timer"] -= 1
+            return
+            
+        if entity.get("force_facing"):
+            del entity["force_facing"]
+            
         cam_x = self.game.player.cam_x
         cam_y = self.game.player.cam_y
 
-        if not (cam_x <= entity["x"] <= cam_x + self.game.screen_width
-                and cam_y <= entity["y"] <= cam_y + self.game.screen_height):
+        if not (cam_x <= entity["x"] <= cam_x + self.game.screen_width and cam_y <= entity["y"] <= cam_y + self.game.screen_height):
             return
 
         script_path = entity.get("script")
         if script_path:
             module = self.load_script(script_path)
+            
             if module is not None and hasattr(module, "update"):
                 try:
                     module.update(entity, self)

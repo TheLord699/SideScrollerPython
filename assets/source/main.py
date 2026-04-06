@@ -15,6 +15,7 @@ from particles import Particles
 from memory_debugger import MemoryDebugger
 from light_source import LightSource
 from ai import AISystem
+from projectiles import ProjectileSystem
 
 class Game:
   def __init__(self):
@@ -57,6 +58,7 @@ class Game:
     self.ui = UI(self)
     self.environment = Environment(self)
     self.ai = AISystem(self)
+    self.projectiles_system = ProjectileSystem(self)
     self.map = Map(self)
     self.player = Player(self)
     self.entities = Entities(self)
@@ -86,6 +88,7 @@ class Game:
     self.background.update()
     self.map.update()
     self.entities.update()
+    self.projectiles_system.update()
     self.player.update()
     self.particles.update()
     self.lighting.update()

@@ -1,5 +1,40 @@
 {
-
-    "basic_sword": {"damage": 10, "range": 15, "speed": 0.2, "sequence": 2, "frames": [6, 6], "type": "melee"}
-
+  "basic_sword": {
+    "type": "melee",
+    "damage": 10,
+    "speed": 0.2,
+    "sequence": 2,
+    "frames": [6, 6],
+    "hitbox_width": 51,
+    "hitbox_height": 45,
+    "spawn_offset_x": 35,
+    "spawn_offset_y": 0,
+    "vel_x": 0,
+    "vel_y": 0,
+    "lifetime": 15,
+    "push_force": 10,
+    "gravity": 0,
+    "piercing": false
+  },
+  "bow": {
+    "type": "ranged",
+    "damage": 20,
+    "speed": 0.4,
+    "projectile": {
+      "width": 6,
+      "height": 6,
+      "vel_x": 20,
+      "vel_y": 0,
+      "lifetime": 90,
+      "push_force": 30,
+      "gravity": 0.2,
+      "piercing": false,
+      "image": "assets/sprites/projectiles/arrow.png"
+    },
+    "ammo_type": "arrow",
+    "ammo_count": 1,
+    "reload_time": 25,
+    "spread": 5,
+    "range": 500
+  }
 }
