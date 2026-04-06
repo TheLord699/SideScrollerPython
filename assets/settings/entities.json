@@ -11,11 +11,7 @@
       "width": 30,
       "height": 30,
       "index": [11, 2],
-      "tile_sheet": [
-        "assets/sprites/gui/items/Sheet.png",
-        16,
-        16
-      ]
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
     "Red Gem": {
       "name": "Red Gem",
@@ -25,11 +21,7 @@
       "width": 32,
       "height": 32,
       "index": [12, 11],
-      "tile_sheet": [
-        "assets/sprites/gui/items/Sheet.png",
-        16,
-        16
-      ]
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
     "Gold": {
       "name": "Gold",
@@ -40,11 +32,7 @@
       "width": 30,
       "height": 30,
       "index": [11, 0],
-      "tile_sheet": [
-        "assets/sprites/gui/items/Sheet.png",
-        16,
-        16
-      ]
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     }
   },
   "npcs": {
@@ -58,25 +46,17 @@
       "width": 90,
       "height": 90,
       "index": [0, 0],
-      "tile_sheet": [
-        "assets/sprites/npc/fox.png",
-        32,
-        32
-      ],
+      "tile_sheet": ["assets/sprites/npc/fox.png", 32, 32],
       "states": {
-          "idle": {
-              "start_row": 0,
-              "start_col": 0,
-              "frames": 5,
-              "cols": 5,
-              "speed": 0.15
-          }
+        "idle": {
+          "start_row": 0,
+          "start_col": 0,
+          "frames": 5,
+          "cols": 5,
+          "speed": 0.15
+        }
       },
-      "message": [
-        "hi",
-        "my name is Bob",
-        "how are you?"
-      ]
+      "message": ["hi", "my name is Bob", "how are you?"]
     },
     "Bab": {
       "name": "Bab",
@@ -87,27 +67,18 @@
       "weight": 2,
       "width": 90,
       "height": 90,
-      "tile_sheet": [
-        "assets/sprites/npc/fox.png",
-        32,
-        32
-      ],
+      "tile_sheet": ["assets/sprites/npc/fox.png", 32, 32],
       "states": {
-          "idle": {
-              "start_row": 0,
-              "start_col": 0,
-              "frames": 5,
-              "cols": 5,
-              "speed": 0.15
-          }
+        "idle": {
+          "start_row": 0,
+          "start_col": 0,
+          "frames": 5,
+          "cols": 5,
+          "speed": 0.15
+        }
       },
       "index": [0, 0],
-      "message": [
-        "please stay away from me",
-        "you smell...",
-        "bad...",
-        "like really bad..."
-      ]
+      "message": ["please stay away from me", "you smell...", "bad...", "like really bad..."]
     },
     "Jimmy": {
       "name": "Jimmy",
@@ -118,25 +89,18 @@
       "weight": 2,
       "width": 90,
       "height": 90,
-      "tile_sheet": [
-        "assets/sprites/npc/pack2/guy.png",
-        29,
-        27
-      ],
+      "tile_sheet": ["assets/sprites/npc/pack2/guy.png", 29, 27],
       "states": {
-          "idle": {
-              "start_row": 0,
-              "start_col": 0,
-              "frames": 6,
-              "cols": 6,
-              "speed": 0.08
-          }
+        "idle": {
+          "start_row": 0,
+          "start_col": 0,
+          "frames": 6,
+          "cols": 6,
+          "speed": 0.08
+        }
       },
       "index": [0, 9],
-      "message": [
-        "you've taken so long \nto update this game!",
-        "how can someone \nbe so lazy?"
-      ]
+      "message": ["you've taken so long \nto update this game!", "how can someone \nbe so lazy?"]
     }
   },
   "enemies": {
@@ -150,11 +114,7 @@
       "weight": 2,
       "width": 90,
       "height": 90,
-      "tile_sheet": [
-        "assets/sprites/npc/fox.png",
-        32,
-        32
-      ],
+      "tile_sheet": ["assets/sprites/npc/fox.png", 32, 32],
       "index": [0, 0],
       "behavior": "aggressive",
       "move_speed": 1.2,
@@ -163,32 +123,31 @@
       "stop_distance": 35,
       "attack_damage": 0.1,
       "states": {
-          "idle": {
-              "start_row": 0,
-              "start_col": 0,
-              "frames": 5,
-              "cols": 5,
-              "speed": 0.15
-          },
-          "walk": {
-              "start_row": 2,
-              "start_col": 0,
-              "frames": 8,
-              "cols": 8,
-              "speed": 0.25
-          },
-          "attack": {
-              "start_row": 3,
-              "start_col": 0,
-              "frames": 11,
-              "cols": 11,
-              "speed": 0.1
-          }
+        "idle": {
+          "start_row": 0,
+          "start_col": 0,
+          "frames": 5,
+          "cols": 5,
+          "speed": 0.15
+        },
+        "walk": {
+          "start_row": 2,
+          "start_col": 0,
+          "frames": 8,
+          "cols": 8,
+          "speed": 0.25
+        },
+        "attack": {
+          "start_row": 3,
+          "start_col": 0,
+          "frames": 11,
+          "cols": 11,
+          "speed": 0.1
+        }
       },
-      "entity_abilities": [
-        "pushable"
-      ],
-      "push_force": 70
+      "entity_abilities": ["pushable"],
+      "push_force": 70,
+      "script": "assets/source/ai/bab.py"
     }
   },
   "actors": {
@@ -199,15 +158,9 @@
       "weight": 2,
       "width": 50,
       "height": 50,
-      "tile_sheet": [
-        "assets/sprites/gui/items/Sheet.png",
-        16,
-        16
-      ],
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16],
       "index": [5, 5],
-      "entity_abilities": [
-        "pushable"
-      ]
+      "entity_abilities": ["pushable"]
     },
     "Potion": {
       "name": "Potion",
@@ -220,14 +173,8 @@
       "width": 30,
       "height": 30,
       "index": [11, 2],
-      "entity_abilities": [
-        "pushable"
-      ],
-      "tile_sheet": [
-        "assets/sprites/gui/items/Sheet.png",
-        16,
-        16
-      ]
+      "entity_abilities": ["pushable"],
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
     "Red Gem": {
       "name": "Red Gem",
@@ -237,14 +184,8 @@
       "width": 32,
       "height": 32,
       "index": [12, 11],
-      "entity_abilities": [
-        "pushable"
-      ],
-      "tile_sheet": [
-        "assets/sprites/gui/items/Sheet.png",
-        16,
-        16
-      ]
+      "entity_abilities": ["pushable"],
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
     "Gold": {
       "name": "Gold",
@@ -255,14 +196,8 @@
       "width": 30,
       "height": 30,
       "index": [11, 0],
-      "entity_abilities": [
-        "pushable"
-      ],
-      "tile_sheet": [
-        "assets/sprites/gui/items/Sheet.png",
-        16,
-        16
-      ]
+      "entity_abilities": ["pushable"],
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     }
   }
 }
