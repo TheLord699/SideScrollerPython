@@ -11,7 +11,7 @@
     "spawn_offset_y": 0,
     "vel_x": 0,
     "vel_y": 0,
-    "lifetime": 15,
+    "lifetime": 20,
     "push_force": 10,
     "gravity": 0,
     "piercing": true
@@ -30,7 +30,7 @@
       "push_force": 30,
       "gravity": 0.2,
       "piercing": false,
-      "image": "assets/sprites/weapons/arrow.png"
+      "image": "assets/sprites/projectiles/arrow.png"
     },
     "ammo_type": "arrow",
     "ammo_count": 1,
