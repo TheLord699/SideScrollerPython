@@ -14,7 +14,7 @@
     "lifetime": 15,
     "push_force": 10,
     "gravity": 0,
-    "piercing": false
+    "piercing": true
   },
   "bow": {
     "type": "ranged",
