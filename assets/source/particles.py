@@ -122,10 +122,9 @@ class Particles:
             
         nearby_tiles = self.game.map.get_nearby_tiles(rect)
         
-        # Reset ground flag
         particle["on_ground"] = False
 
-        # Horizontal movement
+        # horizontal movement
         pos.x += vel.x
         rect.x = pos.x - radius
 
@@ -140,7 +139,7 @@ class Particles:
                 vel.x = 0
                 rect.x = pos.x - radius
 
-        # Vertical movement
+        # vertical movement
         pos.y += vel.y
         rect.y = pos.y - radius
 
@@ -222,7 +221,7 @@ class Particles:
         particle["gravity"] = gravity
         particle["friction"] = friction
         particle["floor_behavior"] = floor_behavior
-        particle["on_ground"] = False  # Track ground state
+        particle["on_ground"] = False
 
         if image:
             if image_size:
@@ -241,29 +240,22 @@ class Particles:
             return
         
         for particle in list(self.particles):
-            # Apply gravity
             particle["vel"].y += particle["gravity"]
             
-            # Apply friction ONLY when on ground (like player physics)
             if particle.get("on_ground", False) and particle.get("friction"):
-                # Only apply friction to horizontal movement
                 particle["vel"].x *= (1 - particle["friction"])
                 
-                # Stop if very slow
                 if abs(particle["vel"].x) < 0.1:
                     particle["vel"].x = 0
             
-            # Handle collisions if needed
             if particle["floor_behavior"]:
                 self.handle_tile_collisions(particle)
                 
             else:
                 particle["pos"] += particle["vel"]
             
-            # Update age
             particle["age"] += 1
             
-            # Update rect position
             if particle["image"]:
                 particle["rect"].center = particle["pos"]
                 
@@ -276,7 +268,6 @@ class Particles:
         
         self.update_physics_batch()
         
-        # Remove dead particles and render alive ones
         for particle in list(self.particles):
             if particle["age"] >= particle["lifespan"]:
                 self.recycle_particle(particle)
@@ -284,7 +275,6 @@ class Particles:
             else:
                 self.render_particle(self.game.screen, particle)
         
-        # Clean up dead particles
         self.particles = deque([p for p in self.particles if p["age"] < p["lifespan"]], maxlen=self.max_particles)
 
     def clear(self):

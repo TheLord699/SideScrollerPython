@@ -397,6 +397,9 @@ class Environment:
     self.clear_ui()
     self.game.entities.reset()
     self.game.lighting.clear_all_lights()
+    self.game.projectiles_system.projectiles = []
+    self.game.particles.particles = []
+    
     self.current_map = None
 
   def clear_ui(self):
