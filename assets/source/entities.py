@@ -779,8 +779,8 @@ class Entities:
             offset_center = (center_x, center_y)
             pg.draw.line(self.game.screen, (255, 255, 0), original_center, offset_center, 2)
         
-        if entity["entity_type"] in {"enemy", "item"}:
-            aggro_range = entity.get("aggro_range", 300)
+        if entity["entity_type"] in {"enemy"}:
+            aggro_range = entity.get("aggro_range", 0)
             
             detection_surface = pg.Surface((aggro_range*2, aggro_range*2), pg.SRCALPHA)
             pg.draw.circle(
