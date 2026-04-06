@@ -22,7 +22,7 @@ class DataManager:
     def save_data(self):
         try:
             os.makedirs(os.path.dirname(self.filename), exist_ok=True)
-            with open(self.filename, 'w') as file:
+            with open(self.filename, "w") as file:
                 json.dump(self.data, file, indent=4)
                 
         except IOError as e:

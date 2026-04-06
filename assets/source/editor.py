@@ -143,7 +143,7 @@ def load_tilesheets(tilesheets):
             })
             
         except Exception as e:
-            print(f"Failed to load tilesheet {sheet['path']}: {e}")
+            print(f"Failed to load tilesheet {sheet["path"]}: {e}")
             all_surfaces.append({
                 "surfaces": [],
                 "tile_size": 32,
@@ -157,7 +157,7 @@ def load_tilesheets(tilesheets):
 
 def load_entity_data():
     try:
-        with open(ENTITIES_FILE, 'r') as f:
+        with open(ENTITIES_FILE, "r") as f:
             return json.load(f)
         
     except Exception as e:
@@ -247,7 +247,7 @@ def save_version(map_folder, tiles, tilesheets, comment=""):
     }
     
     version_path = os.path.join(versions_dir, f"version_{timestamp}.json")
-    with open(version_path, 'w') as f:
+    with open(version_path, "w") as f:
         json.dump(version_data, f)
     
     versions = sorted(os.listdir(versions_dir), reverse=True)
@@ -263,11 +263,11 @@ def load_versions(map_folder):
     for fname in sorted(os.listdir(versions_dir), reverse=True):
         if fname.endswith(".json"):
             try:
-                with open(os.path.join(versions_dir, fname), 'r') as f:
+                with open(os.path.join(versions_dir, fname), "r") as f:
                     data = json.load(f)
                     versions.append(VersionEntry(
-                        data['timestamp'],
-                        data['comment'],
+                        data["timestamp"],
+                        data["comment"],
                         data
                     ))
                     
@@ -542,24 +542,24 @@ def draw_entity_inspector(entity, entity_data, panel_width):
     panel_x = 10
     panel_y = 10
     
-    header_text = font.render(f"Entity: {entity['entity_name']}", True, (255, 255, 255))
+    header_text = font.render(f"Entity: {entity["entity_name"]}", True, (255, 255, 255))
     screen.blit(header_text, (panel_x, panel_y))
     panel_y += 30
     
-    type_text = font.render(f"Type: {entity['entity_type']}", True, (200, 200, 200))
+    type_text = font.render(f"Type: {entity["entity_type"]}", True, (200, 200, 200))
     screen.blit(type_text, (panel_x, panel_y))
     panel_y += 30
     
-    pos_text = font.render(f"Position: ({entity['x']}, {entity['y']})", True, (200, 200, 200))
+    pos_text = font.render(f"Position: ({entity["x"]}, {entity["y"]})", True, (200, 200, 200))
     screen.blit(pos_text, (panel_x, panel_y))
     panel_y += 30
     
-    layer_text = font.render(f"Layer: {entity['layer']}", True, (200, 200, 200))
+    layer_text = font.render(f"Layer: {entity["layer"]}", True, (200, 200, 200))
     screen.blit(layer_text, (panel_x, panel_y))
     panel_y += 40
     
-    if entity['entity_type'] in entity_data and entity['entity_name'] in entity_data[entity['entity_type']]:
-        entity_info = entity_data[entity['entity_type']][entity['entity_name']]
+    if entity["entity_type"] in entity_data and entity["entity_name"] in entity_data[entity["entity_type"]]:
+        entity_info = entity_data[entity["entity_type"]][entity["entity_name"]]
         
         for attr, value in entity_info.items():
             if attr in ["tile_sheet", "index"]:
@@ -680,7 +680,7 @@ def draw_animation_editor(tile, all_tile_surfaces, selected_tile_info, panel_wid
             
             frame_x += visual_size + 10
     
-    speed_text = font.render(f"Speed: {tile['animation']['speed']:.2f}s per frame", True, (200, 200, 200))
+    speed_text = font.render(f"Speed: {tile["animation"]["speed"]:.2f}s per frame", True, (200, 200, 200))
     screen.blit(speed_text, (x + 20, y + 90 + visual_size + 20))
     
     instructions = [
@@ -890,7 +890,7 @@ while running:
                             current_attribute_value = ""
                             
                             try:
-                                with open(ENTITIES_FILE, 'w') as f:
+                                with open(ENTITIES_FILE, "w") as f:
                                     json.dump(entity_data, f, indent=2)
                                     
                             except Exception as e:
@@ -1093,7 +1093,7 @@ while running:
                             current_attribute_value = ""
                             
                             try:
-                                with open(ENTITIES_FILE, 'w') as f:
+                                with open(ENTITIES_FILE, "w") as f:
                                     json.dump(entity_data, f, indent=2)
                                     
                             except Exception as e:
@@ -1120,8 +1120,8 @@ while running:
                 
                 elif event.key == pg.K_r and show_version_menu and selected_version_index >= 0:
                     version = versions[selected_version_index]
-                    tiles = version.data['tiles']
-                    tilesheets = version.data['tilesheets']
+                    tiles = version.data["tiles"]
+                    tilesheets = version.data["tilesheets"]
                     all_tile_surfaces = load_tilesheets(tilesheets)
                     show_version_menu = False
                     
@@ -1371,7 +1371,7 @@ while running:
         if show_entity_panel:
             mode_info.append("ENTITY MODE")
 
-        info = f"Tile: {selected_tile_info['tile']} (Sheet {selected_tile_info['tilesheet']+1})  Rot: {rotation}°  Layer: {current_layer}  Hitbox: {placing_hitbox}  Camera: ({camera_x}, {camera_y})  Brush: ({mx // visual_size}, {my // visual_size})  Zoom: {zoom_level:.1f}x"
+        info = f"Tile: {selected_tile_info["tile"]} (Sheet {selected_tile_info["tilesheet"]+1})  Rot: {rotation}°  Layer: {current_layer}  Hitbox: {placing_hitbox}  Camera: ({camera_x}, {camera_y})  Brush: ({mx // visual_size}, {my // visual_size})  Zoom: {zoom_level:.1f}x"
         text = font.render(info, True, (255, 255, 255))
         screen.blit(text, (10, 10))
 

@@ -30,7 +30,7 @@ class Entities:
         self.load_settings()
 
     def load_entity_info(self):
-        with open('assets/settings/entities.json', 'r') as f:
+        with open("assets/settings/entities.json", "r") as f:
             self.entity_info = json.load(f)
 
     def load_tilesheet(self, path, tile_width, tile_height):
@@ -487,7 +487,7 @@ class Entities:
 
         if entity.get("last_health") != entity["health"]:
             entity["last_health"] = entity["health"]
-            entity["health_text"] = self.health_font.render(f"{int(entity['health'])}/{int(entity['max_health'])}", True, (255, 255, 255))
+            entity["health_text"] = self.health_font.render(f"{int(entity["health"])}/{int(entity["max_health"])}", True, (255, 255, 255))
 
         if "health_text" in entity:
             text_surface = entity["health_text"]
@@ -609,7 +609,7 @@ class Entities:
                 if not hasattr(self, "item_font"):
                     self.item_font = pg.font.Font(self.game.environment.fonts["fantasy"], 11)
                 
-                item_text = entity['name']
+                item_text = entity["name"]
                 
                 if not hasattr(self, "item_text_cache"):
                     self.item_text_cache = {}

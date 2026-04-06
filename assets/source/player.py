@@ -589,7 +589,7 @@ class Player:
                 centered=True, width=60, height=60,
                 element_id="item_info",
                 render_order=1, font=self.game.environment.fonts["fantasy"],
-                label=f"{self.inventory[id]['name']} x{self.inventory[id]['quantity']} Value:{self.inventory[id]['value']}"
+                label=f"{self.inventory[id]["name"]} x{self.inventory[id]["quantity"]} Value:{self.inventory[id]["value"]}"
             )
             self.rendered_inventory_ui_elements.append(self.inventory[id]["name"])
             self.rendered_inventory_ui_elements.append("item_info")
@@ -637,7 +637,7 @@ class Player:
                 x_position = self.inventory_x_offset + col * self.item_spacing
                 y_position = self.inventory_y_offset + row * self.item_spacing
 
-                item_element_id = f"item:{item['name']}"
+                item_element_id = f"item:{item["name"]}"
                 self.game.ui.create_ui(
                     image_id=self.item_info["items"][item["name"]]["index"],
                     sprite_sheet_path="item_sheet",

@@ -102,12 +102,12 @@ class MemoryDebugger:
                 pg.time.set_timer(self.terminal_event, 50, True)
                 
         elif event.type == self.terminal_event:
-            if hasattr(self, '_delayed_input_char'):
+            if hasattr(self, "_delayed_input_char"):
                 self.terminal_input += self._delayed_input_char
                 
                 del self._delayed_input_char
                 
-            if hasattr(self, '_delayed_backspace') and self._delayed_backspace:
+            if hasattr(self, "_delayed_backspace") and self._delayed_backspace:
                 self.terminal_input = self.terminal_input[:-1]
                 self._delayed_backspace = False
 
@@ -119,18 +119,18 @@ class MemoryDebugger:
         self.terminal_history.append(f"> {command}")
         
         try:
-            if '=' in command:
-                var_path, value = command.split('=', 1)
+            if "=" in command:
+                var_path, value = command.split("=", 1)
                 var_path = var_path.strip()
                 value = value.strip()
                 
                 try:
-                    evaluated_value = eval(value, {}, {'game': self.game})
+                    evaluated_value = eval(value, {}, {"game": self.game})
                     
                 except:
                     evaluated_value = value
                 
-                parts = var_path.split('.')
+                parts = var_path.split(".")
                 obj = self.game
                 for part in parts[:-1]:
                     obj = getattr(obj, part)
@@ -139,7 +139,7 @@ class MemoryDebugger:
                 self.terminal_history.append(f"Set {var_path} = {evaluated_value}")
                 
             else:
-                result = eval(command, {}, {'game': self.game})
+                result = eval(command, {}, {"game": self.game})
                 self.terminal_history.append(str(result))
                 
         except Exception as e:
@@ -174,7 +174,7 @@ class MemoryDebugger:
             idx = start_line + i
             if 0 <= idx < len(self.terminal_history):
                 line = self.terminal_history[idx]
-                color = (200, 255, 200) if line.startswith('>') else (255, 255, 255)
+                color = (200, 255, 200) if line.startswith(">") else (255, 255, 255)
                 text_surf = self.terminal_font.render(line, True, color)
                 terminal_panel.blit(text_surf, (10, 10 + i * line_height))
         
@@ -445,13 +445,13 @@ class MemoryDebugger:
         visited_objects = set()
 
         game_objects = [
-            ('UI', self.game.ui),
-            ('Environment', self.game.environment),
-            ('Map', self.game.map),
-            ('Player', self.game.player),
-            ('Entities', self.game.entities),
-            ('Background', self.game.background),
-            ('Particles', self.game.particles)
+            ("UI", self.game.ui),
+            ("Environment", self.game.environment),
+            ("Map", self.game.map),
+            ("Player", self.game.player),
+            ("Entities", self.game.entities),
+            ("Background", self.game.background),
+            ("Particles", self.game.particles)
         ]
 
         def find_surfaces(obj, path):
@@ -471,9 +471,9 @@ class MemoryDebugger:
                     for k, v in obj.items():
                         find_surfaces(v, f"{path}['{k}']")
                         
-                elif hasattr(obj, '__dict__'):
+                elif hasattr(obj, "__dict__"):
                     for name, attr in vars(obj).items():
-                        if not name.startswith('__'):
+                        if not name.startswith("__"):
                             find_surfaces(attr, f"{path}.{name}")
             except Exception:
                 pass
@@ -494,24 +494,24 @@ class MemoryDebugger:
     def get_object_info(self):
         info = []
         if self.selected_object == "UI Elements":
-            count = len(getattr(self.game.ui, 'ui_elements', []))
+            count = len(getattr(self.game.ui, "ui_elements", []))
             info.append(f"UI Elements Count: {count}")
             info.append("")
-            for i, element in enumerate(getattr(self.game.ui, 'ui_elements', [])[:20]):
+            for i, element in enumerate(getattr(self.game.ui, "ui_elements", [])[:20]):
                 info.append(f"Element {i}: {str(element)}")
                 
         elif self.selected_object == "Entities":
-            count = len(getattr(self.game.entities, 'entities', []))
+            count = len(getattr(self.game.entities, "entities", []))
             info.append(f"Entities Count: {count}")
             info.append("")
-            for i, entity in enumerate(getattr(self.game.entities, 'entities', [])[:20]):
+            for i, entity in enumerate(getattr(self.game.entities, "entities", [])[:20]):
                 info.append(f"Entity {i}: {str(entity)}")
                 
         elif self.selected_object == "Particles":
-            count = len(getattr(self.game.particles, 'particles', []))
+            count = len(getattr(self.game.particles, "particles", []))
             info.append(f"Particles Count: {count}")
             info.append("")
-            for i, particle in enumerate(getattr(self.game.particles, 'particles', [])[:20]):
+            for i, particle in enumerate(getattr(self.game.particles, "particles", [])[:20]):
                 info.append(f"Particle {i}: {str(particle)}")
 
         return info
@@ -522,14 +522,14 @@ class MemoryDebugger:
         exclude_set = set(self.preview_cache.values())
 
         game_objects = [
-            ('UI', self.game.ui),
-            ('Environment', self.game.environment),
-            ('Map', self.game.map),
-            ('Player', self.game.player),
-            ('Entities', self.game.entities),
-            ('Background', self.game.background),
-            ('Particles', self.game.particles),
-            ('Foreground', self.game.foreground),
+            ("UI", self.game.ui),
+            ("Environment", self.game.environment),
+            ("Map", self.game.map),
+            ("Player", self.game.player),
+            ("Entities", self.game.entities),
+            ("Background", self.game.background),
+            ("Particles", self.game.particles),
+            ("Foreground", self.game.foreground),
         ]
 
         def find_surfaces(obj):
@@ -551,7 +551,7 @@ class MemoryDebugger:
                     for v in obj.values():
                         find_surfaces(v)
                         
-                elif hasattr(obj, '__dict__'):
+                elif hasattr(obj, "__dict__"):
                     for attr in vars(obj).values():
                         find_surfaces(attr)
                         
@@ -594,15 +594,15 @@ class MemoryDebugger:
         ram_info = self.get_ram_usage()
         if ram_info:
             info.append("RAM Usage:")
-            info.append(f"  Process Memory: {ram_info['process_memory']:.2f} MB")
-            info.append(f"  System RAM: {ram_info['used_ram']:.2f} GB / {ram_info['total_ram']:.2f} GB ({ram_info['ram_percent']:.1f}% used)")
-            info.append(f"  Free RAM: {ram_info['free_ram']:.2f} GB")
+            info.append(f"  Process Memory: {ram_info["process_memory"]:.2f} MB")
+            info.append(f"  System RAM: {ram_info["used_ram"]:.2f} GB / {ram_info["total_ram"]:.2f} GB ({ram_info["ram_percent"]:.1f}% used)")
+            info.append(f"  Free RAM: {ram_info["free_ram"]:.2f} GB")
             info.append("")
 
         info.append("Game Objects Count:")
-        info.append(f"  UI Elements: {len(getattr(self.game.ui, 'ui_elements', []))}")
-        info.append(f"  Entities: {len(getattr(self.game.entities, 'entities', []))}")
-        info.append(f"  Particles: {len(getattr(self.game.particles, 'particles', []))}")
+        info.append(f"  UI Elements: {len(getattr(self.game.ui, "ui_elements", []))}")
+        info.append(f"  Entities: {len(getattr(self.game.entities, "entities", []))}")
+        info.append(f"  Particles: {len(getattr(self.game.particles, "particles", []))}")
         info.append("")
 
         all_surfaces = self.collect_all_surfaces()

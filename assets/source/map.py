@@ -114,7 +114,7 @@ class Map:
                 })
 
             except Exception as e:
-                print(f"Failed to load tilesheet {sheet['path']}: {e}")
+                print(f"Failed to load tilesheet {sheet["path"]}: {e}")
                 all_surfaces.append({
                     "surfaces": [],
                     "tile_size": 32,

@@ -5,7 +5,7 @@ def load_json(filepath):
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"The file {filepath} does not exist.")
 
-    with open(filepath, 'r') as file:
+    with open(filepath, "r") as file:
         try:
             data = json.load(file)
             
