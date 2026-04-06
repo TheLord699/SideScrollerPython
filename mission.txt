@@ -41,6 +41,9 @@ Do immediately:
 -fix tag pickup/delete conflict
 
 
+- bow should make cam follow mouse
+- need to implement projectile based attacks into entities 
+- need to abstract more of entity ai
 
 
 

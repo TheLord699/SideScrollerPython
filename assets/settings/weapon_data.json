@@ -20,6 +20,7 @@
     "type": "ranged",
     "damage": 20,
     "speed": 0.4,
+    "frames": [0, 0],
     "projectile": {
       "width": 6,
       "height": 6,
@@ -29,12 +30,12 @@
       "push_force": 30,
       "gravity": 0.2,
       "piercing": false,
-      "image": "assets/sprites/projectiles/arrow.png"
+      "image": "assets/sprites/weapons/arrow.png"
     },
     "ammo_type": "arrow",
     "ammo_count": 1,
     "reload_time": 25,
-    "spread": 5,
+    "spread": 0,
     "range": 500
   }
 }
