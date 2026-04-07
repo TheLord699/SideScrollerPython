@@ -339,6 +339,22 @@ class Environment:
         hover_range=3.5,
         render_order=0
       )
+      self.game.ui.create_ui(
+        x=self.game.screen_width / 2 + 132, y=470,
+        centered=True, width=250, height=100,
+        is_button=False,
+        scale_multiplier=1.1,
+        label="TEMPORARY DEV NOTE:\n"
+              "VIGOROUS OPTIMIZATIONS\n"
+              "WILL STOP ALL UPDATES\n"
+              "FOR ENTITIES AND PROJECTILES\n"
+              "AS SOON AS THEY ARE OFF-SCREEN,\n"
+              "WHICH CAN GREATLY IMPROVE PERFORMANCE\n"
+              "BUT MAY AFFECT REALISM",
+        font_size=15,
+        element_id="message",
+        render_order=0
+      )
 
   def death_menu(self):
     self.game.ui.create_ui(

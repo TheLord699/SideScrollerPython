@@ -41,7 +41,7 @@
       "height": 6,
       "vel_x": 30,
       "vel_y": 0,
-      "lifetime": 90,
+      "lifetime": 150,
       "push_force": 25,
       "min_push_force_mult": 0.3,
       "gravity": 0.2,
