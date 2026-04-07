@@ -818,20 +818,24 @@ class Entities:
             sprite_y = entity_y - cam_y - entity["height"] // 2
             
             render_padding = 100
-            is_on_screen = (sprite_x + entity["width"] >= -render_padding and 
-                            sprite_x <= screen_w + render_padding and
-                            sprite_y + entity["height"] >= -render_padding and 
-                            sprite_y <= screen_h + render_padding)
+            is_on_screen = (
+                sprite_x + entity["width"] >= -render_padding and 
+                sprite_x <= screen_w + render_padding and
+                sprite_y + entity["height"] >= -render_padding and 
+                sprite_y <= screen_h + render_padding
+                )
             
             if self.game.environment.vigorous_optimizations:
                 if not is_on_screen:
                     continue
                 
             else:
-                is_near_screen = (entity_x >= cam_x - half_w and 
-                                entity_x <= cam_x + screen_w + half_w and
-                                entity_y >= cam_y - half_h and 
-                                entity_y <= cam_y + screen_h + half_h)
+                is_near_screen = (
+                    entity_x >= cam_x - half_w and 
+                    entity_x <= cam_x + screen_w + half_w and
+                    entity_y >= cam_y - half_h and 
+                    entity_y <= cam_y + screen_h + half_h
+                )
                 
                 if not is_near_screen:
                     continue
