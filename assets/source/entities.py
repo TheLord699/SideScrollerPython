@@ -250,7 +250,7 @@ class Entities:
                     sound.set_volume(self.game.environment.volume / 10 * volume)
 
         if entity["entity_type"] in {"npc", "enemy"}:
-            if entity["health"] <= 0:
+            if entity["health"] < 1: # < 1 instead of <= 0 because players will see health as 0 when smaller than 1 due to truncating in the health bar
                 self.drop_item(entity) # Issue where dropped items arent just items in the code, so they have extra attributes that they shouldnt have
                 # also loads the items tile sheet again?
                 self.death_particles(entity)
