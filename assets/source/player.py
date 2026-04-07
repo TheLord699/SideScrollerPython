@@ -1548,8 +1548,8 @@ class Player:
         num_ghosts = 4
         step_size = distance / num_ghosts
 
-        for i in range(num_ghosts):
-            ghost_x = start_x + (step_size * i * dash_dir)
+        for ghost in range(num_ghosts):
+            ghost_x = start_x + (step_size * ghost * dash_dir)
             ghost_y = self.y - 5
 
             current_frame_image = self.frames[self.current_state][self.current_frame]
@@ -1563,12 +1563,12 @@ class Player:
             white_surface.fill((255, 255, 255, 255))
             white_image.blit(white_surface, (0, 0), special_flags=pg.BLEND_MULT)
 
-            opacity = int(255 * ((i + 1) / num_ghosts))
+            opacity = int(255 * ((ghost + 1) / num_ghosts))
             white_image.fill((255, 255, 255, opacity), special_flags=pg.BLEND_RGBA_MULT)
 
             flip_offset = 14 if self.direction == "right" else 0
 
-            lifespan = 15 + (num_ghosts - i - 1) * 2
+            lifespan = 15 + ghost * 2
 
             self.game.particles.generate(
                 pos=(ghost_x + self.hitbox_width / 2 - flip_offset, ghost_y + self.hitbox_height / 8),
