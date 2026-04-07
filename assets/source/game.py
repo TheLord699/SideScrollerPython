@@ -85,10 +85,11 @@ class Environment:
     self.music_channel.play(self.music[new_track], loops=-1)
     self.current_track = new_track
     
-  def save_data(self):
+  def save_data(self): # need to save and load map soon
     self.game.data_manager.set_setting("seed", self.seed)
     self.game.data_manager.set_setting("volume", self.volume)
     self.game.data_manager.set_setting("show_indicators", self.game.entities.show_indicators)
+    self.game.data_manager.set_setting("vigorous_optimizations", self.vigorous_optimizations)
     self.game.data_manager.set_setting("enable_particles", self.game.particles.enable_particles)
     self.game.data_manager.set_setting("enable_foreground", self.game.foreground.enable_foreground)
     self.game.data_manager.set_setting("enable_cam_mouse", self.game.player.enable_cam_mouse)
@@ -118,6 +119,7 @@ class Environment:
       self.seed = self.game.data_manager.get_setting("seed")
       self.volume = self.game.data_manager.get_setting("volume")
       self.game.entities.show_indicators = self.game.data_manager.get_setting("show_indicators")
+      self.vigorous_optimizations = self.game.data_manager.get_setting("vigorous_optimizations")
       self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
       self.game.foreground.enable_foreground = self.game.data_manager.get_setting("enable_foreground")
       self.game.player.enable_cam_mouse = self.game.data_manager.get_setting("enable_cam_mouse")
