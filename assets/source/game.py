@@ -12,6 +12,7 @@ class Environment:
     self.max_fall_speed = 20 # terminal vel for all entities + player
     self.scale = 3 # 3 (experimental)
     self.max_particles = 25 # 20
+    self.vigorous_optimizations = False # if true entities and projectiles will stop all updates as soon as theyre off screen
     
     self.max_darkness = 50 # 50, greater is lighter
     self.lighting = False
@@ -320,6 +321,21 @@ class Environment:
         element_id="cam_follow_mouse_button",
         click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
         callback=lambda: (setattr(self.game.player, "enable_cam_mouse", not self.game.player.enable_cam_mouse)),
+        hover_range=3.5,
+        render_order=0
+      )
+      self.game.ui.create_ui(
+        sprite_sheet_path="ui_sheet", image_id=[33, 0],
+        x=self.game.screen_width / 2, y=520, sprite_width=95, sprite_height=32, 
+        centered=True, width=250, height=100,
+        alpha=True, is_button=True,
+        scale_multiplier=1.1,
+        dynamic_value=lambda: "Vigorous Optimizations?: On" if self.vigorous_optimizations else "Vigorous Optimizations?: Off",
+        font=self.fonts["fantasy"],
+        font_size=16,
+        element_id="vigorous_optimizations_button",
+        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
+        callback=lambda: (setattr(self, "vigorous_optimizations", not self.vigorous_optimizations)),
         hover_range=3.5,
         render_order=0
       )

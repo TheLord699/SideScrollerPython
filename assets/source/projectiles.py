@@ -91,6 +91,57 @@ class ProjectileSystem:
         
         return not vis_rect.colliderect(screen_rect)
 
+    def should_update(self, projectile):
+        cam_x = self.game.player.cam_x
+        cam_y = self.game.player.cam_y
+        
+        sw = self.game.screen_width
+        sh = self.game.screen_height
+        
+        half_w = sw // 2
+        half_h = sh // 2
+        
+        update_bounds = pg.Rect(
+            cam_x - half_w,
+            cam_y - half_h,
+            sw + (half_w * 2),
+            sh + (half_h * 2)
+        )
+        
+        px = projectile["x"]
+        py = projectile["y"]
+        
+        return update_bounds.collidepoint(px, py)
+
+    def should_render(self, projectile):
+        cam_x = self.game.player.cam_x
+        cam_y = self.game.player.cam_y
+        
+        sw = self.game.screen_width
+        sh = self.game.screen_height
+        
+        half_w = sw // 2
+        half_h = sh // 2
+        
+        render_bounds = pg.Rect(
+            cam_x - half_w,
+            cam_y - half_h,
+            sw + (half_w * 2),
+            sh + (half_h * 2)
+        )
+        
+        vis_w, vis_h = self.visual_size(projectile)
+        off_x = projectile.get("image_offset_x", 0)
+        off_y = projectile.get("image_offset_y", 0)
+        
+        vis_rect = pg.Rect(
+            projectile["x"] - vis_w/2 + off_x,
+            projectile["y"] - vis_h/2 + off_y,
+            vis_w, vis_h
+        )
+        
+        return vis_rect.colliderect(render_bounds)
+
     def check_entity_hits(self, projectile, rect):
         if projectile["owner"] == "player":
             for entity in self.game.entities.entities:
@@ -167,6 +218,21 @@ class ProjectileSystem:
         for projectile in self.projectiles:
             if not projectile["alive"]:
                 continue
+            
+            if self.game.environment.vigorous_optimizations:
+                if self.is_offscreen(projectile):
+                    projectile["lifetime"] -= 1
+                    if projectile["lifetime"] <= 0:
+                        projectile["alive"] = False
+                        
+                    continue
+            else:
+                if not self.should_update(projectile):
+                    projectile["lifetime"] -= 1
+                    if projectile["lifetime"] <= 0:
+                        projectile["alive"] = False
+                        
+                    continue
 
             if projectile["follow"] is not None:
                 new_x, new_y = projectile["follow"]()
@@ -201,9 +267,15 @@ class ProjectileSystem:
             rect = self.get_rect(projectile)
 
             if projectile["follow"] is None and not projectile["embedded"]:
-                if self.is_offscreen(projectile):
-                    projectile["alive"] = False
-                    continue
+                if self.game.environment.vigorous_optimizations:
+                    if self.is_offscreen(projectile):
+                        projectile["alive"] = False
+                        continue
+                    
+                else:
+                    if not self.should_render(projectile):
+                        projectile["alive"] = False
+                        continue
 
                 if self.hits_wall(rect):
                     if projectile["embed_on_wall"]:
@@ -222,26 +294,20 @@ class ProjectileSystem:
         self.render()
 
     def render(self):
-        cam_x = self.game.player.cam_x
-        cam_y = self.game.player.cam_y
-        
-        sw = self.game.screen_width
-        sh = self.game.screen_height
-        
-        screen_rect = pg.Rect(cam_x, cam_y, sw, sh)
-
         for projectile in self.projectiles:
             if not projectile["alive"]:
                 continue
 
-            vis_w, vis_h = self.visual_size(projectile)
-            off_x = projectile.get("image_offset_x", 0)
-            off_y = projectile.get("image_offset_y", 0)
-            vis_rect = pg.Rect(projectile["x"] - vis_w/2 + off_x, projectile["y"] - vis_h/2 + off_y, vis_w, vis_h)
-            if not vis_rect.colliderect(screen_rect):
+            if not self.should_render(projectile):
                 continue
 
+            cam_x = self.game.player.cam_x
+            cam_y = self.game.player.cam_y
+
             rect = self.get_rect(projectile)
+            off_x = projectile.get("image_offset_x", 0)
+            off_y = projectile.get("image_offset_y", 0)
+            
             screen_x = rect.x - cam_x + off_x
             screen_y = rect.y - cam_y + off_y
 

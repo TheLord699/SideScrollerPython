@@ -635,18 +635,14 @@ class Entities:
                 self.game.screen.blit(text_surface, text_rect)
 
     def render(self, entity):
-        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
-        screen_width, screen_height = self.game.screen_width, self.game.screen_height
-
         if not entity["image"]:
             return
-            
+        
+        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        
         sprite_x = entity["x"] - cam_x - entity["width"] // 2
         sprite_y = entity["y"] - cam_y - entity["height"] // 2
-
-        if not (sprite_x + entity["width"] >= 0 and sprite_x <= screen_width and sprite_y + entity["height"] >= 0 and sprite_y <= screen_height):
-            return
-
+                
         current_image = entity["image"]
         
         if entity.get("damage_effect", 0) > 0:
@@ -808,7 +804,38 @@ class Entities:
                 )
                             
     def update(self):
+        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        screen_w, screen_h = self.game.screen_width, self.game.screen_height
+        
+        half_w = screen_w // 2
+        half_h = screen_h // 2
+        
         for entity in self.entities[:]:
+            entity_x = entity["x"]
+            entity_y = entity["y"]
+            
+            sprite_x = entity_x - cam_x - entity["width"] // 2
+            sprite_y = entity_y - cam_y - entity["height"] // 2
+            
+            render_padding = 100
+            is_on_screen = (sprite_x + entity["width"] >= -render_padding and 
+                            sprite_x <= screen_w + render_padding and
+                            sprite_y + entity["height"] >= -render_padding and 
+                            sprite_y <= screen_h + render_padding)
+            
+            if self.game.environment.vigorous_optimizations:
+                if not is_on_screen:
+                    continue
+                
+            else:
+                is_near_screen = (entity_x >= cam_x - half_w and 
+                                entity_x <= cam_x + screen_w + half_w and
+                                entity_y >= cam_y - half_h and 
+                                entity_y <= cam_y + screen_h + half_h)
+                
+                if not is_near_screen:
+                    continue
+            
             if entity["entity_type"] in {"npc", "enemy"}:
                 self.game.ai.update_ai(entity)
             self.update_collision(entity)
@@ -816,7 +843,9 @@ class Entities:
             self.apply_horizontal_movement(entity)
             self.update_animation(entity)
             self.update_entity(entity)
-            self.render(entity)
-            self.mouse_interact(entity)
-            self.show_hitboxes(entity)
-            self.entity_indicators(entity)
+            
+            if is_on_screen:
+                self.render(entity)
+                self.mouse_interact(entity)
+                self.show_hitboxes(entity)
+                self.entity_indicators(entity)
