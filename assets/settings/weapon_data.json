@@ -42,7 +42,7 @@
       "vel_y": 0,
       "lifetime": 90,
       "push_force": 25,
-      "gravity": 0.18,
+      "gravity": 0.2,
       "piercing": false,
       "embed_on_wall": true,
       "fluid_drag": true,
