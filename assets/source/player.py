@@ -1568,7 +1568,8 @@ class Player:
 
             flip_offset = 14 if self.direction == "right" else 0
 
-            lifespan = 15 + ghost * 2
+            bonus = 2 if ghost == num_ghosts - 1 else 0
+            lifespan = 15 + ghost * 2 + bonus
 
             self.game.particles.generate(
                 pos=(ghost_x + self.hitbox_width / 2 - flip_offset, ghost_y + self.hitbox_height / 8),
