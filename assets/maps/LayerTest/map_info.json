@@ -3,10 +3,6 @@
     {
       "path": "assets/sprites/maps/tile_sheets/Assets.png",
       "tile_dimension": 16
-    },
-    {
-      "path": "assets/sprites/maps/tile_sheets/Cliff_Tile.png",
-      "tile_dimension": 16
     }
   ],
   "tiles": [
