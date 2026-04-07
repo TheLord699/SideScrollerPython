@@ -1303,7 +1303,15 @@ class Player:
         vel_mult = min_vel_mult + (1.0 - min_vel_mult) * charge
         proj_vel_x = facing * proj_data.get("vel_x", 20) * vel_mult
         proj_vel_y = proj_data.get("vel_y", 0)
-
+        
+        base_damage = weapon_data.get("damage", 20)
+        min_damage_mult = weapon_data.get("min_damage_mult", 0.3)
+        damage = base_damage * (min_damage_mult + (1.0 - min_damage_mult) * charge)
+        
+        base_push_force = proj_data.get("push_force", 30)
+        min_push_mult = proj_data.get("min_push_force_mult", 0.3)
+        push_force = base_push_force * (min_push_mult + (1.0 - min_push_mult) * charge)
+        
         off_x = weapon_data.get("spawn_offset_x", 25)
         if isinstance(off_x, list):
             off_x = off_x[0] if facing == -1 else off_x[1]
@@ -1332,8 +1340,8 @@ class Player:
             vel_x=proj_vel_x,
             vel_y=proj_vel_y,
             lifetime=proj_data.get("lifetime", 90),
-            damage=weapon_data.get("damage", 20),
-            push_force=proj_data.get("push_force", 30),
+            damage=damage,
+            push_force=push_force,
             gravity=proj_data.get("gravity", 0.2),
             piercing=proj_data.get("piercing", False),
             embed_on_wall=proj_data.get("embed_on_wall", False),

@@ -1,7 +1,6 @@
 import pygame as pg
 import random
 
-
 class ProjectileSystem:
     def __init__(self, game):
         self.game = game
@@ -95,7 +94,7 @@ class ProjectileSystem:
     def check_entity_hits(self, projectile, rect):
         if projectile["owner"] == "player":
             for entity in self.game.entities.entities:
-                if entity["entity_type"] not in {"enemy", "npc", "actor"}:
+                if entity["entity_type"] not in {"enemy", "npc", "actor"}: # will remove npc later, this is just for fun
                     continue
 
                 entity_id = id(entity)
