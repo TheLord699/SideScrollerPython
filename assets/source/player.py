@@ -1568,7 +1568,7 @@ class Player:
 
             flip_offset = 14 if self.direction == "right" else 0
 
-            bonus = 2 if ghost == num_ghosts - 1 else 0
+            bonus = 1 if ghost == num_ghosts - 1 else 0
             lifespan = 15 + ghost * 2 + bonus
 
             self.game.particles.generate(
