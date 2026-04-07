@@ -33,6 +33,10 @@ class ProjectileSystem:
             "embedded": False,
             "hit_ids": set(),
             "alive": True,
+            "is_melee": kwargs.get("is_melee", False),
+            "melee_direction": kwargs.get("melee_direction", None),
+            "knockback_direction_x": kwargs.get("knockback_direction_x", None),
+            "get_facing_direction": kwargs.get("get_facing_direction", None),
         }
         self.projectiles.append(projectile)
         return projectile
@@ -121,12 +125,22 @@ class ProjectileSystem:
                     random.choice(self.game.entities.sounds["hit"])["sound"].play()
 
                 if entity.get("abilities") and "pushable" in entity["abilities"]:
-                    is_melee = projectile.get("follow") is not None
-                    if is_melee:
-                        dir_sign = 1 if entity["x"] > self.game.player.x else -1
+                    if projectile["is_melee"]:
+                        if projectile.get("get_facing_direction"):
+                            dir_sign = projectile["get_facing_direction"]()
+                            
+                        elif projectile["melee_direction"] is not None:
+                            dir_sign = projectile["melee_direction"]
+                            
+                        else:
+                            dir_sign = 1 if entity["x"] > self.game.player.x else -1
                         
                     else:
-                        dir_sign = 1 if projectile["vel_x"] >= 0 else -1
+                        if projectile["knockback_direction_x"] is not None:
+                            dir_sign = projectile["knockback_direction_x"]
+                            
+                        else:
+                            dir_sign = 1 if projectile["vel_x"] >= 0 else -1
 
                     push = projectile.get("push_force", 20) / max(entity.get("weight", 1), 0.1)
                     entity["vel_x"] = dir_sign * push
@@ -140,7 +154,7 @@ class ProjectileSystem:
                 if not projectile["piercing"]:
                     projectile["alive"] = False
                     break
-
+                
         else:
             player_id = id(self.game.player)
             if player_id not in projectile["hit_ids"] and rect.colliderect(self.game.player.hitbox):

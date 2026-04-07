@@ -17,7 +17,7 @@
     "piercing": true
   },
 
-  "basic_bow": {
+"basic_bow": {
     "type": "ranged",
     "damage": 20,
     "speed": 0.4,
@@ -27,9 +27,9 @@
     "full_draw_frame": 6,
     "full_draw_ticks": 18,
     "min_vel_mult": 0.4,
-    "spawn_offset_x": 25,
+    "spawn_offset_x": 0,
     "spawn_offset_y": -8,
-    "image_offset_x": -30,
+    "image_offset_x": [-10, -32],
     "image_offset_y": -20,
     "charge_sound": "bow_draw",
     "shoot_sound": "bow_shoot",

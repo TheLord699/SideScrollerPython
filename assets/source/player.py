@@ -93,7 +93,8 @@ class Player:
         self.current_frame = 0
         self.animation_timer = 0
         self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
-        self.equipped_weapon = "basic_bow"
+        self.weapon_inventory = ["basic_sword", "basic_bow"] # temporary, will be replaced with actual inventory system
+        self.equipped_weapon = "basic_sword"
         self.state_frames = {
             "idle": {"frames": 6, "speed": 0.15},
             "walking": {"frames": 8, "speed": 0.2},
@@ -1195,6 +1196,33 @@ class Player:
         if pause_input:
             pass
 
+        self.handle_weapon_switching(keys, controller)
+
+    def handle_weapon_switching(self, keys, controller):
+        key_to_index = {
+            pg.K_1: 0, pg.K_2: 1, pg.K_3: 2, pg.K_4: 3, pg.K_5: 4,
+            pg.K_6: 5, pg.K_7: 6, pg.K_8: 7, pg.K_9: 8
+        }
+        
+        for key, index in key_to_index.items():
+            if keys[key] and index < len(self.weapon_inventory):
+                weapon_to_equip = self.weapon_inventory[index]
+                
+                if weapon_to_equip != self.equipped_weapon:
+                    self.equip_weapon(weapon_to_equip)
+                    break
+        
+        if self.joystick and controller:
+            if controller.get("LB"):
+                current_index = self.weapon_inventory.index(self.equipped_weapon) if self.equipped_weapon in self.weapon_inventory else 0
+                new_index = (current_index - 1) % len(self.weapon_inventory)
+                self.equip_weapon(self.weapon_inventory[new_index])
+                
+            elif controller.get("RB"):
+                current_index = self.weapon_inventory.index(self.equipped_weapon) if self.equipped_weapon in self.weapon_inventory else 0
+                new_index = (current_index + 1) % len(self.weapon_inventory)
+                self.equip_weapon(self.weapon_inventory[new_index])
+
     def handle_weapon_input(self, attack_held):
         weapon_data = self.weapon_info.get(self.equipped_weapon, {})
         weapon_type = weapon_data.get("type", "melee")
@@ -1273,14 +1301,24 @@ class Player:
         proj_vel_y = proj_data.get("vel_y", 0)
 
         off_x = weapon_data.get("spawn_offset_x", 25)
+        if isinstance(off_x, list):
+            off_x = off_x[0] if facing == -1 else off_x[1]
+        
         off_y = weapon_data.get("spawn_offset_y", -8)
+        if isinstance(off_y, list):
+            off_y = off_y[0] if facing == -1 else off_y[1]
 
         img = self.load_projectile_image(self.equipped_weapon)
         if img and facing == -1:
             img = pg.transform.flip(img, True, False)
 
         img_off_x = weapon_data.get("image_offset_x", -30 if facing == 1 else -10)
+        if isinstance(img_off_x, list):
+            img_off_x = img_off_x[0] if facing == -1 else img_off_x[1]
+        
         img_off_y = weapon_data.get("image_offset_y", -20)
+        if isinstance(img_off_y, list):
+            img_off_y = img_off_y[0] if facing == -1 else img_off_y[1]
 
         self.game.projectiles_system.spawn(
             x=self.x + facing * off_x,
@@ -1301,6 +1339,8 @@ class Player:
             image_offset_x=img_off_x,
             image_offset_y=img_off_y,
             owner="player",
+            is_melee=False,
+            knockback_direction_x=facing,
         )
 
     def load_projectile_image(self, weapon_name):
@@ -1327,21 +1367,26 @@ class Player:
         self.current_frame = 0
         self.attack_timer = 0
 
-        facing = 1 if self.direction == "right" else -1
+        self.attack_start_direction = 1 if self.direction == "right" else -1
         offset_x = weapon_data.get("spawn_offset_x", 30)
+        if isinstance(offset_x, list):
+            offset_x = offset_x[0] if self.attack_start_direction == -1 else offset_x[1]
+        
         offset_y = weapon_data.get("spawn_offset_y", 0)
+        if isinstance(offset_y, list):
+            offset_y = offset_y[0] if self.attack_start_direction == -1 else offset_y[1]
 
         def make_follow(player, off_x, off_y):
             def follow():
-                follow_facing = 1 if player.direction == "right" else -1
-                return player.x + follow_facing * off_x, player.y + off_y
+                current_facing = 1 if player.direction == "right" else -1
+                return player.x + current_facing * off_x, player.y + off_y
             
             return follow
 
         follow_func = make_follow(self, offset_x, offset_y)
 
         self.current_attack_projectile = self.game.projectiles_system.spawn(
-            x=self.x + facing * offset_x,
+            x=self.x + self.attack_start_direction * offset_x,
             y=self.y + offset_y,
             width=weapon_data.get("hitbox_width", 34),
             height=weapon_data.get("hitbox_height", 30),
@@ -1354,6 +1399,8 @@ class Player:
             piercing=weapon_data.get("piercing", False),
             follow=follow_func,
             owner="player",
+            is_melee=True,
+            get_facing_direction=lambda: 1 if self.direction == "right" else -1,
         )
 
         attack_sound = random.choice(self.sounds["attack"])
@@ -1361,12 +1408,20 @@ class Player:
 
     def equip_weapon(self, weapon_name):
         self.cancel_charge()
+        
+        if hasattr(self, 'current_attack_projectile') and self.current_attack_projectile:
+            if self.current_attack_projectile in self.game.projectiles_system.projectiles:
+                self.current_attack_projectile["lifetime"] = 0
+        
         self.equipped_weapon = weapon_name
         self.attacking = False
         self.current_frame = 0
         self.attack_timer = 0
         self.attack_sequence = 1
         self.current_attack_projectile = None
+        
+        if hasattr(self, 'attack_facing_direction'):
+            delattr(self, 'attack_facing_direction')
 
     def handle_map_controls(self, mouse_buttons):
         mouse_pos = pg.mouse.get_pos()

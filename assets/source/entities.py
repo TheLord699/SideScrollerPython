@@ -152,7 +152,9 @@ class Entities:
             "animation_timer": 0,
             "animation_speed": template.get("animation_speed", 0.2),
             "flip_x": False,
-            "flip_y": False
+            "flip_y": False,
+            "knockback_timer": 0,
+            "force_facing": None,
         }
 
         if entity_type == "item" and template.get("damageable", False):
@@ -427,6 +429,9 @@ class Entities:
 
         if entity.get("knockback_timer", 0) > 0:
             entity["knockback_timer"] -= 1
+            if entity["knockback_timer"] <= 0 and entity.get("force_facing"):
+                entity["force_facing"] = None
+                
             return
 
         if entity.get("on_ground", False): 
@@ -671,7 +676,7 @@ class Entities:
             if entity.get("force_facing"):
                 flip_image = entity["force_facing"] == "left"
                 if entity.get("knockback_timer", 0) <= 0:
-                    del entity["force_facing"]
+                    entity["force_facing"] = None
 
             else:
                 if "last_dir" not in entity:
