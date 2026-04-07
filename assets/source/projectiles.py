@@ -1,4 +1,5 @@
 import pygame as pg
+import math
 import random
 
 class ProjectileSystem:
@@ -29,6 +30,11 @@ class ProjectileSystem:
             "embed_on_wall": kwargs.get("embed_on_wall", False),
             "fluid_drag": kwargs.get("fluid_drag", False),
             "fluid_drag_mult": kwargs.get("fluid_drag_mult", 0.85),
+            "rotate_to_velocity": kwargs.get("rotate_to_velocity", False),
+            "rotation_offset": kwargs.get("rotation_offset", 0),
+            "rotation": kwargs.get("rotation", 0),
+            "facing_direction": kwargs.get("facing_direction", 1),
+            "flipped": kwargs.get("flipped", False),
             "embedded": False,
             "hit_ids": set(),
             "alive": True,
@@ -41,7 +47,7 @@ class ProjectileSystem:
         return projectile
 
     def get_rect(self, projectile):
-        w = projectile["width"]  * projectile["scale"]
+        w = projectile["width"] * projectile["scale"]
         h = projectile["height"] * projectile["scale"]
         
         return pg.Rect(projectile["x"] - w / 2, projectile["y"] - h / 2, w, h)
@@ -86,7 +92,7 @@ class ProjectileSystem:
         off_x = projectile.get("image_offset_x", 0)
         off_y = projectile.get("image_offset_y", 0)
         
-        vis_rect    = pg.Rect(projectile["x"] - vis_w/2 + off_x, projectile["y"] - vis_h/2 + off_y, vis_w, vis_h)
+        vis_rect = pg.Rect(projectile["x"] - vis_w/2 + off_x, projectile["y"] - vis_h/2 + off_y, vis_w, vis_h)
         screen_rect = pg.Rect(cam_x, cam_y, sw, sh)
         
         return not vis_rect.colliderect(screen_rect)
@@ -142,10 +148,23 @@ class ProjectileSystem:
         
         return vis_rect.colliderect(render_bounds)
 
+    def update_rotation(self, projectile):
+        if not projectile.get("rotate_to_velocity", False):
+            return
+        
+        vel_x = projectile["vel_x"]
+        vel_y = projectile["vel_y"]
+        
+        if abs(vel_x) > 0.1 or abs(vel_y) > 0.1:
+            angle_rad = math.atan2(vel_y, vel_x)
+            angle_deg = math.degrees(angle_rad)
+            
+            projectile["rotation"] = angle_deg + projectile.get("rotation_offset", 0)
+
     def check_entity_hits(self, projectile, rect):
         if projectile["owner"] == "player":
             for entity in self.game.entities.entities:
-                if entity["entity_type"] not in {"enemy", "npc", "actor"}: # will remove npc later, this is just for fun
+                if entity["entity_type"] not in {"enemy", "npc", "actor"}:
                     continue
 
                 entity_id = id(entity)
@@ -258,6 +277,8 @@ class ProjectileSystem:
                 projectile["vel_y"] += projectile["gravity"]
                 projectile["x"] += projectile["vel_x"]
                 projectile["y"] += projectile["vel_y"]
+                
+                self.update_rotation(projectile)
 
             projectile["lifetime"] -= 1
             if projectile["lifetime"] <= 0:
@@ -279,9 +300,21 @@ class ProjectileSystem:
 
                 if self.hits_wall(rect):
                     if projectile["embed_on_wall"]:
+                        step_x = projectile["vel_x"] * 0.25
+                        step_y = projectile["vel_y"] * 0.25
+                        
+                        for attempts in range(4):
+                            projectile["x"] -= step_x
+                            projectile["y"] -= step_y
+                            
+                            test_rect = self.get_rect(projectile)
+                            if not self.hits_wall(test_rect):
+                                break
+                        
+                        projectile["flipped"] = projectile["vel_x"] < 0
                         projectile["embedded"] = True
-                        projectile["vel_x"]    = 0
-                        projectile["vel_y"]    = 0
+                        projectile["vel_x"] = 0
+                        projectile["vel_y"] = 0
                         
                     else:
                         projectile["alive"] = False
@@ -305,21 +338,91 @@ class ProjectileSystem:
             cam_y = self.game.player.cam_y
 
             rect = self.get_rect(projectile)
-            off_x = projectile.get("image_offset_x", 0)
-            off_y = projectile.get("image_offset_y", 0)
             
-            screen_x = rect.x - cam_x + off_x
-            screen_y = rect.y - cam_y + off_y
-
             if projectile["image"] is not None:
                 image = projectile["image"]
+                
                 if projectile["scale"] != 1.0:
-                    nw = int(image.get_width()  * projectile["scale"])
+                    nw = int(image.get_width() * projectile["scale"])
                     nh = int(image.get_height() * projectile["scale"])
                     
                     image = pg.transform.scale(image, (nw, nh))
+                
+                if projectile["embedded"]:
+                    should_flip = projectile.get("flipped", False)
+                else:
+                    should_flip = projectile["vel_x"] < 0
+                    projectile["flipped"] = should_flip
+                
+                if projectile.get("rotate_to_velocity", False):
+                    rotation = projectile.get("rotation", 0)
+                    if rotation != 0:
+                        if should_flip:
+                            flipped_image = pg.transform.flip(image, True, False)
+                            rotated_image = pg.transform.rotate(flipped_image, -rotation)
+                            
+                        else:
+                            rotated_image = pg.transform.rotate(image, -rotation)
+                        
+                        hitbox_center_x = rect.centerx - cam_x
+                        hitbox_center_y = rect.centery - cam_y
+                        
+                        rot_rect = rotated_image.get_rect(center=(hitbox_center_x, hitbox_center_y))
+                        
+                        off_x = projectile.get("image_offset_x", 0)
+                        off_y = projectile.get("image_offset_y", 0)
+                        
+                        rot_rect.x += off_x
+                        rot_rect.y += off_y
+                        
+                        self.game.screen.blit(rotated_image, rot_rect)
+                        
+                        if self.game.debugging:
+                            pg.draw.circle(self.game.screen, (255, 0, 0), (int(hitbox_center_x), int(hitbox_center_y)), 4)
+                            pg.draw.circle(self.game.screen, (0, 255, 0), (int(rot_rect.centerx), int(rot_rect.centery)), 3)
+                        
+                        continue
                     
-                self.game.screen.blit(image, (screen_x, screen_y))
+                    else:
+                        if should_flip:
+                            image = pg.transform.flip(image, True, False)
+                            
+                else:
+                    if should_flip:
+                        image = pg.transform.flip(image, True, False)
+                
+                hitbox_center_x = rect.centerx - cam_x
+                hitbox_center_y = rect.centery - cam_y
+                
+                image_rect = image.get_rect(center=(hitbox_center_x, hitbox_center_y))
+                
+                off_x = projectile.get("image_offset_x", 0)
+                off_y = projectile.get("image_offset_y", 0)
+                
+                image_rect.x += off_x
+                image_rect.y += off_y
+                
+                self.game.screen.blit(image, image_rect)
+                
+                if self.game.debugging:
+                    pg.draw.circle(self.game.screen, (255, 0, 0), (int(hitbox_center_x), int(hitbox_center_y)), 4)
+                    pg.draw.circle(self.game.screen, (0, 255, 0), (int(image_rect.centerx), int(image_rect.centery)), 3)
 
             if self.game.debugging:
-                pg.draw.rect(self.game.screen, (255, 80, 80), (rect.x - cam_x, rect.y - cam_y, rect.width, rect.height))
+                pg.draw.rect(self.game.screen, (255, 80, 80), (rect.x - cam_x, rect.y - cam_y, rect.width, rect.height), 2)
+                
+                if projectile.get("rotate_to_velocity", False) and not projectile["embedded"]:
+                    center_x = rect.centerx - cam_x
+                    center_y = rect.centery - cam_y
+                    
+                    angle_rad = math.radians(projectile.get("rotation", 0))
+                    
+                    if projectile["vel_x"] < 0:
+                        angle_rad = -angle_rad
+                    
+                    length = 20
+                    end_x = center_x + math.cos(angle_rad) * length
+                    end_y = center_y + math.sin(angle_rad) * length
+                    
+                    pg.draw.line(self.game.screen, (255, 255, 0), (center_x, center_y), (end_x, end_y), 2)
+                    pg.draw.circle(self.game.screen, (255, 255, 0), (int(center_x), int(center_y)), 3)

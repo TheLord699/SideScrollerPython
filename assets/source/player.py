@@ -1353,6 +1353,8 @@ class Player:
             owner="player",
             is_melee=False,
             knockback_direction_x=facing,
+            rotate_to_velocity=proj_data.get("rotate_to_velocity", False),
+            rotation_offset=proj_data.get("rotation_offset", 0)
         )
 
     def load_projectile_image(self, weapon_name):

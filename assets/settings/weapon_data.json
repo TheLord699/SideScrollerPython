@@ -23,18 +23,16 @@
     "min_damage_mult": 0.3,
     "speed": 0.4,
     "frames": [7],
-
     "draw_start_frame": 4,
     "full_draw_frame": 6,
     "full_draw_ticks": 18,
     "min_vel_mult": 0.1,
     "spawn_offset_x": 0,
     "spawn_offset_y": -1,
-    "image_offset_x": [-10, -32],
-    "image_offset_y": -20,
+    "image_offset_x": 0,
+    "image_offset_y": 0,
     "charge_sound": "bow_draw",
     "shoot_sound": "bow_shoot",
-
     "projectile": {
       "image": "assets/sprites/projectiles/arrow.png",
       "width": 6,
@@ -48,7 +46,9 @@
       "piercing": false,
       "embed_on_wall": true,
       "fluid_drag": true,
-      "fluid_drag_mult": 0.85
+      "fluid_drag_mult": 0.85,
+      "rotate_to_velocity": true,
+      "rotation_offset": 0
     }
   }
 }
