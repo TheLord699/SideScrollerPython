@@ -667,29 +667,23 @@ class Entities:
         
         elif entity["entity_type"] == "enemy":
             self.health_bar(entity)
-            
+
             if entity.get("force_facing"):
-                if entity["force_facing"] == "left":
-                    flip_image = True
-                    
-                else:
-                    flip_image = False
-                    
+                flip_image = entity["force_facing"] == "left"
                 if entity.get("knockback_timer", 0) <= 0:
                     del entity["force_facing"]
-                    
+
             else:
                 if "last_dir" not in entity:
                     entity["last_dir"] = 1
-                
+
                 if entity["vel_x"] > 0:
                     entity["last_dir"] = 1
                     
                 elif entity["vel_x"] < 0:
                     entity["last_dir"] = -1
-                
-                if entity["last_dir"] == -1:
-                    flip_image = True
+
+                flip_image = entity["last_dir"] == -1
         
         if flip_image:
             current_image = pg.transform.flip(current_image, True, False)

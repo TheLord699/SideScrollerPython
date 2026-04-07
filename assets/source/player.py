@@ -93,7 +93,7 @@ class Player:
         self.current_frame = 0
         self.animation_timer = 0
         self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
-        self.equipped_weapon = "basic_sword"
+        self.equipped_weapon = "basic_bow"
         self.state_frames = {
             "idle": {"frames": 6, "speed": 0.15},
             "walking": {"frames": 8, "speed": 0.2},
@@ -145,8 +145,19 @@ class Player:
             "dash": [
                 {"sound": pg.mixer.Sound("assets/sounds/player/movement/15_human_dash_1.wav"), "volume": 2.0},
                 {"sound": pg.mixer.Sound("assets/sounds/player/movement/15_human_dash_2.wav"), "volume": 2.0}
+            ],
+            "bow_draw": [
+                {"sound": pg.mixer.Sound("assets/sounds/player/attack/bow_draw.wav"), "volume": 2.0}
+            ],
+            "bow_shoot": [
+                {"sound": pg.mixer.Sound("assets/sounds/player/attack/bow_shoot.wav"), "volume": 2.0}
             ]
         }
+
+        self.charging = False
+        self.charge_timer = 0
+        self.charge_sound_played = False
+        self.proj_image_cache = {}
 
         self.attacking = False
         self.on_ground = False
@@ -938,7 +949,7 @@ class Player:
 
                 else:
                     self.y += overlap_y
-                    self.vel_y += 1 # will set 0 when I fix head collisions
+                    self.vel_y += 1
                     
                 self.hitbox_set()
 
@@ -965,7 +976,7 @@ class Player:
                 damage = tile_attributes.get("damage", 0)
 
                 if swimmable:
-                    self.vel_y *= 0.8 # temp fix for swimming
+                    self.vel_y *= 0.8
                     self.on_ground = True
                     continue
 
@@ -1055,9 +1066,12 @@ class Player:
                 self.attacking = False
                 return
 
+            if self.charging:
+                return
+
             frame_delay = int(1 / weapon_data["speed"])
             frames_for_attack = weapon_data["frames"][self.attack_sequence - 1]
-            
+
         else:
             frame_delay = int(1 / self.state_frames[self.current_state]["speed"])
             frames_for_attack = self.state_frames[self.current_state]["frames"]
@@ -1067,16 +1081,15 @@ class Player:
             return
 
         self.animation_timer = 0
-
         self.current_frame = (self.current_frame + 1) % frames_for_attack
 
         if self.current_state.startswith("attacking"):
-            if self.current_frame == frames_for_attack - 1:
+            weapon_data = self.weapon_info.get(self.equipped_weapon, {})
+            is_ranged = weapon_data.get("type") in ("ranged", "instant_ranged")
+            if not is_ranged and self.current_frame == frames_for_attack - 1:
                 self.attacking = False
-
                 max_sequence = weapon_data.get("sequence", 1)
                 self.attack_sequence = (self.attack_sequence % max_sequence) + 1
-
                 self.current_attack_projectile = None
 
     def handle_controls(self):
@@ -1175,12 +1188,185 @@ class Player:
             self.interact_with_entity()
 
         attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
-        if attack_input and self.current_state != "hurt":
-            self.start_attack()
+        if self.current_state != "hurt":
+            self.handle_weapon_input(attack_input)
 
         pause_input = keys[pg.K_ESCAPE] or (self.joystick and controller.get("start"))
         if pause_input:
             pass
+
+    def handle_weapon_input(self, attack_held):
+        weapon_data = self.weapon_info.get(self.equipped_weapon, {})
+        weapon_type = weapon_data.get("type", "melee")
+
+        if weapon_type in ("ranged", "instant_ranged"):
+            self.handle_ranged_input(attack_held, weapon_data)
+            
+        elif attack_held:
+            self.handle_melee_input(weapon_data)
+
+    def handle_ranged_input(self, attack_held, weapon_data):
+        is_instant = weapon_data.get("type") == "instant_ranged"
+        draw_start = weapon_data.get("draw_start_frame", 0 if is_instant else 4)
+        
+        full_frame = weapon_data.get("full_draw_frame", 2 if is_instant else 6)
+        full_ticks = weapon_data.get("full_draw_ticks", 1 if is_instant else 18)
+        
+        min_vel_mult = weapon_data.get("min_vel_mult", 1.0 if is_instant else 0.4)
+        
+        charge_key = weapon_data.get("charge_sound", "bow_draw")
+        shoot_key = weapon_data.get("shoot_sound", "bow_shoot")
+
+        if attack_held:
+            if not self.attacking:
+                self.attacking = True
+                self.current_frame = 0
+                self.attack_timer = 0
+                self.charging = False
+                self.charge_timer = 0
+                self.charge_sound_played = False
+
+            if self.current_frame >= draw_start:
+                self.charge_timer = min(self.charge_timer + 1, full_ticks)
+                t = self.charge_timer / full_ticks
+                self.current_frame = min(draw_start + int(t * (full_frame - draw_start)), full_frame)
+                self.charging = True
+
+                if not self.charge_sound_played:
+                    for s in self.sounds.get(charge_key, []):
+                        s["sound"].play()
+                    self.charge_sound_played = True
+
+                if is_instant:
+                    self.fire_projectile(weapon_data, charge=1.0, min_vel_mult=min_vel_mult)
+                    for s in self.sounds.get(shoot_key, []):
+                        s["sound"].play()
+                    self.cancel_charge()
+
+        else:
+            if self.attacking and self.charging:
+                charge = min(1.0, self.charge_timer / max(full_ticks, 1))
+                self.fire_projectile(weapon_data, charge=charge, min_vel_mult=min_vel_mult)
+                for s in self.sounds.get(shoot_key, []):
+                    s["sound"].play()
+
+            self.cancel_charge()
+
+    def cancel_charge(self):
+        if self.charging:
+            charge_key = self.weapon_info.get(self.equipped_weapon, {}).get("charge_sound", "bow_draw")
+            for s in self.sounds.get(charge_key, []):
+                s["sound"].stop()
+
+        self.charging = False
+        self.charge_timer = 0
+        self.charge_sound_played = False
+        self.attacking = False
+        self.attack_timer = 0
+
+    def fire_projectile(self, weapon_data, charge=1.0, min_vel_mult=0.4):
+        proj_data = weapon_data.get("projectile", {})
+        facing = 1 if self.direction == "right" else -1
+
+        vel_mult = min_vel_mult + (1.0 - min_vel_mult) * charge
+        proj_vel_x = facing * proj_data.get("vel_x", 20) * vel_mult
+        proj_vel_y = proj_data.get("vel_y", 0)
+
+        off_x = weapon_data.get("spawn_offset_x", 25)
+        off_y = weapon_data.get("spawn_offset_y", -8)
+
+        img = self.load_projectile_image(self.equipped_weapon)
+        if img and facing == -1:
+            img = pg.transform.flip(img, True, False)
+
+        img_off_x = weapon_data.get("image_offset_x", -30 if facing == 1 else -10)
+        img_off_y = weapon_data.get("image_offset_y", -20)
+
+        self.game.projectiles_system.spawn(
+            x=self.x + facing * off_x,
+            y=self.y + off_y,
+            width=proj_data.get("width", 6),
+            height=proj_data.get("height", 6),
+            vel_x=proj_vel_x,
+            vel_y=proj_vel_y,
+            lifetime=proj_data.get("lifetime", 90),
+            damage=weapon_data.get("damage", 20),
+            push_force=proj_data.get("push_force", 30),
+            gravity=proj_data.get("gravity", 0.2),
+            piercing=proj_data.get("piercing", False),
+            embed_on_wall=proj_data.get("embed_on_wall", False),
+            fluid_drag=proj_data.get("fluid_drag", False),
+            fluid_drag_mult=proj_data.get("fluid_drag_mult", 0.85),
+            image=img,
+            image_offset_x=img_off_x,
+            image_offset_y=img_off_y,
+            owner="player",
+        )
+
+    def load_projectile_image(self, weapon_name):
+        if weapon_name in self.proj_image_cache:
+            return self.proj_image_cache[weapon_name]
+
+        path = self.weapon_info.get(weapon_name, {}).get("projectile", {}).get("image")
+        img = None
+        if path:
+            try:
+                img = pg.image.load(path).convert_alpha()
+                
+            except Exception as e:
+                print(f"Could not load projectile image '{path}': {e}")
+
+        self.proj_image_cache[weapon_name] = img
+        return img
+
+    def handle_melee_input(self, weapon_data):
+        if self.attacking or self.equipped_weapon not in self.weapon_info:
+            return
+
+        self.attacking = True
+        self.current_frame = 0
+        self.attack_timer = 0
+
+        facing = 1 if self.direction == "right" else -1
+        offset_x = weapon_data.get("spawn_offset_x", 30)
+        offset_y = weapon_data.get("spawn_offset_y", 0)
+
+        def make_follow(player, off_x, off_y):
+            def follow():
+                follow_facing = 1 if player.direction == "right" else -1
+                return player.x + follow_facing * off_x, player.y + off_y
+            
+            return follow
+
+        follow_func = make_follow(self, offset_x, offset_y)
+
+        self.current_attack_projectile = self.game.projectiles_system.spawn(
+            x=self.x + facing * offset_x,
+            y=self.y + offset_y,
+            width=weapon_data.get("hitbox_width", 34),
+            height=weapon_data.get("hitbox_height", 30),
+            vel_x=0,
+            vel_y=0,
+            lifetime=weapon_data.get("lifetime", 15),
+            damage=weapon_data.get("damage", 10),
+            push_force=weapon_data.get("push_force", 70),
+            gravity=0,
+            piercing=weapon_data.get("piercing", False),
+            follow=follow_func,
+            owner="player",
+        )
+
+        attack_sound = random.choice(self.sounds["attack"])
+        attack_sound["sound"].play()
+
+    def equip_weapon(self, weapon_name):
+        self.cancel_charge()
+        self.equipped_weapon = weapon_name
+        self.attacking = False
+        self.current_frame = 0
+        self.attack_timer = 0
+        self.attack_sequence = 1
+        self.current_attack_projectile = None
 
     def handle_map_controls(self, mouse_buttons):
         mouse_pos = pg.mouse.get_pos()
@@ -1290,7 +1476,7 @@ class Player:
             return
 
         dash_dir = 1 if self.direction == "right" else -1
-        num_ghosts = 4 # 8
+        num_ghosts = 4
         step_size = distance / num_ghosts
 
         for i in range(num_ghosts):
@@ -1377,53 +1563,6 @@ class Player:
 
             dash_sound = random.choice(self.sounds["dash"])
             dash_sound["sound"].play()
-
-    def start_attack(self):
-        if self.attacking or self.equipped_weapon not in self.weapon_info:
-            return
-
-        self.attacking = True
-        self.current_frame = 0
-        self.attack_timer = 0
-
-        weapon_data = self.weapon_info[self.equipped_weapon]
-        facing = 1 if self.direction == "right" else -1
-
-        offset_x = weapon_data.get("spawn_offset_x", 30)
-        offset_y = weapon_data.get("spawn_offset_y", 0)
-
-        if weapon_data.get("type") == "melee":
-            
-            def make_follow(player, off_x, off_y):
-                def follow():
-                    follow_facing = 1 if player.direction == "right" else -1
-                    return player.x + follow_facing * off_x, player.y + off_y
-                
-                return follow
-
-            follow_func = make_follow(self, offset_x, offset_y)
-            
-        else:
-            follow_func = None
-
-        self.current_attack_projectile = self.game.projectiles_system.spawn(
-            x=self.x + facing * offset_x,
-            y=self.y + offset_y,
-            width=weapon_data.get("hitbox_width", 34),
-            height=weapon_data.get("hitbox_height", 30),
-            vel_x=facing * weapon_data.get("vel_x", 0),
-            vel_y=weapon_data.get("vel_y", 0),
-            lifetime=weapon_data.get("lifetime", 15),
-            damage=weapon_data.get("damage", 10),
-            push_force=weapon_data.get("push_force", 70),
-            gravity=weapon_data.get("gravity", 0),
-            piercing=weapon_data.get("piercing", False),
-            follow=follow_func,
-            owner="player",
-        )
-
-        attack_sound = random.choice(self.sounds["attack"])
-        attack_sound["sound"].play()
 
     def render(self):
         self.flip_offset = {"left": 1.4, "right": 0}
@@ -1718,8 +1857,6 @@ class Player:
             tile_image = pg.transform.scale(tile_image, (tile_pixel_size, tile_pixel_size))
         
         return tile_image
-    
-    #{"x": 20, "y": 62, "id": 3, "direction": 0, "layer": 0, "hitbox": True} Tile format
 
     def handle_free_cam(self):
         if not self.free_cam:

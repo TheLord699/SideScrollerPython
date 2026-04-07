@@ -44,6 +44,16 @@ Do immediately:
 - bow should make cam follow mouse
 - need to implement projectile based attacks into entities 
 - need to abstract more of entity ai
+- need to make it that you can place anything including entities in the editor, and load entities from the map and not using functions in environment class
+
+
+
+
+
+
+
+
+
 
 
 

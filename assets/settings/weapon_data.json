@@ -16,12 +16,26 @@
     "gravity": 0,
     "piercing": true
   },
+
   "basic_bow": {
     "type": "ranged",
     "damage": 20,
     "speed": 0.4,
-    "frames": [0, 0],
+    "frames": [7],
+
+    "draw_start_frame": 4,
+    "full_draw_frame": 6,
+    "full_draw_ticks": 18,
+    "min_vel_mult": 0.4,
+    "spawn_offset_x": 25,
+    "spawn_offset_y": -8,
+    "image_offset_x": -30,
+    "image_offset_y": -20,
+    "charge_sound": "bow_draw",
+    "shoot_sound": "bow_shoot",
+
     "projectile": {
+      "image": "assets/sprites/projectiles/arrow.png",
       "width": 6,
       "height": 6,
       "vel_x": 20,
@@ -30,12 +44,9 @@
       "push_force": 30,
       "gravity": 0.2,
       "piercing": false,
-      "image": "assets/sprites/projectiles/arrow.png"
-    },
-    "ammo_type": "arrow",
-    "ammo_count": 1,
-    "reload_time": 25,
-    "spread": 0,
-    "range": 500
+      "embed_on_wall": true,
+      "fluid_drag": true,
+      "fluid_drag_mult": 0.85
+    }
   }
 }
