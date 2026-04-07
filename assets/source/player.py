@@ -369,6 +369,7 @@ class Player:
             self.game.foreground.add_screen_effect("hurt", intensity=0.7, duration=20)
 
             self.shake_camera(intensity=8, duration=25)
+            self.cancel_charge()
 
             if self.current_health < 0.5:
                 self.death()
@@ -1224,6 +1225,9 @@ class Player:
                 self.equip_weapon(self.weapon_inventory[new_index])
 
     def handle_weapon_input(self, attack_held):
+        if self.current_state in ("hurt", "death"):
+            return
+            
         weapon_data = self.weapon_info.get(self.equipped_weapon, {})
         weapon_type = weapon_data.get("type", "melee")
 
