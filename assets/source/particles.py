@@ -1,5 +1,5 @@
 import pygame as pg
-import random
+
 from collections import deque
 
 class Particles:

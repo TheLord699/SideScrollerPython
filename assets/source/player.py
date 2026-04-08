@@ -1763,7 +1763,7 @@ class Player:
         )
 
         for projectile in self.game.projectiles_system.projectiles:
-            if not projectile["alive"] or projectile["owner"] != "player":
+            if not projectile.alive or projectile.owner != "player":
                 continue
             
             rect = self.game.projectiles_system.get_rect(projectile)
