@@ -264,7 +264,22 @@ class ProjectileSystem:
         else:
             player_id = id(self.game.player)
             if player_id not in projectile.hit_ids and rect.colliderect(self.game.player.hitbox):
+                if projectile.is_melee and projectile.melee_direction is not None:
+                    direction_sign = projectile.melee_direction
+                    
+                elif projectile.knockback_direction_x is not None:
+                    direction_sign = projectile.knockback_direction_x
+                    
+                else:
+                    direction_sign = 1 if projectile.vel_x >= 0 else -1
+
+                if projectile.push_force:
+                    self.game.player.vel_x = direction_sign * projectile.push_force
+                    self.game.player.vel_y = -abs(projectile.push_force) * 0.1
+
                 self.game.player.take_damage(projectile.damage)
+                projectile.hit_ids.add(player_id)
+
                 if not projectile.piercing:
                     projectile.alive = False
 
@@ -353,12 +368,20 @@ class ProjectileSystem:
             if not projectile.alive:
                 continue
 
-            if not self.should_render(projectile):
-                continue
-
             camera_x = self.game.player.cam_x
             camera_y = self.game.player.cam_y
             rect = self.get_rect(projectile)
+
+            if debugging:
+                debug_color = (255, 80, 80) if projectile.owner == "player" else (255, 140, 0)
+                fill_surface = pg.Surface((max(1, rect.width), max(1, rect.height)), pg.SRCALPHA)
+                fill_surface.fill((*debug_color, 120))
+                self.game.screen.blit(fill_surface, (rect.x - camera_x, rect.y - camera_y))
+                pg.draw.rect(self.game.screen, debug_color, (rect.x - camera_x, rect.y - camera_y, rect.width, rect.height), 2)
+                pg.draw.circle(self.game.screen, debug_color, (int(rect.centerx - camera_x), int(rect.centery - camera_y)), 4)
+
+            if not self.should_render(projectile):
+                continue
 
             if projectile.image is not None:
                 image = projectile.image
@@ -411,6 +434,8 @@ class ProjectileSystem:
                         if debugging:
                             pg.draw.circle(self.game.screen, (255, 0, 0), (int(hitbox_center_x), int(hitbox_center_y)), 4)
                             pg.draw.circle(self.game.screen, (0, 255, 0), (int(rotated_rect.centerx), int(rotated_rect.centery)), 3)
+                            debug_color = (255, 80, 80) if projectile.owner == "player" else (255, 140, 0)
+                            pg.draw.rect(self.game.screen, debug_color, (rect.x - camera_x, rect.y - camera_y, rect.width, rect.height), 2)
                             
                         continue
                     
@@ -436,9 +461,7 @@ class ProjectileSystem:
                     pg.draw.circle(self.game.screen, (255, 0, 0), (int(hitbox_center_x), int(hitbox_center_y)), 4)
                     pg.draw.circle(self.game.screen, (0, 255, 0), (int(image_rect.centerx), int(image_rect.centery)), 3)
 
-            if debugging:
-                pg.draw.rect(self.game.screen, (255, 80, 80), (rect.x - camera_x, rect.y - camera_y, rect.width, rect.height), 2)
-                if projectile.rotate_to_velocity and not projectile.embedded:
+            if debugging and projectile.rotate_to_velocity and not projectile.embedded:
                     center_x = rect.centerx - camera_x
                     center_y = rect.centery - camera_y
                     angle_rad = math.radians(projectile.rotation)

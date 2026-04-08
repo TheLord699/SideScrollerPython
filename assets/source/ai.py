@@ -200,20 +200,36 @@ class AISystem:
         if entity["attack_timer"] <= 0:
             entity["attack_timer"] = 30
             direction = entity.get("ai_direction", 1)
-            hitbox_width = 30
-            hitbox_height = 30
-            attack_dist = 20
 
-            attack_rect = pg.Rect(
-                entity["x"] + attack_dist * direction - hitbox_width // 2,
-                entity["y"] - 10 - hitbox_height // 2,
-                hitbox_width,
-                hitbox_height,
+            attack_offset_x = 20 * direction
+            attack_offset_y = -10
+
+            def follow_entity(
+                ent=entity,
+                off_x=attack_offset_x,
+                off_y=attack_offset_y
+            ):
+                return (ent["x"] + off_x, ent["y"] + off_y)
+
+            self.game.projectiles_system.spawn(
+                x=entity["x"] + attack_offset_x,
+                y=entity["y"] + attack_offset_y,
+                width=30,
+                height=30,
+                scale=1,
+                damage=entity.get("attack_damage", 10),
+                push_force=entity.get("attack_knockback", 4),
+                lifetime=6,
+                owner="enemy",
+                is_melee=True,
+                melee_direction=direction,
+                follow=follow_entity,
+                piercing=False,
+                gravity=0,
+                vel_x=0,
+                vel_y=0,
             )
 
-            if attack_rect.colliderect(self.game.player.hitbox):
-                self.game.player.take_damage(entity.get("attack_damage", 10))
-                
         else:
             entity["attack_timer"] -= 1
 

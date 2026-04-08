@@ -365,6 +365,7 @@ class Player:
         if self.game.environment.current_time - self.last_damage_time >= self.invinsibility_duration:
             self.current_health -= damage
             self.last_damage_time = self.game.environment.current_time
+            self.knockback_timer = 12 
 
             self.game.foreground.add_screen_effect("hurt", intensity=0.7, duration=20)
 
@@ -1152,6 +1153,10 @@ class Player:
         self.handle_actions(keys, mouse_buttons, controller)
 
     def handle_movement(self, keys, controller):
+        if getattr(self, "knockback_timer", 0) > 0:
+            self.knockback_timer -= 1
+            return 
+    
         left_input = keys[pg.K_a] or (self.joystick and controller.get("left_x") < -0.5)
         right_input = keys[pg.K_d] or (self.joystick and controller.get("left_x") > 0.5)
 
@@ -1761,15 +1766,6 @@ class Player:
                 self.interact_radius.centery - self.cam_y - self.interact_radius.height // 2
             )
         )
-
-        for projectile in self.game.projectiles_system.projectiles:
-            if not projectile.alive or projectile.owner != "player":
-                continue
-            
-            rect = self.game.projectiles_system.get_rect(projectile)
-            hitbox_surface = pg.Surface((rect.width, rect.height), pg.SRCALPHA)
-            hitbox_surface.fill((255, 0, 0, 100))
-            self.game.screen.blit(hitbox_surface, (rect.x - self.cam_x, rect.y - self.cam_y))
 
         hitbox_color = (0, 255, 0, 100)
         hitbox_surface = pg.Surface((self.hitbox_width, self.hitbox_height), pg.SRCALPHA)
