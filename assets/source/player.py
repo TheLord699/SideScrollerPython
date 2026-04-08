@@ -1633,6 +1633,38 @@ class Player:
             dash_sound = random.choice(self.sounds["dash"])
             dash_sound["sound"].play()
 
+    def render_charge_bar(self):
+        if not self.game.environment.show_indicators:
+            return
+        
+        if not self.charging or self.equipped_weapon not in self.weapon_info:
+            return
+        
+        weapon_data = self.weapon_info[self.equipped_weapon]
+        if weapon_data.get("type") not in ("ranged", "instant_ranged"):
+            return
+        
+        full_ticks = weapon_data.get("full_draw_ticks", 18)
+        charge_percent = min(1.0, self.charge_timer / max(full_ticks, 1))
+        
+        bar_width = 30
+        bar_height = 4
+        filled_width = int(bar_width * charge_percent)
+        
+        bar_x = self.hitbox.centerx - self.cam_x - bar_width // 2
+        bar_y = self.hitbox.y - self.cam_y - 12
+        
+        pg.draw.rect(self.game.screen, (50, 50, 50, 180), (bar_x, bar_y, bar_width, bar_height))
+        
+        if charge_percent > 0:
+            if charge_percent < 0.5:
+                color = (200, 255, 0)  # Yellow-green for early charge
+                
+            else:
+                color = (0, 255, 0)    # Bright green for full charge
+                
+            pg.draw.rect(self.game.screen, color, (bar_x, bar_y, filled_width, bar_height))
+
     def render(self):
         self.flip_offset = {"left": 1.4, "right": 0}
         self.foot_alignment = 3
@@ -1659,7 +1691,8 @@ class Player:
         
         sprite_x = hb_cx - cam_x - img_w // 2 + self.flip_offset[self.direction]
         sprite_y = hb_cy - cam_y + self.foot_alignment - img_h // 2
-
+        
+        self.render_charge_bar()
         self.game.screen.blit(image, (sprite_x, sprite_y))
         
     def shake_camera(self, intensity, duration):

@@ -13,6 +13,7 @@ class Environment:
     self.scale = 3 # 3 (experimental)
     self.max_particles = 25 # 20
     self.vigorous_optimizations = False # if true entities and projectiles will stop all updates as soon as theyre off screen
+    self.show_indicators = True
     
     self.max_darkness = 50 # 50, greater is lighter
     self.lighting = False
@@ -88,7 +89,7 @@ class Environment:
   def save_data(self): # need to save and load map soon
     self.game.data_manager.set_setting("seed", self.seed)
     self.game.data_manager.set_setting("volume", self.volume)
-    self.game.data_manager.set_setting("show_indicators", self.game.entities.show_indicators)
+    self.game.data_manager.set_setting("show_indicators", self.show_indicators)
     self.game.data_manager.set_setting("vigorous_optimizations", self.vigorous_optimizations)
     self.game.data_manager.set_setting("enable_particles", self.game.particles.enable_particles)
     self.game.data_manager.set_setting("enable_foreground", self.game.foreground.enable_foreground)
@@ -118,7 +119,7 @@ class Environment:
       self.game.data_manager.load_data()
       self.seed = self.game.data_manager.get_setting("seed")
       self.volume = self.game.data_manager.get_setting("volume")
-      self.game.entities.show_indicators = self.game.data_manager.get_setting("show_indicators")
+      self.show_indicators = self.game.data_manager.get_setting("show_indicators")
       self.vigorous_optimizations = self.game.data_manager.get_setting("vigorous_optimizations")
       self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
       self.game.foreground.enable_foreground = self.game.data_manager.get_setting("enable_foreground")
@@ -272,12 +273,12 @@ class Environment:
         centered=True, width=200, height=100,
         alpha=True, is_button=True,
         scale_multiplier=1.1,
-        dynamic_value=lambda: "Indicators: On" if self.game.entities.show_indicators else "Indicators: Off",
+        dynamic_value=lambda: "Indicators: On" if self.show_indicators else "Indicators: Off",
         font=self.fonts["fantasy"],
         font_size=16,
         element_id="indicator_button",
         click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        callback=lambda: (setattr(self.game.entities, "show_indicators", not self.game.entities.show_indicators)),
+        callback=lambda: (setattr(self, "show_indicators", not self.show_indicators)),
         hover_range=3.5,
         render_order=0
       )

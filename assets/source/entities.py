@@ -10,7 +10,6 @@ class Entities:
         
         self.tilesheet_cache = {} 
         
-        self.show_indicators = True
         self.sounds = {
             "hit": [
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_1.wav"), "volume": 2},
@@ -475,6 +474,9 @@ class Entities:
         return False
         
     def health_bar(self, entity):
+        if not self.game.environment.show_indicators:
+            return False
+        
         if entity["health"] <= 0 or entity["health"] == entity["max_health"]:
             return False
 
@@ -507,7 +509,7 @@ class Entities:
         return True
 
     def entity_indicators(self, entity):
-        if not self.show_indicators:
+        if not self.game.environment.show_indicators:
             return
         
         if not hasattr(self, "arrow_surface"):

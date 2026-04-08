@@ -40,7 +40,7 @@ class Game:
     self.version = "0.6.5-dev"
     icon = pg.image.load("assets/sprites/misc/bug.png")
 
-    self.screen_width, self.screen_height = 800, 600
+    self.screen_width, self.screen_height = 800, 600 # 1137
     self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.RESIZABLE | pg.SCALED, vsync=1)
 
     # will remove later
