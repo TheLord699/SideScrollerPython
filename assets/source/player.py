@@ -1422,9 +1422,9 @@ class Player:
     def equip_weapon(self, weapon_name):
         self.cancel_charge()
         
-        if hasattr(self, 'current_attack_projectile') and self.current_attack_projectile:
+        if hasattr(self, "current_attack_projectile") and self.current_attack_projectile:
             if self.current_attack_projectile in self.game.projectiles_system.projectiles:
-                self.current_attack_projectile["lifetime"] = 0
+                self.current_attack_projectile.lifetime = 0
         
         self.equipped_weapon = weapon_name
         self.attacking = False
@@ -1433,8 +1433,8 @@ class Player:
         self.attack_sequence = 1
         self.current_attack_projectile = None
         
-        if hasattr(self, 'attack_facing_direction'):
-            delattr(self, 'attack_facing_direction')
+        if hasattr(self, "attack_facing_direction"):
+            delattr(self, "attack_facing_direction")
 
     def handle_map_controls(self, mouse_buttons):
         mouse_pos = pg.mouse.get_pos()
