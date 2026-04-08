@@ -27,12 +27,11 @@ class WindowManager:
     def __init__(self, screen_width, screen_height, window_title, icon, use_opengl=True):
         self.screen_width = screen_width
         self.screen_height = screen_height
-        
         self.use_opengl = use_opengl
 
-        self.screen = pg.Surface((screen_width, screen_height))
-
         if use_opengl:
+            self.screen = pg.Surface((screen_width, screen_height))
+            
             pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
             pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
             pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
@@ -44,7 +43,8 @@ class WindowManager:
             self.init_gl()
             
         else:
-            self.window = pg.display.set_mode((self.screen_width, self.screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.RESIZABLE | pg.SCALED, vsync=1)
+            self.window = pg.display.set_mode((screen_width, screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.SCALED | pg.RESIZABLE, vsync=1)
+            self.screen = self.window 
 
         pg.display.set_caption(window_title)
         pg.display.set_icon(icon)
@@ -108,15 +108,14 @@ class WindowManager:
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
 
     def draw_scaled(self):
-        if self.use_opengl:
-            screen_data = pg.image.tobytes(self.screen, "RGBA", True)
-            gl.glBindTexture(gl.GL_TEXTURE_2D, self.screen_texture)
-            gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, self.screen_width, self.screen_height, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, screen_data)
-            gl.glClearColor(0, 0, 0, 1)
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-            gl.glUseProgram(self.shader_program)
-            gl.glBindVertexArray(self.vao)
-            gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
+        if not self.use_opengl:
+            return
             
-        else:
-            self.window.blit(self.screen)
+        screen_data = pg.image.tobytes(self.screen, "RGBA", True)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.screen_texture)
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, self.screen_width, self.screen_height, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, screen_data)
+        gl.glClearColor(0, 0, 0, 1)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glUseProgram(self.shader_program)
+        gl.glBindVertexArray(self.vao)
+        gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
