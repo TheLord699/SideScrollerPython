@@ -16,6 +16,7 @@ from memory_debugger import MemoryDebugger
 from light_source import LightSource
 from ai import AISystem
 from projectiles import ProjectileSystem
+from window_manager import WindowManager
 
 class Game:
   def __init__(self):
@@ -23,10 +24,10 @@ class Game:
         
     if getattr(sys, "frozen", False):
       base_path = sys._MEIPASS
-        
+      
     else:
       base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        
+      
     os.chdir(base_path)
     
     try:
@@ -41,14 +42,13 @@ class Game:
     icon = pg.image.load("assets/sprites/misc/bug.png")
 
     self.screen_width, self.screen_height = 800, 600 # 1137
-    self.screen = pg.display.set_mode((self.screen_width, self.screen_height), pg.DOUBLEBUF | pg.HWSURFACE | pg.RESIZABLE | pg.SCALED, vsync=1)
+    # optional fullscreen(doesnt change resolution, just stretches it), might remove later
+    self.window_manager = WindowManager(self.screen_width, self.screen_height, f"SideScroller {self.version}", icon, use_opengl=False)
+    self.screen = self.window_manager.screen
 
     # will remove later
     self.debugging = False
     self.show_fps = False
-
-    pg.display.set_caption(f"SideScroller {self.version}")
-    pg.display.set_icon(icon)
 
     self.init_objects()
     self.game_loop()
@@ -181,6 +181,8 @@ class Game:
       self.memory_debugger.render() # will remove later
       if self.show_fps:
         self.render_fps()
+
+      self.window_manager.draw_scaled()
 
       pg.display.flip()
       self.clock.tick(self.environment.fps)
