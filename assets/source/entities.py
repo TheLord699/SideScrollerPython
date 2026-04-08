@@ -340,7 +340,7 @@ class Entities:
             vel_y = random.uniform(-2.0, -3.5)
             
             radius = random.randint(3, 6)
-            smoke_img = random.choice(list(self.smoke_images.values()))
+            smoke_img = self.smoke_images[random.choice([1, 2])]
             
             self.game.particles.generate(
                 pos=(entity["x"] + random.uniform(-2, 2), entity["y"] + random.uniform(-5, 5)),

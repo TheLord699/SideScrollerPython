@@ -880,8 +880,7 @@ class Player:
             vel_y = random.uniform(-1.0, -0.3)
 
             radius = random.randint(2, 4)
-            image_path = f"assets/sprites/particles/smoke{random.choice([1, 2])}.png"
-            smoke_img = pg.image.load(image_path).convert_alpha()
+            smoke_img = self.smoke_images[random.choice([1, 2])]
 
             pos_x = self.x + self.hitbox_width / 2 + random.uniform(-15, 15) - flip_offset
             pos_y = self.y + self.hitbox_height / 2 + random.uniform(0, 7)
