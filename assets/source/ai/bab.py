@@ -19,8 +19,11 @@ def init_state(entity):
     entity.setdefault("bab_state", STATE_IDLE)
     entity.setdefault("bab_alert_timer", 0)
     entity.setdefault("bab_idle_timer", random.randint(30, 90))
+    entity.setdefault("chase_initialized", False)
 
 def set_state(entity, new_state):
+    if new_state == STATE_CHASE:
+        entity["chase_initialized"] = False
     entity["bab_state"] = new_state
 
 def do_idle(entity, ai_system):
@@ -62,7 +65,8 @@ def do_alert(entity, ai_system):
     delta_x = player.x - entity["x"]
     direction = 1 if delta_x > 0 else -1
     
-    entity["vel_x"] = direction * entity.get("move_speed", 1) * 0.5
+    entity["ai_direction"] = direction
+    entity["vel_x"] = direction * entity.get("move_speed", 1)
     
     entity["bab_alert_timer"] -= 1
     if entity["bab_alert_timer"] <= 0:
@@ -77,17 +81,26 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
             new_direction = 1 if delta_x > 0 else -1
             entity["ai_direction"] = new_direction
 
+            target_vel_x = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
+            
+            if not entity.get("chase_initialized", True):
+                entity["vel_x"] = target_vel_x
+                entity["chase_initialized"] = True
+                
+            else:
+                acceleration = entity.get("acceleration", 0.5)
+                if abs(entity["vel_x"] - target_vel_x) > acceleration:
+                    entity["vel_x"] += (1 if target_vel_x > entity["vel_x"] else -1) * acceleration
+                    
+                else:
+                    entity["vel_x"] = target_vel_x
+
             if not ai_system.check_floor_ahead(entity):
                 if entity.get("on_ground", False):
                     entity["vel_y"] = -entity.get("jump_force", 10)
-                    
-                entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
-                
-            else:
-                entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
                 
         else:
-            entity["vel_x"] = 0
+            entity["vel_x"] *= 0.9
 
         if delta_y < -50 and entity.get("on_ground", False):
             entity["vel_y"] = -entity.get("jump_force", 10)
@@ -100,7 +113,7 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
 
 def do_attack(entity, ai_system, distance, delta_x):
     entity["ai_direction"] = 1 if delta_x > 0 else -1
-    entity["vel_x"] = 0
+    entity["vel_x"] *= 0.85
 
     if "attack_timer" not in entity:
         entity["attack_timer"] = 0
@@ -128,7 +141,14 @@ def do_retreat(entity, ai_system, distance, delta_x):
             
         return
 
-    entity["vel_x"] = flee_direction * entity.get("move_speed", 1) * 1.2
+    target_vel_x = flee_direction * entity.get("move_speed", 1) * 1.2
+    
+    acceleration = entity.get("acceleration", 0.5)
+    if abs(entity["vel_x"] - target_vel_x) > acceleration:
+        entity["vel_x"] += (1 if target_vel_x > entity["vel_x"] else -1) * acceleration
+        
+    else:
+        entity["vel_x"] = target_vel_x
 
     health_ratio = entity["health"] / max(entity.get("max_health", entity["health"]), 1)
     retreat_threshold = entity.get("retreat_hp_ratio", 0.25)
@@ -177,6 +197,7 @@ def update(entity, ai_system):
         set_state(entity, STATE_ALERT)
         entity["bab_alert_timer"] = entity.get("alert_duration", 15)
         entity["ai_direction"] = 1 if delta_x > 0 else -1
+        entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1)
         
         return
 
