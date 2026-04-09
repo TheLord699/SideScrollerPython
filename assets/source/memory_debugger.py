@@ -2,7 +2,7 @@ import pygame as pg
 import traceback
 import psutil
 import os
-
+import types
 from collections import defaultdict
 
 class MemoryDebugger:
@@ -12,7 +12,7 @@ class MemoryDebugger:
         self.memory_info = []
         self.scroll_offset = 0
         self.last_update_time = 0
-        self.update_interval = 500
+        self.update_interval = 2000
         self.font = pg.font.SysFont("Consolas", 14)
 
         self.dragging_scrollbar = False
@@ -27,6 +27,9 @@ class MemoryDebugger:
         self.scroll_offsets = defaultdict(int)
 
         self.preview_cache = {}
+        
+        self.cached_memory_info = []
+        self.cache_valid = False
 
         self.terminal_active = False
         self.terminal_input = ""
@@ -47,6 +50,7 @@ class MemoryDebugger:
         self.selected_object = None
         self.scroll_offsets.clear()
         self.dragging_scrollbar = False
+        self.cache_valid = False
         self.update()
 
     def toggle_terminal(self):
@@ -202,9 +206,12 @@ class MemoryDebugger:
     def update(self):
         if self.menu_state == "main":
             current_time = pg.time.get_ticks()
-            if current_time - self.last_update_time > self.update_interval:
-                self.memory_info = self.get_memory_info()
+            if current_time - self.last_update_time > self.update_interval or not self.cache_valid:
+                self.cached_memory_info = self.get_memory_info()
                 self.last_update_time = current_time
+                self.cache_valid = True
+        
+        self.memory_info = self.cached_memory_info
 
     def handle_scroll(self, direction):
         max_scroll = self.get_max_scroll()
@@ -307,7 +314,7 @@ class MemoryDebugger:
                         self.drag_start_scroll = self.scroll_offsets[self.menu_state]
                         return
 
-                    if panel_x <= mx <= panel_x + panel_width and panel_y <= my <= panel_y + panel_height: # some sort of issue when clicking really far scrolled down
+                    if panel_x <= mx <= panel_x + panel_width and panel_y <= my <= panel_y + panel_height:
                         rel_x = mx - panel_x
                         rel_y = my - panel_y
 
@@ -454,32 +461,49 @@ class MemoryDebugger:
             ("Particles", self.game.particles)
         ]
 
-        def find_surfaces(obj, path):
+        def find_surfaces(obj, path, depth=0):
+            if depth > 3:
+                return
+                
             obj_id = id(obj)
             if obj_id in visited_objects:
                 return
             visited_objects.add(obj_id)
+            
             try:
                 if isinstance(obj, pg.Surface):
                     storage_locations[path].append(obj)
                     
+                elif isinstance(obj, types.ModuleType):
+                    return
+                    
+                elif callable(obj) and not isinstance(obj, type):
+                    return
+                    
                 elif isinstance(obj, (list, tuple)):
                     for i, item in enumerate(obj):
-                        find_surfaces(item, f"{path}[{i}]")
+                        if depth < 3:
+                            find_surfaces(item, f"{path}[{i}]", depth + 1)
                         
                 elif isinstance(obj, dict):
                     for k, v in obj.items():
-                        find_surfaces(v, f"{path}['{k}']")
+                        if depth < 3:
+                            find_surfaces(v, f"{path}['{k}']", depth + 1)
                         
-                elif hasattr(obj, "__dict__"):
-                    for name, attr in vars(obj).items():
-                        if not name.startswith("__"):
-                            find_surfaces(attr, f"{path}.{name}")
+                elif hasattr(obj, "__dict__") and not isinstance(obj, (str, int, float, bool)):
+                    class_name = obj.__class__.__name__
+                    if class_name in ("module", "builtin_function_or_method", "method"):
+                        return
+                    
+                    if depth < 2:
+                        for name, attr in vars(obj).items():
+                            if not name.startswith("__"):
+                                find_surfaces(attr, f"{path}.{name}", depth + 1)
             except Exception:
                 pass
 
         for name, obj in game_objects:
-            find_surfaces(obj, name)
+            find_surfaces(obj, name, 0)
 
         return storage_locations
 
@@ -505,7 +529,12 @@ class MemoryDebugger:
             info.append(f"Entities Count: {count}")
             info.append("")
             for i, entity in enumerate(getattr(self.game.entities, "entities", [])[:20]):
-                info.append(f"Entity {i}: {str(entity)}")
+                if "_module" in entity:
+                    entity_str = f"Entity {i}: {entity.get('name', 'Unknown')} (has script)"
+                    
+                else:
+                    entity_str = f"Entity {i}: {str(entity)[:100]}"
+                info.append(entity_str)
                 
         elif self.selected_object == "Particles":
             count = len(getattr(self.game.particles, "particles", []))
@@ -532,7 +561,10 @@ class MemoryDebugger:
             ("Foreground", self.game.foreground),
         ]
 
-        def find_surfaces(obj):
+        def find_surfaces(obj, depth=0):
+            if depth > 3:
+                return
+                
             obj_id = id(obj)
             if obj_id in visited_objects:
                 return
@@ -543,23 +575,36 @@ class MemoryDebugger:
                     if obj not in exclude_set:
                         all_surfaces.append(obj)
                         
+                elif isinstance(obj, types.ModuleType):
+                    return
+                    
+                elif callable(obj) and not isinstance(obj, type):
+                    return
+                    
                 elif isinstance(obj, (list, tuple)):
                     for item in obj:
-                        find_surfaces(item)
+                        if depth < 3:
+                            find_surfaces(item, depth + 1)
                         
                 elif isinstance(obj, dict):
                     for v in obj.values():
-                        find_surfaces(v)
+                        if depth < 3:
+                            find_surfaces(v, depth + 1)
                         
-                elif hasattr(obj, "__dict__"):
-                    for attr in vars(obj).values():
-                        find_surfaces(attr)
+                elif hasattr(obj, "__dict__") and not isinstance(obj, (str, int, float, bool)):
+                    class_name = obj.__class__.__name__
+                    if class_name in ("module", "builtin_function_or_method", "method", "function"):
+                        return
+                    
+                    if depth < 2:
+                        for attr in vars(obj).values():
+                            find_surfaces(attr, depth + 1)
                         
             except Exception:
                 pass
 
         for _, obj in game_objects:
-            find_surfaces(obj)
+            find_surfaces(obj, 0)
 
         return all_surfaces
 
@@ -594,15 +639,15 @@ class MemoryDebugger:
         ram_info = self.get_ram_usage()
         if ram_info:
             info.append("RAM Usage:")
-            info.append(f"  Process Memory: {ram_info["process_memory"]:.2f} MB")
-            info.append(f"  System RAM: {ram_info["used_ram"]:.2f} GB / {ram_info["total_ram"]:.2f} GB ({ram_info["ram_percent"]:.1f}% used)")
-            info.append(f"  Free RAM: {ram_info["free_ram"]:.2f} GB")
+            info.append(f"  Process Memory: {ram_info['process_memory']:.2f} MB")
+            info.append(f"  System RAM: {ram_info['used_ram']:.2f} GB / {ram_info['total_ram']:.2f} GB ({ram_info['ram_percent']:.1f}% used)")
+            info.append(f"  Free RAM: {ram_info['free_ram']:.2f} GB")
             info.append("")
 
         info.append("Game Objects Count:")
-        info.append(f"  UI Elements: {len(getattr(self.game.ui, "ui_elements", []))}")
-        info.append(f"  Entities: {len(getattr(self.game.entities, "entities", []))}")
-        info.append(f"  Particles: {len(getattr(self.game.particles, "particles", []))}")
+        info.append(f"  UI Elements: {len(getattr(self.game.ui, 'ui_elements', []))}")
+        info.append(f"  Entities: {len(getattr(self.game.entities, 'entities', []))}")
+        info.append(f"  Particles: {len(getattr(self.game.particles, 'particles', []))}")
         info.append("")
 
         all_surfaces = self.collect_all_surfaces()

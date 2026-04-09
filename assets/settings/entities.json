@@ -122,6 +122,8 @@
       "aggro_range": 150,
       "stop_distance": 35,
       "attack_damage": 0.1,
+      "attack_knockback": 4,
+      "attack_cooldown_max": 8,
       "states": {
         "idle": {
           "start_row": 0,

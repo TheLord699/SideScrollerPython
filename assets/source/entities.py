@@ -154,6 +154,7 @@ class Entities:
             "flip_y": False,
             "knockback_timer": 0,
             "force_facing": None,
+            "script": template.get("script"),
         }
 
         if entity_type == "item" and template.get("damageable", False):
@@ -172,6 +173,7 @@ class Entities:
                 "move_speed": template.get("move_speed", 1),
                 "jump_force": template.get("jump_force", 10),
                 "aggro_range": template.get("aggro_range", 0),
+                "attack_cooldown_max": template.get("attack_cooldown_max", 30),
                 "stop_distance": template.get("stop_distance", 0),
                 "attack_damage": template.get("attack_damage", 10),
                 "ai_timer": 0,
@@ -180,8 +182,8 @@ class Entities:
             })
             
             if entity_type == "enemy":
-                entity.update({"abilities": template.get("entity_abilities"), "attack_timer": 0})
-                
+                entity.update({"abilities": template.get("entity_abilities")})
+                    
         elif entity_type == "actor":
             entity.update({"abilities": template.get("entity_abilities")})
 
@@ -710,6 +712,11 @@ class Entities:
         
         hovering = entity_hitbox.collidepoint(mouse_world_x, mouse_world_y)
         mouse_pressed = pg.mouse.get_pressed()[0]
+        
+        if hasattr(self, "dragged_entity"):
+            if self.dragged_entity not in self.entities:
+                del self.dragged_entity
+                return
         
         if not hasattr(self, "dragged_entity"):
             if hovering and mouse_pressed:

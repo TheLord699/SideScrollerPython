@@ -37,7 +37,7 @@ Do immediately:
 - need to make it that you can place anything including entities in the editor, and load entities from the map and not using functions in environment class
 - need all weapons in weapon_inventory to be pre loaded instead of only the weapon currently equipped
 
-
+and also entities are still hitting me at same speed, there might be left over code from when I didnt have individual AI's implemented 
 
 
 

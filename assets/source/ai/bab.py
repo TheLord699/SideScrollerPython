@@ -32,77 +32,113 @@ def do_idle(entity, ai_system):
         ai_system.reset_wander_timer(entity)
 
 def do_wander(entity, ai_system):
-    ai_system.ai_wander(entity)
-    if random.random() < 0.005:
-        set_state(entity, STATE_IDLE)
-        entity["bab_idle_timer"] = random.randint(30, 90)
+    if entity.get("knockback_timer", 0) > 0:
+        return
+    
+    if "ai_timer" not in entity:
+        ai_system.reset_wander_timer(entity)
+
+    if entity["ai_direction"] != 0 and not ai_system.check_floor_ahead(entity):
+        entity["ai_direction"] *= -1
+        ai_system.reset_wander_timer(entity)
+        return
+
+    if entity["ai_direction"] != 0 and ai_system.check_wall_collision(entity):
+        entity["ai_direction"] *= -1
+        ai_system.reset_wander_timer(entity)
+        return
+
+    entity["ai_timer"] -= 1
+    if entity["ai_timer"] <= 0:
+        ai_system.reset_wander_timer(entity)
+
+    entity["vel_x"] = entity.get("move_speed", 1) * entity["ai_direction"]
+
+    if random.random() < 0.01 and entity.get("on_ground", False):
+        entity["vel_y"] = -entity.get("jump_force", 10)
 
 def do_alert(entity, ai_system):
-    entity["vel_x"] = 0
+    player = ai_system.game.player
+    delta_x = player.x - entity["x"]
+    direction = 1 if delta_x > 0 else -1
+    
+    entity["vel_x"] = direction * entity.get("move_speed", 1) * 0.5
+    
     entity["bab_alert_timer"] -= 1
     if entity["bab_alert_timer"] <= 0:
         set_state(entity, STATE_CHASE)
 
-def do_chase(entity, ai_system):
-    distance, delta_x, delta_y = get_player_distance(entity, ai_system)
+def do_chase(entity, ai_system, distance, delta_x, delta_y):
+    aggro_range = entity.get("aggro_range", 300)
+    stop_distance = entity.get("stop_distance", 50)
 
-    stop_distance = entity.get("stop_distance", 40)
-    forget_range = entity.get("forget_range", 350)
-    sprint_mult = entity.get("sprint_mult", 1.8)
+    if distance < aggro_range:
+        if distance > stop_distance:
+            new_direction = 1 if delta_x > 0 else -1
+            entity["ai_direction"] = new_direction
 
-    if distance <= stop_distance:
-        set_state(entity, STATE_ATTACK)
-        return
+            if not ai_system.check_floor_ahead(entity):
+                if entity.get("on_ground", False):
+                    entity["vel_y"] = -entity.get("jump_force", 10)
+                    
+                entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
+                
+            else:
+                entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
+                
+        else:
+            entity["vel_x"] = 0
 
-    if distance >= forget_range:
-        set_state(entity, STATE_WANDER)
-        ai_system.reset_wander_timer(entity)
-        return
+        if delta_y < -50 and entity.get("on_ground", False):
+            entity["vel_y"] = -entity.get("jump_force", 10)
 
-    new_direction = 1 if delta_x > 0 else -1
-
-    if (
-        entity.get("ai_direction") != new_direction
-        or ai_system.check_wall_collision(entity)
-        or not ai_system.check_floor_ahead(entity)
-    ):
-        entity["ai_direction"] = new_direction
-
-    if ai_system.check_floor_ahead(entity):
-        entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1) * sprint_mult
-        
+        if distance < stop_distance:
+            set_state(entity, STATE_ATTACK)
+            
     else:
-        entity["vel_x"] = 0
+        do_wander(entity, ai_system)
 
-    if delta_y < -60 and entity.get("on_ground", False):
-        entity["vel_y"] = -entity.get("jump_force", 10)
-
-def do_attack(entity, ai_system):
-    distance, delta_x, ignored = get_player_distance(entity, ai_system)
-
+def do_attack(entity, ai_system, distance, delta_x):
     entity["ai_direction"] = 1 if delta_x > 0 else -1
     entity["vel_x"] = 0
 
-    ai_system.ai_attack(entity)
+    if "attack_timer" not in entity:
+        entity["attack_timer"] = 0
 
-    if distance > entity.get("stop_distance", 40) * 1.5:
+    if entity["attack_timer"] <= 0:
+        ai_system.ai_attack(entity)
+        entity["attack_timer"] = entity.get("attack_cooldown_max", 30)
+
+    else:
+        entity["attack_timer"] -= 1
+
+    if distance > entity.get("stop_distance", 50):
         set_state(entity, STATE_CHASE)
 
-def do_retreat(entity, ai_system):
-    distance, delta_x, ignored = get_player_distance(entity, ai_system)
-
+def do_retreat(entity, ai_system, distance, delta_x):
     flee_direction = -1 if delta_x > 0 else 1
     entity["ai_direction"] = flee_direction
 
     if ai_system.check_wall_collision(entity) or not ai_system.check_floor_ahead(entity):
-        set_state(entity, STATE_CHASE)
+        if distance < entity.get("aggro_range", 300):
+            set_state(entity, STATE_CHASE)
+            
+        else:
+            set_state(entity, STATE_WANDER)
+            
         return
 
-    entity["vel_x"] = flee_direction * entity.get("move_speed", 1) * entity.get("retreat_mult", 1.4)
+    entity["vel_x"] = flee_direction * entity.get("move_speed", 1) * 1.2
 
     health_ratio = entity["health"] / max(entity.get("max_health", entity["health"]), 1)
-    if health_ratio > entity.get("retreat_hp_ratio", 0.25) + 0.1:
-        set_state(entity, STATE_CHASE)
+    retreat_threshold = entity.get("retreat_hp_ratio", 0.25)
+    
+    if health_ratio > retreat_threshold + 0.1:
+        if distance < entity.get("aggro_range", 300):
+            set_state(entity, STATE_CHASE)
+            
+        else:
+            set_state(entity, STATE_WANDER)
 
 STATE_HANDLERS = {
     STATE_IDLE: do_idle,
@@ -123,20 +159,34 @@ def update(entity, ai_system):
         set_state(entity, STATE_WANDER)
         return
 
-    distance, delta_x, ignored = get_player_distance(entity, ai_system)
+    distance, delta_x, delta_y = get_player_distance(entity, ai_system)
     state = entity["bab_state"]
 
     health_ratio = entity["health"] / max(entity.get("max_health", entity["health"]), 1)
-    if health_ratio <= entity.get("retreat_hp_ratio", 0.25) and state != STATE_RETREAT:
+    retreat_threshold = entity.get("retreat_hp_ratio", 0.25)
+    
+    if health_ratio <= retreat_threshold and state != STATE_RETREAT:
         set_state(entity, STATE_RETREAT)
-        state = STATE_RETREAT
+        state = entity["bab_state"]
+
+    if state == STATE_RETREAT:
+        do_retreat(entity, ai_system, distance, delta_x)
+        return
 
     if state in (STATE_IDLE, STATE_WANDER) and distance < entity.get("aggro_range", 200):
         set_state(entity, STATE_ALERT)
-        entity["bab_alert_timer"] = entity.get("alert_duration", 45)
-        entity["vel_x"] = 0
+        entity["bab_alert_timer"] = entity.get("alert_duration", 15)
+        entity["ai_direction"] = 1 if delta_x > 0 else -1
+        
         return
 
-    handler = STATE_HANDLERS.get(entity["bab_state"])
-    if handler:
-        handler(entity, ai_system)
+    if state == STATE_CHASE:
+        do_chase(entity, ai_system, distance, delta_x, delta_y)
+        
+    elif state == STATE_ATTACK:
+        do_attack(entity, ai_system, distance, delta_x)
+        
+    else:
+        handler = STATE_HANDLERS.get(state)
+        if handler:
+            handler(entity, ai_system)

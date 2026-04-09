@@ -198,7 +198,8 @@ class AISystem:
             entity["attack_timer"] = 0
 
         if entity["attack_timer"] <= 0:
-            entity["attack_timer"] = 30
+            cooldown = entity.get("attack_cooldown_max", 30)
+            entity["attack_timer"] = cooldown
             direction = entity.get("ai_direction", 1)
 
             attack_offset_x = 20 * direction
