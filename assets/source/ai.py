@@ -110,6 +110,8 @@ class AISystem:
             self.reset_wander_timer(entity)
 
         entity["vel_x"] = entity.get("move_speed", 1) * entity["ai_direction"]
+        if entity["ai_direction"] != 0:
+            entity["facing"] = entity["ai_direction"]
 
         if random.random() < 0.01 and entity.get("on_ground", False):
             entity["vel_y"] = -entity.get("jump_force", 10)
@@ -142,6 +144,8 @@ class AISystem:
                     or not self.check_floor_ahead(entity)
                 ):
                     entity["ai_direction"] = new_dir
+
+                entity["facing"] = entity["ai_direction"]
 
                 if self.check_floor_ahead(entity):
                     entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
@@ -179,6 +183,8 @@ class AISystem:
                 or not self.check_floor_ahead(entity)
             ):
                 entity["ai_direction"] = new_dir
+
+            entity["facing"] = entity["ai_direction"]
 
             if self.check_floor_ahead(entity):
                 entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1)
@@ -238,9 +244,6 @@ class AISystem:
         if entity.get("knockback_timer", 0) > 0:
             entity["knockback_timer"] -= 1
             return
-            
-        if entity.get("force_facing"):
-            del entity["force_facing"]
             
         cam_x = self.game.player.cam_x
         cam_y = self.game.player.cam_y

@@ -153,7 +153,6 @@ class Entities:
             "flip_x": False,
             "flip_y": False,
             "knockback_timer": 0,
-            "force_facing": None,
             "script": template.get("script"),
         }
 
@@ -178,6 +177,7 @@ class Entities:
                 "attack_damage": template.get("attack_damage", 10),
                 "ai_timer": 0,
                 "ai_direction": 0,
+                "facing": 1,
                 "damage_effect": 0
             })
             
@@ -429,10 +429,6 @@ class Entities:
         entity["x"] += entity["vel_x"]
 
         if entity.get("knockback_timer", 0) > 0:
-            entity["knockback_timer"] -= 1
-            if entity["knockback_timer"] <= 0 and entity.get("force_facing"):
-                entity["force_facing"] = None
-                
             return
 
         if entity.get("on_ground", False): 
@@ -672,23 +668,7 @@ class Entities:
         
         elif entity["entity_type"] == "enemy":
             self.health_bar(entity)
-
-            if entity.get("force_facing"):
-                flip_image = entity["force_facing"] == "left"
-                if entity.get("knockback_timer", 0) <= 0:
-                    entity["force_facing"] = None
-
-            else:
-                if "last_dir" not in entity:
-                    entity["last_dir"] = 1
-
-                if entity["vel_x"] > 0:
-                    entity["last_dir"] = 1
-                    
-                elif entity["vel_x"] < 0:
-                    entity["last_dir"] = -1
-
-                flip_image = entity["last_dir"] == -1
+            flip_image = entity.get("facing", 1) == -1
         
         if flip_image:
             current_image = pg.transform.flip(current_image, True, False)

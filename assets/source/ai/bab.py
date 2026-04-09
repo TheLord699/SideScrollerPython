@@ -15,11 +15,16 @@ def get_player_distance(entity, ai_system):
     
     return math.hypot(delta_x, delta_y), delta_x, delta_y
 
+def set_facing(entity, direction):
+    if direction != 0:
+        entity["facing"] = direction
+
 def init_state(entity):
     entity.setdefault("bab_state", STATE_IDLE)
     entity.setdefault("bab_alert_timer", 0)
     entity.setdefault("bab_idle_timer", random.randint(30, 90))
     entity.setdefault("chase_initialized", False)
+    entity.setdefault("facing", 1)
 
 def set_state(entity, new_state):
     if new_state == STATE_CHASE:
@@ -41,21 +46,27 @@ def do_wander(entity, ai_system):
     if "ai_timer" not in entity:
         ai_system.reset_wander_timer(entity)
 
-    if entity["ai_direction"] != 0 and not ai_system.check_floor_ahead(entity):
-        entity["ai_direction"] *= -1
-        ai_system.reset_wander_timer(entity)
-        return
-
-    if entity["ai_direction"] != 0 and ai_system.check_wall_collision(entity):
-        entity["ai_direction"] *= -1
-        ai_system.reset_wander_timer(entity)
-        return
+    if entity["ai_direction"] != 0:
+        if not ai_system.check_floor_ahead(entity):
+            entity["ai_direction"] *= -1
+            ai_system.reset_wander_timer(entity)
+            set_facing(entity, entity["ai_direction"])
+            entity["vel_x"] = entity.get("move_speed", 1) * entity["ai_direction"]
+            return
+        
+        if ai_system.check_wall_collision(entity):
+            entity["ai_direction"] *= -1
+            ai_system.reset_wander_timer(entity)
+            set_facing(entity, entity["ai_direction"])
+            entity["vel_x"] = entity.get("move_speed", 1) * entity["ai_direction"]
+            return
 
     entity["ai_timer"] -= 1
     if entity["ai_timer"] <= 0:
         ai_system.reset_wander_timer(entity)
 
     entity["vel_x"] = entity.get("move_speed", 1) * entity["ai_direction"]
+    set_facing(entity, entity["ai_direction"])
 
     if random.random() < 0.01 and entity.get("on_ground", False):
         entity["vel_y"] = -entity.get("jump_force", 10)
@@ -66,6 +77,7 @@ def do_alert(entity, ai_system):
     direction = 1 if delta_x > 0 else -1
     
     entity["ai_direction"] = direction
+    set_facing(entity, direction)
     entity["vel_x"] = direction * entity.get("move_speed", 1)
     
     entity["bab_alert_timer"] -= 1
@@ -80,6 +92,17 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
         if distance > stop_distance:
             new_direction = 1 if delta_x > 0 else -1
             entity["ai_direction"] = new_direction
+            set_facing(entity, new_direction)
+
+            if not ai_system.check_floor_ahead(entity):
+                entity["vel_x"] = 0
+                if abs(delta_x) < 150 and abs(delta_x) > 50 and entity.get("on_ground", False):
+                    entity["vel_y"] = -entity.get("jump_force", 10)
+                return
+            
+            if ai_system.check_wall_collision(entity):
+                entity["vel_x"] = 0
+                return
 
             target_vel_x = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
             
@@ -94,10 +117,6 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
                     
                 else:
                     entity["vel_x"] = target_vel_x
-
-            if not ai_system.check_floor_ahead(entity):
-                if entity.get("on_ground", False):
-                    entity["vel_y"] = -entity.get("jump_force", 10)
                 
         else:
             entity["vel_x"] *= 0.9
@@ -113,6 +132,7 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
 
 def do_attack(entity, ai_system, distance, delta_x):
     entity["ai_direction"] = 1 if delta_x > 0 else -1
+    set_facing(entity, entity["ai_direction"])
     entity["vel_x"] *= 0.85
 
     if "attack_timer" not in entity:
@@ -131,8 +151,18 @@ def do_attack(entity, ai_system, distance, delta_x):
 def do_retreat(entity, ai_system, distance, delta_x):
     flee_direction = -1 if delta_x > 0 else 1
     entity["ai_direction"] = flee_direction
+    set_facing(entity, flee_direction)
 
-    if ai_system.check_wall_collision(entity) or not ai_system.check_floor_ahead(entity):
+    if not ai_system.check_floor_ahead(entity):
+        if distance < entity.get("aggro_range", 300):
+            set_state(entity, STATE_CHASE)
+            
+        else:
+            set_state(entity, STATE_WANDER)
+            
+        return
+
+    if ai_system.check_wall_collision(entity):
         if distance < entity.get("aggro_range", 300):
             set_state(entity, STATE_CHASE)
             
@@ -197,6 +227,8 @@ def update(entity, ai_system):
         set_state(entity, STATE_ALERT)
         entity["bab_alert_timer"] = entity.get("alert_duration", 15)
         entity["ai_direction"] = 1 if delta_x > 0 else -1
+        
+        set_facing(entity, entity["ai_direction"])
         entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1)
         
         return
