@@ -157,7 +157,7 @@
       "name": "Rock",
       "health": 100,
       "amount": 0,
-      "weight": 2,
+      "weight": 1.2,
       "width": 50,
       "height": 50,
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16],

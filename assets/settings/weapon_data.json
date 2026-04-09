@@ -12,7 +12,7 @@
     "vel_x": 0,
     "vel_y": 0,
     "lifetime": 20,
-    "push_force": 10,
+    "push_force": 7,
     "gravity": 0,
     "piercing": true
   },
@@ -40,7 +40,7 @@
       "vel_x": 30,
       "vel_y": 0,
       "lifetime": 150,
-      "push_force": 25,
+      "push_force": 13,
       "min_push_force_mult": 0.3,
       "gravity": 0.2,
       "piercing": false,
