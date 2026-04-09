@@ -250,11 +250,8 @@ class ProjectileSystem:
                             direction_sign = 1 if projectile.vel_x >= 0 else -1
                             
                     push_force = projectile.push_force / max(entity.get("weight", 1), 0.1)
-                    entity["vel_x"] = direction_sign * push_force
-                    entity["vel_y"] = -abs(push_force) * 0.2
-                    entity["knockback_timer"] = 10
-                    entity["force_facing"] = "left" if direction_sign > 0 else "right"
-                
+                    self.game.entities.apply_knockback(entity, direction_sign, push_force)
+                                    
                 if not projectile.piercing:
                     projectile.alive = False
                     return

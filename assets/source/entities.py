@@ -178,7 +178,9 @@ class Entities:
                 "ai_timer": 0,
                 "ai_direction": 0,
                 "facing": 1,
-                "damage_effect": 0
+                "damage_effect": 0,
+                "facing_lock_timer": 0,
+                "locked_facing": None,
             })
             
             if entity_type == "enemy":
@@ -310,8 +312,9 @@ class Entities:
             entity["image"] = frames[entity["animation_frame"]]
 
             if entity["entity_type"] in ("npc", "enemy"):
-                ai_dir = entity.get("ai_direction", 0)
-                entity["flip_x"] = ai_dir < 0
+                if entity.get("facing_lock_timer", 0) <= 0:
+                    ai_dir = entity.get("ai_direction", 0)
+                    entity["flip_x"] = ai_dir < 0
 
     def spawn_hit_particles(self, entity, amount=5):
         for particles in range(amount):
@@ -428,7 +431,8 @@ class Entities:
     def apply_horizontal_movement(self, entity):
         entity["x"] += entity["vel_x"]
 
-        if entity.get("knockback_timer", 0) > 0:
+        if entity.get("facing_lock_timer", 0) > 0:
+            entity["facing_lock_timer"] -= 1
             return
 
         if entity.get("on_ground", False): 
@@ -439,6 +443,15 @@ class Entities:
                 
                 if abs(entity["vel_x"]) < 0.1:  
                     entity["vel_x"] = 0
+
+    def apply_knockback(self, entity, direction_sign, push_force):
+        entity["vel_x"] = direction_sign * push_force
+        entity["vel_y"] = -abs(push_force) * 0.2
+        
+        entity["knockback_timer"] = 10
+        entity["facing_lock_timer"] = 10
+        
+        entity["locked_facing"] = "left" if direction_sign > 0 else "right"
 
     def is_on_ground(self, entity):
         hitbox_w = entity.get("hitbox_width", entity["width"])
@@ -668,7 +681,11 @@ class Entities:
         
         elif entity["entity_type"] == "enemy":
             self.health_bar(entity)
-            flip_image = entity.get("facing", 1) == -1
+            if entity.get("facing_lock_timer", 0) > 0 and entity.get("locked_facing"):
+                flip_image = entity["locked_facing"] == "left"
+                
+            else:
+                flip_image = entity.get("flip_x", False)
         
         if flip_image:
             current_image = pg.transform.flip(current_image, True, False)
