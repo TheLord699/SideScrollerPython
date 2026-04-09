@@ -154,6 +154,7 @@ class Entities:
             "flip_y": False,
             "knockback_timer": 0,
             "script": template.get("script"),
+            "facing_direction": 1,
         }
 
         if entity_type == "item" and template.get("damageable", False):
@@ -279,16 +280,27 @@ class Entities:
             return
 
         new_state = entity["current_state"]
-
         if entity["entity_type"] in {"npc", "enemy"}:
             if abs(entity["vel_x"]) > 0.1:
                 new_state = "walk"
+                distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
+                is_aggro = distance_to_player < entity.get("aggro_range", 200)
                 
+                if is_aggro:
+                    entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
+                    
+                else:
+                    if entity["vel_x"] != 0:
+                        entity["facing_direction"] = 1 if entity["vel_x"] > 0 else -1
+            
             elif entity.get("damage_effect", 0) > 0:
                 new_state = "hurt"
-                
+            
             else:
                 new_state = "idle"
+                distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
+                if distance_to_player < entity.get("aggro_range", 200):
+                    entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
 
         if new_state != entity["current_state"] and new_state in entity["states"]:
             entity["current_state"] = new_state
@@ -313,8 +325,8 @@ class Entities:
 
             if entity["entity_type"] in ("npc", "enemy"):
                 if entity.get("facing_lock_timer", 0) <= 0:
-                    ai_dir = entity.get("ai_direction", 0)
-                    entity["flip_x"] = ai_dir < 0
+                    # Use facing_direction instead of ai_direction for visual flip
+                    entity["flip_x"] = entity.get("facing_direction", 1) < 0
 
     def spawn_hit_particles(self, entity, amount=5):
         for particles in range(amount):

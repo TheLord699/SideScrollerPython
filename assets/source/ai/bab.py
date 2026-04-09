@@ -18,6 +18,7 @@ def get_player_distance(entity, ai_system):
 def set_facing(entity, direction):
     if direction != 0:
         entity["facing"] = direction
+        entity["facing_direction"] = direction
 
 def init_state(entity):
     entity.setdefault("bab_state", STATE_IDLE)
@@ -25,6 +26,7 @@ def init_state(entity):
     entity.setdefault("bab_idle_timer", random.randint(30, 90))
     entity.setdefault("chase_initialized", False)
     entity.setdefault("facing", 1)
+    entity.setdefault("facing_direction", 1)
 
 def set_state(entity, new_state):
     if new_state == STATE_CHASE:
