@@ -39,7 +39,7 @@ Do immediately:
 
 and also entities are still hitting me at same speed, there might be left over code from when I didnt have individual AI's implemented 
 annnnddddddddd knockback isnt applied to player whn in inventory, and in mem debugger kncokback doesnt end/is really strong(due to how state is handled)
-
+entities flicker dir when fleeing and hit
 
 
 

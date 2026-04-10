@@ -488,7 +488,7 @@ class MemoryDebugger:
                 elif isinstance(obj, dict):
                     for k, v in obj.items():
                         if depth < 3:
-                            find_surfaces(v, f"{path}['{k}']", depth + 1)
+                            find_surfaces(v, f"{path}['{k}'']", depth + 1)
                         
                 elif hasattr(obj, "__dict__") and not isinstance(obj, (str, int, float, bool)):
                     class_name = obj.__class__.__name__
@@ -530,7 +530,7 @@ class MemoryDebugger:
             info.append("")
             for i, entity in enumerate(getattr(self.game.entities, "entities", [])[:20]):
                 if "_module" in entity:
-                    entity_str = f"Entity {i}: {entity.get('name', 'Unknown')} (has script)"
+                    entity_str = f"Entity {i}: {entity.get("name", "Unknown")} (has script)"
                     
                 else:
                     entity_str = f"Entity {i}: {str(entity)[:100]}"
@@ -548,7 +548,6 @@ class MemoryDebugger:
     def collect_all_surfaces(self):
         all_surfaces = []
         visited_objects = set()
-        exclude_set = set(self.preview_cache.values())
 
         game_objects = [
             ("UI", self.game.ui),
@@ -559,10 +558,12 @@ class MemoryDebugger:
             ("Background", self.game.background),
             ("Particles", self.game.particles),
             ("Foreground", self.game.foreground),
+            ("ProjectilesSystem", self.game.projectiles_system),
+            ("AISystem", self.game.ai),
         ]
 
         def find_surfaces(obj, depth=0):
-            if depth > 3:
+            if depth > 7:
                 return
                 
             obj_id = id(obj)
@@ -572,9 +573,8 @@ class MemoryDebugger:
             visited_objects.add(obj_id)
             try:
                 if isinstance(obj, pg.Surface):
-                    if obj not in exclude_set:
-                        all_surfaces.append(obj)
-                        
+                    all_surfaces.append(obj)
+                    
                 elif isinstance(obj, types.ModuleType):
                     return
                     
@@ -583,12 +583,12 @@ class MemoryDebugger:
                     
                 elif isinstance(obj, (list, tuple)):
                     for item in obj:
-                        if depth < 3:
+                        if depth < 5:
                             find_surfaces(item, depth + 1)
                         
                 elif isinstance(obj, dict):
                     for v in obj.values():
-                        if depth < 3:
+                        if depth < 5:
                             find_surfaces(v, depth + 1)
                         
                 elif hasattr(obj, "__dict__") and not isinstance(obj, (str, int, float, bool)):
@@ -596,17 +596,40 @@ class MemoryDebugger:
                     if class_name in ("module", "builtin_function_or_method", "method", "function"):
                         return
                     
-                    if depth < 2:
-                        for attr in vars(obj).values():
-                            find_surfaces(attr, depth + 1)
-                        
+                    if depth < 4:  # Increased from 2 to 4
+                        for attr_name, attr in vars(obj).items():
+                            if not attr_name.startswith("__"):
+                                find_surfaces(attr, depth + 1)
+                            
             except Exception:
                 pass
 
         for _, obj in game_objects:
             find_surfaces(obj, 0)
-
-        return all_surfaces
+        
+        if hasattr(self.game.entities, "tilesheet_cache"):
+            for cache_key, sprites in self.game.entities.tilesheet_cache.items():
+                for sprite in sprites.values():
+                    if isinstance(sprite, pg.Surface):
+                        all_surfaces.append(sprite)
+        
+        if hasattr(self.game.entities, "animation_frames"):
+            for entity in getattr(self.game.entities, "entities", []):
+                if "animation_frames" in entity:
+                    for state_data in entity["animation_frames"].values():
+                        for frame in state_data.get("frames", []):
+                            if isinstance(frame, pg.Surface):
+                                all_surfaces.append(frame)
+        
+        unique_surfaces = []
+        seen = set()
+        for surf in all_surfaces:
+            surf_id = id(surf)
+            if surf_id not in seen:
+                seen.add(surf_id)
+                unique_surfaces.append(surf)
+        
+        return unique_surfaces
 
     def get_ram_usage(self):
         try:
@@ -639,15 +662,15 @@ class MemoryDebugger:
         ram_info = self.get_ram_usage()
         if ram_info:
             info.append("RAM Usage:")
-            info.append(f"  Process Memory: {ram_info['process_memory']:.2f} MB")
-            info.append(f"  System RAM: {ram_info['used_ram']:.2f} GB / {ram_info['total_ram']:.2f} GB ({ram_info['ram_percent']:.1f}% used)")
-            info.append(f"  Free RAM: {ram_info['free_ram']:.2f} GB")
+            info.append(f"  Process Memory: {ram_info["process_memory"]:.2f} MB")
+            info.append(f"  System RAM: {ram_info["used_ram"]:.2f} GB / {ram_info["total_ram"]:.2f} GB ({ram_info["ram_percent"]:.1f}% used)")
+            info.append(f"  Free RAM: {ram_info["free_ram"]:.2f} GB")
             info.append("")
 
         info.append("Game Objects Count:")
-        info.append(f"  UI Elements: {len(getattr(self.game.ui, 'ui_elements', []))}")
-        info.append(f"  Entities: {len(getattr(self.game.entities, 'entities', []))}")
-        info.append(f"  Particles: {len(getattr(self.game.particles, 'particles', []))}")
+        info.append(f"  UI Elements: {len(getattr(self.game.ui, "ui_elements", []))}")
+        info.append(f"  Entities: {len(getattr(self.game.entities, "entities", []))}")
+        info.append(f"  Particles: {len(getattr(self.game.particles, "particles", []))}")
         info.append("")
 
         all_surfaces = self.collect_all_surfaces()
