@@ -286,10 +286,10 @@ class Entities:
                 distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
                 is_aggro = distance_to_player < entity.get("aggro_range", 200)
                 
-                if is_aggro:
+                if is_aggro and not entity.get("fleeing", False):
                     entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
                     
-                else:
+                elif not entity.get("fleeing", False):
                     if entity["vel_x"] != 0:
                         entity["facing_direction"] = 1 if entity["vel_x"] > 0 else -1
             
@@ -299,7 +299,8 @@ class Entities:
             else:
                 new_state = "idle"
                 distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
-                if distance_to_player < entity.get("aggro_range", 200):
+                if distance_to_player < entity.get("aggro_range", 200) and not entity.get("fleeing", False):
+                    print(entity.get("fleeing", False))
                     entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
 
         if new_state != entity["current_state"] and new_state in entity["states"]:
@@ -325,7 +326,6 @@ class Entities:
 
             if entity["entity_type"] in ("npc", "enemy"):
                 if entity.get("facing_lock_timer", 0) <= 0:
-                    # Use facing_direction instead of ai_direction for visual flip
                     entity["flip_x"] = entity.get("facing_direction", 1) < 0
 
     def spawn_hit_particles(self, entity, amount=5):

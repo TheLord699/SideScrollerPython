@@ -149,7 +149,7 @@
       },
       "entity_abilities": ["pushable"],
       "push_force": 70,
-      "script": "assets/source/ai/bab.py"
+      "script": "assets/source/behaviour_scripts/bab.py"
     }
   },
   "actors": {

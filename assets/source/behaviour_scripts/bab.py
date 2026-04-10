@@ -215,11 +215,15 @@ def update(entity, ai_system):
     state = entity["bab_state"]
 
     health_ratio = entity["health"] / max(entity.get("max_health", entity["health"]), 1)
-    retreat_threshold = entity.get("retreat_hp_ratio", 0.15) # 15%
-    
+    retreat_threshold = entity.get("retreat_hp_ratio", 0.15)
+
     if health_ratio <= retreat_threshold and state != STATE_RETREAT:
         set_state(entity, STATE_RETREAT)
         state = entity["bab_state"]
+        entity["fleeing"] = True
+
+    elif health_ratio > retreat_threshold + 0.1 and entity.get("fleeing", False):
+        del entity["fleeing"]
 
     if state == STATE_RETREAT:
         do_retreat(entity, ai_system, distance, delta_x)
