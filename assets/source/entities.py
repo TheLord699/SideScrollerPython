@@ -300,7 +300,6 @@ class Entities:
                 new_state = "idle"
                 distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
                 if distance_to_player < entity.get("aggro_range", 200) and not entity.get("fleeing", False):
-                    print(entity.get("fleeing", False))
                     entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
 
         if new_state != entity["current_state"] and new_state in entity["states"]:
