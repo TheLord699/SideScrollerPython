@@ -1218,12 +1218,14 @@ class Player:
                     break
         
         if self.joystick and controller:
-            if controller.get("LB"):
+            dpad = controller.get("dpad", (0, 0))
+            
+            if dpad[0] < 0:
                 current_index = self.weapon_inventory.index(self.equipped_weapon) if self.equipped_weapon in self.weapon_inventory else 0
                 new_index = (current_index - 1) % len(self.weapon_inventory)
                 self.equip_weapon(self.weapon_inventory[new_index])
                 
-            elif controller.get("RB"):
+            elif dpad[0] > 0:
                 current_index = self.weapon_inventory.index(self.equipped_weapon) if self.equipped_weapon in self.weapon_inventory else 0
                 new_index = (current_index + 1) % len(self.weapon_inventory)
                 self.equip_weapon(self.weapon_inventory[new_index])
