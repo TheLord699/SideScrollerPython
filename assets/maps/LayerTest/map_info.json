@@ -517,14 +517,6 @@
       "hitbox": false
     },
     {
-      "x": 6,
-      "y": 18,
-      "id": 63,
-      "layer": 1,
-      "direction": 0,
-      "hitbox": false
-    },
-    {
       "x": 4,
       "y": 18,
       "id": 67,
@@ -8028,6 +8020,15 @@
       "direction": 0,
       "layer": 0,
       "hitbox": true
+    },
+    {
+      "x": 6.0,
+      "y": 18.0,
+      "id": 14,
+      "tilesheet": 0,
+      "direction": 0,
+      "layer": -1,
+      "hitbox": false
     }
   ]
 }

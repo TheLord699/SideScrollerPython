@@ -41,6 +41,7 @@ and also entities are still hitting me at same speed, there might be left over c
 annnnddddddddd knockback isnt applied to player whn in inventory, and in mem debugger kncokback doesnt end/is really strong(due to how state is handled)
 entities flicker dir when fleeing and hit
 
+need to load menus from a menu_config.json instead of hardcoded funcs
 
 
 
