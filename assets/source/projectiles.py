@@ -224,7 +224,7 @@ class ProjectileSystem:
                 if entity["entity_type"] in {"enemy", "npc"} and entity["health"] > 0:
                     entity["health"] -= projectile.damage
                     entity["damage_effect"] = 1
-                    self.game.player.shake_camera(intensity=5, duration=25) # 3.2
+                    self.game.player.shake_camera(intensity=4.6, duration=25) # 3.2
                     self.game.entities.spawn_hit_particles(entity)
                     for sound_data in self.game.entities.sounds["hit"]:
                         sound_data["sound"].stop()
