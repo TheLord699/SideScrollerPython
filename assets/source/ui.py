@@ -50,19 +50,25 @@ class UI:
             label_str = cfg.get("label", "")
             callback = self.resolve_callback(cfg.get("callback"), env) if element_type != "label" else None
             label, dynamic_value = self.resolve_label(label_str, env)
-            self.create_ui(**shared, **sprite_kwargs,
-                           is_button=element_type != "label",
-                           label=label, dynamic_value=dynamic_value, callback=callback)
+            self.create_ui(
+                **shared, **sprite_kwargs,
+                is_button=element_type != "label",
+                label=label, 
+                dynamic_value=dynamic_value,
+                callback=callback
+            )
 
         elif element_type == "slider":
             variable = self.resolve_callback(cfg.get("variable"), env)
-            self.create_ui(**shared,
-                           is_slider=True,
-                           min_value=self.resolve_expr(cfg.get("min_value", 0), env),
-                           max_value=self.resolve_expr(cfg.get("max_value", 100), env),
-                           initial_value=self.resolve_expr(cfg.get("initial_value", 50), env),
-                           step_size=self.resolve_expr(cfg.get("step_size", 1), env),
-                           variable=variable)
+            self.create_ui(
+                **shared,
+                is_slider=True,
+                min_value=self.resolve_expr(cfg.get("min_value", 0), env),
+                max_value=self.resolve_expr(cfg.get("max_value", 100), env),
+                initial_value=self.resolve_expr(cfg.get("initial_value", 50), env),
+                step_size=self.resolve_expr(cfg.get("step_size", 1), env),
+                variable=variable
+            )
 
         else:
             print(f"Unknown element type '{element_type}' for id '{cfg.get('id')}'")
