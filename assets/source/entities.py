@@ -283,24 +283,35 @@ class Entities:
         if entity["entity_type"] in {"npc", "enemy"}:
             if abs(entity["vel_x"]) > 0.1:
                 new_state = "walk"
-                distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
-                is_aggro = distance_to_player < entity.get("aggro_range", 200)
                 
-                if is_aggro and not entity.get("fleeing", False):
-                    entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
-                    
-                elif not entity.get("fleeing", False):
+                if self.game.player.current_state == "death":
                     if entity["vel_x"] != 0:
                         entity["facing_direction"] = 1 if entity["vel_x"] > 0 else -1
+                        
+                else:
+                    distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
+                    is_aggro = distance_to_player < entity.get("aggro_range", 200)
+                    
+                    if is_aggro and not entity.get("fleeing", False):
+                        entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
+                        
+                    elif not entity.get("fleeing", False):
+                        if entity["vel_x"] != 0:
+                            entity["facing_direction"] = 1 if entity["vel_x"] > 0 else -1
             
             elif entity.get("damage_effect", 0) > 0:
                 new_state = "hurt"
             
             else:
                 new_state = "idle"
-                distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
-                if distance_to_player < entity.get("aggro_range", 200) and not entity.get("fleeing", False):
-                    entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
+                
+                if self.game.player.current_state == "death":
+                    pass
+                    
+                else:
+                    distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
+                    if distance_to_player < entity.get("aggro_range", 200) and not entity.get("fleeing", False):
+                        entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
 
         if new_state != entity["current_state"] and new_state in entity["states"]:
             entity["current_state"] = new_state

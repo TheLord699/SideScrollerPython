@@ -1116,37 +1116,64 @@ class Player:
 
             if self.joystick.get_numhats() > 0:
                 controller["dpad"] = self.joystick.get_hat(0)
-
+                
             else:
                 controller["dpad"] = (0, 0)
 
         if self.current_state == "death":
             return
 
-        if self.in_inventory:
-            self.handle_inventory_controls(keys, controller)
-
+        if hasattr(self, "knockback_timer") and self.knockback_timer > 0:
+            self.knockback_timer -= 1
+            
+            if self.in_inventory:
+                self.handle_inventory_controls(keys, controller, in_knockback=True)
+                
+            else:
+                self.handle_normal_controls(keys, mouse_buttons, controller, in_knockback=True)
+                
         else:
-            self.handle_normal_controls(keys, mouse_buttons, controller)
+            if self.in_inventory:
+                self.handle_inventory_controls(keys, controller, in_knockback=False)
+                
+            else:
+                self.handle_normal_controls(keys, mouse_buttons, controller, in_knockback=False)
 
         if self.in_map:
             self.handle_map_controls(mouse_buttons)
 
         self.handle_events(controller)
 
-    def handle_inventory_controls(self, keys, controller):
-        if not getattr(self, "sliding", False):
-            self.vel_x = 0
+    def handle_inventory_controls(self, keys, controller, in_knockback=False):
+        if not in_knockback:
+            if not getattr(self, "sliding", False):
+                self.vel_x = 0
+                self.vel_y = 0
 
         if keys[pg.K_q] or (self.joystick and controller.get("X")):
             self.drop_item()
 
         if keys[pg.K_e] or (self.joystick and controller.get("A")):
             self.consume_item()
-
-    def handle_normal_controls(self, keys, mouse_buttons, controller):
+        
+    def handle_normal_controls(self, keys, mouse_buttons, controller, in_knockback=False):
         if self.in_dialogue:
             self.vel_x = 0
+            return
+
+        if in_knockback:
+            jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
+            if jump_input and self.coyote_timer > 0:
+                self.jump()
+            
+            interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
+            if interact_input and not self.in_map:
+                self.interact_with_entity()
+            
+            attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
+            if self.current_state != "hurt":
+                self.handle_weapon_input(attack_input)
+                
             return
 
         self.handle_movement(keys, controller)
