@@ -1,4 +1,5 @@
 import pygame as pg
+import re
 
 class UI:
     def __init__(self, game):
@@ -8,9 +9,199 @@ class UI:
         self.loaded_sheets = {}
         self.loaded_images = {}
         self.loaded_fonts = {}
+        self.loaded_sounds = {}
         
         self.mouse_locked = False
+
+    def build_element_from_config(self, cfg, env):
+        element_type = cfg.get("type")
+
+        shared = dict(
+            x=self.resolve_expr(cfg.get("x", 0), env),
+            y=self.resolve_expr(cfg.get("y", 0), env),
+            width=self.resolve_expr(cfg.get("width", 0), env),
+            height=self.resolve_expr(cfg.get("height", 0), env),
+            element_id=cfg["id"],
+            centered=cfg.get("centered", False),
+            render_order=cfg.get("render_order", 0),
+            font=env.fonts.get(cfg["font"]) if cfg.get("font") else None,
+            font_size=cfg.get("font_size", 24),
+            text_color=tuple(cfg["text_color"]) if cfg.get("text_color") else (255, 255, 255),
+            alpha=cfg.get("alpha"),
+            scale_multiplier=cfg.get("scale_multiplier", 1.1),
+            hover_range=cfg.get("hover_range"),
+            click_sound=self.resolve_sound(cfg.get("click_sound"), cfg.get("click_sound_volume", 1.0)),
+            release_sound=self.resolve_sound(cfg.get("release_sound"), cfg.get("release_sound_volume", 1.0)),
+        )
+
+        sprite_kwargs = {}
+        if cfg.get("sprite_sheet"):
+            sprite_kwargs = dict(
+                sprite_sheet_path=cfg["sprite_sheet"],
+                image_id=cfg.get("sprite_id"),
+                sprite_width=cfg.get("sprite_width", 16),
+                sprite_height=cfg.get("sprite_height", 16),
+            )
+            
+        elif cfg.get("image_path"):
+            sprite_kwargs = dict(image_path=cfg["image_path"])
+
+        if element_type in ("label", "button", "dynamic_button"):
+            label_str = cfg.get("label", "")
+            callback = self.resolve_callback(cfg.get("callback"), env) if element_type != "label" else None
+            label, dynamic_value = self.resolve_label(label_str, env)
+            self.create_ui(**shared, **sprite_kwargs,
+                           is_button=element_type != "label",
+                           label=label, dynamic_value=dynamic_value, callback=callback)
+
+        elif element_type == "slider":
+            variable = self.resolve_callback(cfg.get("variable"), env)
+            self.create_ui(**shared,
+                           is_slider=True,
+                           min_value=self.resolve_expr(cfg.get("min_value", 0), env),
+                           max_value=self.resolve_expr(cfg.get("max_value", 100), env),
+                           initial_value=self.resolve_expr(cfg.get("initial_value", 50), env),
+                           step_size=self.resolve_expr(cfg.get("step_size", 1), env),
+                           variable=variable)
+
+        else:
+            print(f"Unknown element type '{element_type}' for id '{cfg.get('id')}'")
+
+    def resolve_expr(self, value, env=None):
+        if not isinstance(value, str):
+            return value
         
+        try:
+            sw = self.game.screen_width
+            sh = self.game.screen_height
+            
+            expr = (value.replace("screen_width", str(sw)).replace("screen_height", str(sh)))
+
+            if env is not None:
+                expr = expr.replace("env.", "env_proxy.")
+                env_proxy = env
+                return eval(expr, {"env_proxy": env_proxy, "sw": sw, "sh": sh})
+            
+            return eval(expr)
+        
+        except Exception as e:
+            print(f"Error resolving expression '{value}': {e}")
+            return 0
+
+    def resolve_label(self, label, env):
+        vars_found = re.findall(r"\{([^}]+)\}", label)
+        
+        if not vars_found:
+            return label, None
+
+        def format_value(raw, true_text=None, false_text=None):
+            if true_text is not None and false_text is not None:
+                return true_text if raw else false_text
+            
+            return str(raw)
+
+        def make_lambda(template, vars, env=env):
+            parsed = []
+            for var in vars:
+                if "?" in var:
+                    attr_path, options = var.split("?", 1)
+                    true_text, false_text = options.split(":", 1)
+                    
+                else:
+                    attr_path = var
+                    true_text = false_text = None
+
+                parts = attr_path.split(".", 1)
+                if len(parts) == 1:
+                    getter = lambda e=env, a=attr_path: getattr(e, a, "")
+                    
+                elif parts[0] == "game":
+                    getter = lambda e=env, a=parts[1]: getattr(e.game, a, "")
+                    
+                else:
+                    obj_name, sub_attr = parts
+                    getter = lambda e=env, o=obj_name, a=sub_attr: getattr(getattr(e.game, o, None), a, "")
+
+                parsed.append(("{" + var + "}", getter, true_text, false_text))
+
+            def evaluate():
+                result = template
+                for placeholder, getter, true_text, false_text in parsed:
+                    result = result.replace(placeholder, format_value(getter(), true_text, false_text), 1)
+                    
+                return result
+            return evaluate
+
+        return None, make_lambda(label, vars_found)
+
+    def resolve_callback(self, spec, env):
+        if not spec:
+            return None
+
+        if spec.startswith("change_menu:"):
+            target = spec.split(":", 1)[1]
+            return env.change_menu(target)
+
+        if spec.startswith("toggle:"):
+            attr_path = spec.split(":", 1)[1]
+            setter = self.build_attr_setter(attr_path, env)
+            getter = self.build_attr_getter(attr_path, env)
+            return lambda g=getter, s=setter: s(not g())
+
+        if spec.startswith("call:"):
+            method_name = spec.split(":", 1)[1]
+            method = getattr(env, method_name, None)
+            if method is None:
+                print(f"Unknown method '{method_name}' on env")
+                return None
+            
+            return method
+
+        if spec.startswith("multi:"):
+            parts = spec.split(":", 1)[1].split("|")
+            callbacks = [self.resolve_callback(p, env) for p in parts]
+            callbacks = [c for c in callbacks if c is not None]
+            return lambda cbs=callbacks: [cb() for cb in cbs]
+
+        if spec.startswith("update_slider:"):
+            element_id = spec.split(":", 1)[1]
+            return lambda value, eid=element_id: env.update_slider_value(eid, value)
+
+        print(f"Unknown callback spec: '{spec}'")
+        return None
+
+    def resolve_sound(self, path, volume=1.0):
+        if not path:
+            return None
+        
+        if path not in self.loaded_sounds:
+            try:
+                self.loaded_sounds[path] = pg.mixer.Sound(path)
+                
+            except Exception as e:
+                print(f"Error loading sound {path}: {e}")
+                return None
+            
+        return {"sound": self.loaded_sounds[path], "volume": volume}
+
+    def build_attr_getter(self, attr_path, env):
+        parts = attr_path.split(".", 1)
+        if len(parts) == 1:
+            return lambda: getattr(env, attr_path)
+        
+        else:
+            obj_name, sub_attr = parts
+            return lambda: getattr(getattr(env.game, obj_name), sub_attr)
+
+    def build_attr_setter(self, attr_path, env):
+        parts = attr_path.split(".", 1)
+        if len(parts) == 1:
+            return lambda v: setattr(env, attr_path, v)
+        
+        else:
+            obj_name, sub_attr = parts
+            return lambda v: setattr(getattr(env.game, obj_name), sub_attr, v)
+
     def load_sheet(self, sheet_name, path):
         if sheet_name in self.loaded_sheets:
             return 
@@ -105,7 +296,7 @@ class UI:
                     missing_texture = True
                     print(f"Sprite sheet {sprite_sheet_path} not found, using missing texture")
 
-            show_missing_texture = (missing_texture or original_image is None) and not is_slider and not (label and not is_button)
+            show_missing_texture = (missing_texture or original_image is None) and not is_slider and not ((label or dynamic_value) and not is_button)
             
             if show_missing_texture:
                 original_image = self.game.environment.missing_texture.copy()
@@ -214,6 +405,7 @@ class UI:
         self.loaded_sheets.clear()
         self.loaded_images.clear()
         self.loaded_fonts.clear()
+        self.loaded_sounds.clear()
 
     def update_dynamic_values(self):
         for element in self.ui_elements:

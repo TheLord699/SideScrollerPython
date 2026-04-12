@@ -1,6 +1,8 @@
 import pygame as pg
 import os
 
+from helper_methods import load_json
+
 class Environment:
   def __init__(self, game):
     self.game = game
@@ -49,13 +51,6 @@ class Environment:
       "pixel": "assets/sprites/gui/fonts/pixel.ttf",
       "fantasy": "assets/sprites/gui/fonts/pixel_fantasy.ttf"
     }
-    self.menu_functions = {
-      "main": self.main_menu,
-      "select_menu": self.select_menu,
-      "play": self.start_game,
-      "settings": self.settings_menu,
-      "death": self.death_menu
-    }
     self.maps = {
       "TestMap": "assets/maps/LayerTest/",
       "Test2": "assets/maps/LayerTest2/"
@@ -64,7 +59,34 @@ class Environment:
       "main": pg.mixer.Sound("assets/sounds/music/Alone_In_The_Town.wav"),
       "TestMap": pg.mixer.Sound("assets/sounds/music/Maternal_Heart.wav"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
     }
-    
+
+    self.menu_config = load_json("assets/settings/menu_config.json")
+
+  def load_game(self):
+    self.game.player.settings_loaded = True
+    self.load_data()
+
+  def restart_game(self):
+    self.game.player.load_settings()
+    self.menu = "play"
+
+  def load_menu(self, menu_name):
+    config = self.menu_config["menus"].get(menu_name)
+    if not config:
+      return
+
+    if "lighting" in config:
+      self.lighting = config["lighting"]
+
+    if "music" in config:
+      self.handle_music(config["music"])
+
+    if "background" in config:
+      self.load_background_foreground(config["background"])
+
+    for element_cfg in config.get("elements", []):
+      self.game.ui.build_element_from_config(element_cfg, self)
+
   def get_controller(self):
     if pg.joystick.get_count() == 0:
       if self.joystick is not None:
@@ -135,6 +157,8 @@ class Environment:
       
       for index, saved_item in enumerate(saved_inventory):
         self.game.player.inventory[index] = saved_item
+
+      self.menu = "play"
       
     except Exception as e:
       self.menu = "select_menu"
@@ -144,247 +168,7 @@ class Environment:
     if element_id == "volume_slider":
       self.volume = value
 
-  def main_menu(self):
-    self.lighting = False
-    self.handle_music("main")
-    self.load_background_foreground("assets/maps/LayerTest")
-    
-    self.game.ui.create_ui(
-      x=-40, y=-30, sprite_width=95, sprite_height=32, 
-      width=200, height=100,
-      alpha=True,
-      scale_multiplier=1,
-      label=f"ver: {self.game.version}",
-      font=self.fonts["fantasy"],
-      element_id="version",
-      font_size=16,
-      render_order=0
-    )
-    self.game.ui.create_ui(
-      x=self.game.screen_width / 2.6, y=100, sprite_width=95, sprite_height=32, 
-      centered=False, width=200, height=100,
-      alpha=True,
-      scale_multiplier=1,
-      label="Generic Side Scroller",
-      font=self.fonts["fantasy"],
-      element_id="title",
-      font_size=28,
-      render_order=0
-    )
-    self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=250, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      label="Play",
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      font=self.fonts["fantasy"],
-      element_id="play_button",
-      callback=self.change_menu("select_menu"),
-      hover_range=3.5,
-      render_order=0
-    )
-    self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=400, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      label="Settings",
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      font=self.fonts["fantasy"],
-      element_id="settings_button",
-      callback=self.change_menu("settings"),
-      hover_range=3.5,
-      render_order=0
-    )
-  
-  def select_menu(self):
-    self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=250, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      label="New Game",
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      font=self.fonts["fantasy"],
-      element_id="new_game_button",
-      callback=lambda: (self.change_menu("play")()),#callback=lambda: (setattr(self, "transition", True), self.change_menu("play")()),
-      hover_range=3.5,
-      render_order=0
-    )
-    self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=400, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      label="Load Game",
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      font=self.fonts["fantasy"],
-      element_id="load_button",
-      callback=lambda: (setattr(self, "menu", "play"), setattr(self.game.player, "settings_loaded", True), self.load_data()),
-      hover_range=3.5,
-      render_order=0
-    )
-    self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[0, 0],
-      x=self.game.screen_width / 7, y=500, sprite_width=32, sprite_height=32, 
-      centered=True, width=100, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      element_id="back_button",
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      callback=self.change_menu("main"),
-      hover_range=3.5,
-      render_order=0
-    )
-    
-  def settings_menu(self):   
-      self.game.ui.create_ui(
-        sprite_sheet_path="ui_sheet", image_id=[0, 0],
-        x=self.game.screen_width / 7, y=500, sprite_width=32, sprite_height=32, 
-        centered=True, width=100, height=100,
-        alpha=True, is_button=True,
-        scale_multiplier=1.1,
-        element_id="back_button",
-        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        callback=self.change_menu("main"),
-        hover_range=3.5,
-        render_order=0
-      )
-      self.game.ui.create_ui(
-        x=self.game.screen_width / 2.65, y=170, width=200, height=20, is_slider=True,
-        min_value=0.0, max_value=1.1, initial_value=self.volume,
-        step_size=0.01, element_id="volume_slider", 
-        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        variable=lambda value: self.update_slider_value("volume_slider", value),
-      )
-      self.game.ui.create_ui(
-        x=self.game.screen_width / 2, y=120,
-        element_id="volume_text", label="Volume",
-        font=self.fonts["fantasy"],
-      )
-      self.game.ui.create_ui(
-        sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2 + 110, y=270, sprite_width=95, sprite_height=32, 
-        centered=True, width=200, height=100,
-        alpha=True, is_button=True,
-        scale_multiplier=1.1,
-        dynamic_value=lambda: "Indicators: On" if self.show_indicators else "Indicators: Off",
-        font=self.fonts["fantasy"],
-        font_size=16,
-        element_id="indicator_button",
-        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        callback=lambda: (setattr(self, "show_indicators", not self.show_indicators)),
-        hover_range=3.5,
-        render_order=0
-      )
-      self.game.ui.create_ui(
-        sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2 - 110, y=270, sprite_width=95, sprite_height=32, 
-        centered=True, width=200, height=100,
-        alpha=True, is_button=True,
-        scale_multiplier=1.1,
-        dynamic_value=lambda: "Particles: On" if self.game.particles.enable_particles else "Particles: Off",
-        font=self.fonts["fantasy"],
-        font_size=16,
-        element_id="particle_button",
-        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        callback=lambda: (setattr(self.game.particles, "enable_particles", not self.game.particles.enable_particles)),
-        hover_range=3.5,
-        render_order=0
-      )
-      self.game.ui.create_ui(
-        sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2 - 110, y=395, sprite_width=95, sprite_height=32, 
-        centered=True, width=200, height=100,
-        alpha=True, is_button=True,
-        scale_multiplier=1.1,
-        dynamic_value=lambda: "Foreground: On" if self.game.foreground.enable_foreground else "Foreground: Off",
-        font=self.fonts["fantasy"],
-        font_size=16,
-        element_id="foreground_button",
-        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        callback=lambda: (setattr(self.game.foreground, "enable_foreground", not self.game.foreground.enable_foreground)),
-        hover_range=3.5,
-        render_order=0
-      )
-      self.game.ui.create_ui(
-        sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2 + 110, y=395, sprite_width=95, sprite_height=32, 
-        centered=True, width=200, height=100,
-        alpha=True, is_button=True,
-        scale_multiplier=1.1,
-        dynamic_value=lambda: "Cam Follow Mouse?: On" if self.game.player.enable_cam_mouse else "Cam Follow Mouse?: Off",
-        font=self.fonts["fantasy"],
-        font_size=16,
-        element_id="cam_follow_mouse_button",
-        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        callback=lambda: (setattr(self.game.player, "enable_cam_mouse", not self.game.player.enable_cam_mouse)),
-        hover_range=3.5,
-        render_order=0
-      )
-      self.game.ui.create_ui(
-        sprite_sheet_path="ui_sheet", image_id=[33, 0],
-        x=self.game.screen_width / 2, y=520, sprite_width=95, sprite_height=32, 
-        centered=True, width=250, height=100,
-        alpha=True, is_button=True,
-        scale_multiplier=1.1,
-        dynamic_value=lambda: "Vigorous Optimizations?: On" if self.vigorous_optimizations else "Vigorous Optimizations?: Off",
-        font=self.fonts["fantasy"],
-        font_size=16,
-        element_id="vigorous_optimizations_button",
-        click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-        callback=lambda: (setattr(self, "vigorous_optimizations", not self.vigorous_optimizations)),
-        hover_range=3.5,
-        render_order=0
-      )
-      self.game.ui.create_ui(
-        x=self.game.screen_width / 2 + 132, y=470,
-        centered=True, width=250, height=100,
-        is_button=False,
-        scale_multiplier=1.1,
-        label="TEMPORARY DEV NOTE:\n"
-              "VIGOROUS OPTIMIZATIONS\n"
-              "WILL STOP ALL UPDATES\n"
-              "FOR ENTITIES AND PROJECTILES\n"
-              "AS SOON AS THEY ARE OFF-SCREEN,\n"
-              "WHICH CAN GREATLY IMPROVE PERFORMANCE\n"
-              "BUT MAY AFFECT REALISM",
-        font_size=15,
-        element_id="message",
-        render_order=0
-      )
-
   def death_menu(self):
-    self.game.ui.create_ui(
-      x=self.game.screen_width / 2.6, y=150, sprite_width=95, sprite_height=32, 
-      centered=False, width=200, height=100,
-      alpha=True,
-      scale_multiplier=1,
-      label="You Died",
-      font=self.fonts["fantasy"],
-      element_id="Death_message",
-      font_size=35,
-      render_order=0
-    )
-    self.game.ui.create_ui(
-      sprite_sheet_path="ui_sheet", image_id=[33, 0],
-      x=self.game.screen_width / 2, y=350, sprite_width=95, sprite_height=32, 
-      centered=True, width=200, height=100,
-      alpha=True, is_button=True,
-      scale_multiplier=1.1,
-      element_id="restart_button",
-      label="Restart",
-      font=self.fonts["fantasy"],
-      click_sound={"sound": pg.mixer.Sound("assets/sounds/ui/01_chest_open_4.wav"), "volume": 2.0},
-      callback=lambda: (self.game.player.load_settings(), setattr(self, "menu", "play")),
-      hover_range=3.5,
-      render_order=0
-    )
     self.current_track = None
 
   def start_game(self):
@@ -411,8 +195,16 @@ class Environment:
         
   def run_menu(self):
     self.reset()
-    if self.menu in self.menu_functions:
-      self.menu_functions[self.menu]()
+    if self.menu == "play":
+      self.start_game()
+      
+    elif self.menu == "death":
+      self.death_menu()
+      self.load_menu(self.menu)
+      
+    else:
+      self.load_menu(self.menu)
+      
     self.last_menu = self.menu
 
   def load_background_foreground(self, map_path):
