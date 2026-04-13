@@ -273,10 +273,11 @@ class ProjectileSystem:
                 if projectile.push_force:
                     self.game.player.vel_x = direction_sign * projectile.push_force
                     if self.game.player.vel_y >= 0:
-                        self.game.player.vel_y = -abs(projectile.push_force) * 0.1
+                        #self.game.player.vel_y = -abs(projectile.push_force) * 0.1
                         
-                    else:
-                        self.game.player.vel_y += -abs(projectile.push_force) * 0.05
+                    #else:
+                        #self.game.player.vel_y += -abs(projectile.push_force) * 0.05
+                    pass
 
                 self.game.player.take_damage(projectile.damage)
                 projectile.hit_ids.add(player_id)
