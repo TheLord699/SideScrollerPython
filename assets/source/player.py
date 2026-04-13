@@ -1148,7 +1148,7 @@ class Player:
         if not in_knockback:
             if not getattr(self, "sliding", False):
                 self.vel_x = 0
-                self.vel_y = 0
+                #self.vel_y = 0
 
         if keys[pg.K_q] or (self.joystick and controller.get("X")):
             self.drop_item()
