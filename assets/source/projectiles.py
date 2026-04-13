@@ -277,7 +277,7 @@ class ProjectileSystem:
                         
                     #else:
                         #self.game.player.vel_y += -abs(projectile.push_force) * 0.05
-                    pass
+                        pass
 
                 self.game.player.take_damage(projectile.damage)
                 projectile.hit_ids.add(player_id)

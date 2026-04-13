@@ -596,7 +596,7 @@ class MemoryDebugger:
                     if class_name in ("module", "builtin_function_or_method", "method", "function"):
                         return
                     
-                    if depth < 4:  # Increased from 2 to 4
+                    if depth < 4:  # Increased from 2 to 4(might chnage later)
                         for attr_name, attr in vars(obj).items():
                             if not attr_name.startswith("__"):
                                 find_surfaces(attr, depth + 1)
