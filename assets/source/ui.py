@@ -615,8 +615,9 @@ class UI:
         track_rect = element["slider_rect"]
         knob_rect = element["slider_knob"]
 
-        pg.draw.rect(self.game.screen, (200, 200, 200), track_rect)
+        pg.draw.rect(self.game.screen, (185, 185, 185), track_rect)
         pg.draw.rect(self.game.screen, (0, 0, 255), knob_rect)
+        pg.draw.rect(self.game.screen, (235, 235, 235), knob_rect, 3)
 
         if pg.mouse.get_pressed()[0]:
             if knob_rect.collidepoint(mouse_pos) and not element["grabbed"]:
