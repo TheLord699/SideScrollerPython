@@ -240,26 +240,27 @@ class Entities:
                 entity["damage_frames"][state_name] = damage_frames
 
     def update_entity(self, entity):
-        for sound_group in self.sounds.values():
-            if isinstance(sound_group, list):
-                for sound_dict in sound_group:
-                    sound = sound_dict["sound"]
-                    volume = sound_dict["volume"]
-                    sound.set_volume(self.game.environment.volume / 10 * volume)
-                        
-            elif isinstance(sound_group, dict):
-                for sound_key, sound_dict in sound_group.items():
-                    sound = sound_dict["sound"]
-                    volume = sound_dict["volume"]
-                    sound.set_volume(self.game.environment.volume / 10 * volume)
-
         if entity["entity_type"] in {"npc", "enemy"}:
             if entity["health"] < 1: # < 1 instead of <= 0 because players will see health as 0 when smaller than 1 due to truncating in the health bar
                 self.drop_item(entity) # Issue where dropped items arent just items in the code, so they have extra attributes that they shouldnt have
                 # also loads the items tile sheet again?
                 self.death_particles(entity)
                 self.entities.remove(entity)
-    
+                
+    def update_sounds(self):
+        for sound_group in self.sounds.values():
+            if isinstance(sound_group, list):
+                for sound_dict in sound_group:
+                    sound = sound_dict["sound"]
+                    volume = sound_dict["volume"]
+                    sound.set_volume(self.game.environment.volume / 10 * volume)
+
+            elif isinstance(sound_group, dict):
+                for sound_dict in sound_group.values():
+                    sound = sound_dict["sound"]
+                    volume = sound_dict["volume"]
+                    sound.set_volume(self.game.environment.volume / 10 * volume)
+        
     def drop_item(self, entity):
         items = ["Red Gem", "Potion", "Gold"]
         item = random.choices(items, weights=[0.2, 0.5, 0.3], k=1)[0]
@@ -385,48 +386,45 @@ class Entities:
         
         offset_x = entity.get("hitbox_offset_x", 0)
         offset_y = entity.get("hitbox_offset_y", 0)
-        
+
         entity_hitbox = pg.Rect(
             entity["x"] - hitbox_width / 2 + offset_x,
             entity["y"] - hitbox_heigth / 2 + offset_y,
             hitbox_width,
             hitbox_heigth
         )
-        
+
         ground_check = pg.Rect(
             entity_hitbox.left + 2,
             entity_hitbox.bottom - 2,
             entity_hitbox.width - 4,
             4
         )
-        
+
         nearby_tiles = self.game.map.get_nearby_tiles(entity_hitbox, padding=5)
         entity["on_ground"] = False
-        
+
+        wall_epsilon = 0.6
+
         for tile_hitbox, tile_id in nearby_tiles:
             tile_attrs = self.game.map.tile_attributes.get(tile_id, {})
             swimmable = tile_attrs.get("swimmable", False)
-            #damage = tile_attrs.get("damage", 0)
-            
+
             if entity_hitbox.colliderect(tile_hitbox) or ground_check.colliderect(tile_hitbox):
-                #if damage and entity["entity_type"] != "actor":
-                    #entity["health"] -= damage
-                    #entity["damage_effect"] = 1
-                
+
                 if swimmable:
                     continue
-                    
-                overlap_x = min(entity_hitbox.right - tile_hitbox.left, tile_hitbox.right - entity_hitbox.left)
-                overlap_y = min(entity_hitbox.bottom - tile_hitbox.top, tile_hitbox.bottom - entity_hitbox.top)
-                
-                if overlap_x < overlap_y:
-                    if entity_hitbox.centerx > tile_hitbox.centerx:
-                        entity["x"] = tile_hitbox.right + hitbox_width / 2 - offset_x
-                        
-                    else:
-                        entity["x"] = tile_hitbox.left - hitbox_width / 2 - offset_x
-                        
-                else:
+
+                overlap_x = min(
+                    entity_hitbox.right - tile_hitbox.left,
+                    tile_hitbox.right - entity_hitbox.left
+                )
+                overlap_y = min(
+                    entity_hitbox.bottom - tile_hitbox.top,
+                    tile_hitbox.bottom - entity_hitbox.top
+                )
+
+                if overlap_y < overlap_x:
                     if entity_hitbox.centery < tile_hitbox.centery:
                         entity["y"] = tile_hitbox.top - hitbox_heigth / 2 - offset_y
                         entity["vel_y"] = 0
@@ -435,6 +433,36 @@ class Entities:
                     else:
                         entity["y"] = tile_hitbox.bottom + hitbox_heigth / 2 - offset_y
                         entity["vel_y"] = 0
+
+                    entity_hitbox = pg.Rect(
+                        entity["x"] - hitbox_width / 2 + offset_x,
+                        entity["y"] - hitbox_heigth / 2 + offset_y,
+                        hitbox_width,
+                        hitbox_heigth
+                    )
+
+                else:
+                    touching_left = abs(entity_hitbox.right - tile_hitbox.left) < wall_epsilon
+                    touching_right = abs(entity_hitbox.left - tile_hitbox.right) < wall_epsilon
+
+                    if touching_left or touching_right:
+                        entity["vel_x"] = 0
+                        continue
+
+                    if entity_hitbox.centerx > tile_hitbox.centerx:
+                        entity["x"] = tile_hitbox.right + hitbox_width / 2 - offset_x
+                        
+                    else:
+                        entity["x"] = tile_hitbox.left - hitbox_width / 2 - offset_x
+
+                    entity["vel_x"] = 0
+
+                    entity_hitbox = pg.Rect(
+                        entity["x"] - hitbox_width / 2 + offset_x,
+                        entity["y"] - hitbox_heigth / 2 + offset_y,
+                        hitbox_width,
+                        hitbox_heigth
+                    )
         
     def apply_gravity(self, entity):
         if not self.is_on_ground(entity):
@@ -451,19 +479,22 @@ class Entities:
                 entity["vel_y"] = self.game.environment.max_fall_speed 
 
     def apply_horizontal_movement(self, entity):
-        entity["x"] += entity["vel_x"]
+        steps = max(1, int(abs(entity["vel_x"])))
+        step_size = entity["vel_x"] / steps
+
+        for step in range(steps):
+            entity["x"] += step_size
+            self.update_collision(entity)
 
         if entity.get("facing_lock_timer", 0) > 0:
             entity["facing_lock_timer"] -= 1
             return
 
-        if entity.get("on_ground", False): 
+        if entity.get("on_ground", False):
             friction = 0.8
-
             if abs(entity["vel_x"]) > 0.1:
-                entity["vel_x"] *= friction 
-                
-                if abs(entity["vel_x"]) < 0.1:  
+                entity["vel_x"] *= friction
+                if abs(entity["vel_x"]) < 0.1:
                     entity["vel_x"] = 0
 
     def apply_knockback(self, entity, direction_sign, push_force):
@@ -874,6 +905,7 @@ class Entities:
             self.apply_gravity(entity)
             self.apply_horizontal_movement(entity)
             self.update_animation(entity)
+            self.update_sounds() # will pass entity and put in is_onscreen when I add indicidual entity sounds
             self.update_entity(entity)
             
             if is_on_screen:
