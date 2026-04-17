@@ -801,7 +801,7 @@ class Player:
 
             if entity["entity_type"] == "npc":
                 if not self.on_ground:
-                    return
+                    continue
 
                 entity_hitbox = pg.Rect(entity["x"] - entity["width"] / 2, entity["y"] - entity["height"] / 2, entity["width"], entity["height"])
 
