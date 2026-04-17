@@ -199,12 +199,15 @@ class Entities:
 
     def setup_entity_animations(self, entity):
         entity["animation_frames"] = {}
+        entity["flipped_frames"] = {}
         
         target_width = entity["width"]
         target_height = entity["height"]
         
         for state, state_data in entity["states"].items():
             frames = []
+            flipped = []
+            
             start_row = state_data.get("start_row", 0)
             start_col = state_data.get("start_col", 0)
             frame_count = state_data.get("frames", 1)
@@ -219,25 +222,32 @@ class Entities:
                     original = self.item_sprites[key]
                     scaled = pg.transform.scale(original, (target_width, target_height))
                     frames.append(scaled)
+                    flipped.append(pg.transform.flip(scaled, True, False))
                     
                 else:
                     print(f"Warning: Missing animation frame {key} for state {state}")
                     scaled = pg.transform.scale(entity["image"], (target_width, target_height))
                     frames.append(scaled)
+                    flipped.append(pg.transform.flip(scaled, True, False))
             
             entity["animation_frames"][state] = {"frames": frames, "speed": animation_speed}
+            entity["flipped_frames"][state] = flipped
         
         if entity["entity_type"] in {"npc", "enemy", "actor"} and entity.get("states"):
             entity["damage_frames"] = {}
+            entity["flipped_damage_frames"] = {}
             
             for state_name, state_data in entity["animation_frames"].items():
                 damage_frames = []
+                flipped_damage = []
                 for frame in state_data["frames"]:
                     damage_frame = frame.copy()
                     damage_frame.fill((255, 0, 0), special_flags=pg.BLEND_ADD)
                     damage_frames.append(damage_frame)
+                    flipped_damage.append(pg.transform.flip(damage_frame, True, False))
                     
                 entity["damage_frames"][state_name] = damage_frames
+                entity["flipped_damage_frames"][state_name] = flipped_damage
 
     def update_entity(self, entity):
         if entity["entity_type"] in {"npc", "enemy"}:
@@ -282,6 +292,9 @@ class Entities:
 
         new_state = entity["current_state"]
         if entity["entity_type"] in {"npc", "enemy"}:
+            distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
+            is_aggro = distance_to_player < entity.get("aggro_range", 200)
+
             if abs(entity["vel_x"]) > 0.1:
                 new_state = "walk"
                 
@@ -290,9 +303,6 @@ class Entities:
                         entity["facing_direction"] = 1 if entity["vel_x"] > 0 else -1
                         
                 else:
-                    distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
-                    is_aggro = distance_to_player < entity.get("aggro_range", 200)
-                    
                     if is_aggro and not entity.get("fleeing", False):
                         entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
                         
@@ -310,8 +320,7 @@ class Entities:
                     pass
                     
                 else:
-                    distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
-                    if distance_to_player < entity.get("aggro_range", 200) and not entity.get("fleeing", False):
+                    if is_aggro and not entity.get("fleeing", False):
                         entity["facing_direction"] = 1 if entity["x"] < self.game.player.x else -1
 
         if new_state != entity["current_state"] and new_state in entity["states"]:
@@ -708,23 +717,11 @@ class Entities:
         
         sprite_x = entity["x"] - cam_x - entity["width"] // 2
         sprite_y = entity["y"] - cam_y - entity["height"] // 2
-                
-        current_image = entity["image"]
         
-        if entity.get("damage_effect", 0) > 0:
-            if entity.get("damage_frames") and entity.get("current_state"):
-                damage_frames = entity["damage_frames"].get(entity["current_state"], [])
-                
-                if damage_frames and entity["animation_frame"] < len(damage_frames):
-                    current_image = damage_frames[entity["animation_frame"]]
-                    
-            elif entity.get("damage_image"):
-                current_image = entity["damage_image"]
-            
-            entity["damage_effect"] -= 0.05
-            if entity["damage_effect"] < 0:
-                entity["damage_effect"] = 0
-
+        current_image = entity["image"]
+        current_state = entity.get("current_state")
+        frame_idx = entity.get("animation_frame", 0)
+        
         flip_image = False
         
         if entity["entity_type"] == "npc":
@@ -741,7 +738,34 @@ class Entities:
                 flip_image = entity.get("flip_x", False)
         
         if flip_image:
-            current_image = pg.transform.flip(current_image, True, False)
+            flipped_frames = entity.get("flipped_frames", {})
+            
+            if current_state in flipped_frames and frame_idx < len(flipped_frames[current_state]):
+                current_image = flipped_frames[current_state][frame_idx]
+                
+            else:
+                current_image = pg.transform.flip(current_image, True, False)
+        
+        if entity.get("damage_effect", 0) > 0:
+            if entity.get("damage_frames") and current_state:
+                if flip_image:
+                    flipped_damage = entity.get("flipped_damage_frames", {}).get(current_state, [])
+                    if flipped_damage and frame_idx < len(flipped_damage):
+                        current_image = flipped_damage[frame_idx]
+                        
+                else:
+                    damage_frames = entity["damage_frames"].get(current_state, [])
+                    if damage_frames and frame_idx < len(damage_frames):
+                        current_image = damage_frames[frame_idx]
+                    
+            elif entity.get("damage_image"):
+                current_image = entity["damage_image"]
+                if flip_image:
+                    current_image = pg.transform.flip(current_image, True, False)
+            
+            entity["damage_effect"] -= 0.05
+            if entity["damage_effect"] < 0:
+                entity["damage_effect"] = 0
         
         self.game.screen.blit(current_image, (sprite_x, sprite_y))
 
@@ -869,7 +893,7 @@ class Entities:
         half_w = screen_w // 2
         half_h = screen_h // 2
         
-        self.update_sounds() # will pass entity, put in the for loop, and put in is_onscreen when I add indicidual entity sounds
+        self.update_sounds()
         
         for entity in self.entities[:]:
             entity_x = entity["x"]
