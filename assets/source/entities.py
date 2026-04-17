@@ -869,6 +869,8 @@ class Entities:
         half_w = screen_w // 2
         half_h = screen_h // 2
         
+        self.update_sounds() # will pass entity, put in the for loop, and put in is_onscreen when I add indicidual entity sounds
+        
         for entity in self.entities[:]:
             entity_x = entity["x"]
             entity_y = entity["y"]
@@ -905,7 +907,6 @@ class Entities:
             self.apply_gravity(entity)
             self.apply_horizontal_movement(entity)
             self.update_animation(entity)
-            self.update_sounds() # will pass entity and put in is_onscreen when I add indicidual entity sounds
             self.update_entity(entity)
             
             if is_on_screen:
