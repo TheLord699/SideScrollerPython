@@ -1861,7 +1861,9 @@ class Player:
         map_tiles = self.game.map.tiles
         cached_tiles = getattr(self, "cached_tile_surfaces", {})
         
-        for tile_index, current_tile in enumerate(map_tiles):
+        sorted_tiles = sorted(map_tiles, key=lambda tile: tile.get("layer", 0))
+        
+        for current_tile in sorted_tiles:
             tile_pixel_x = center_pixel_x + current_tile.get("x", 0) * tile_pixel_size
             tile_pixel_y = center_pixel_y + current_tile.get("y", 0) * tile_pixel_size
             
