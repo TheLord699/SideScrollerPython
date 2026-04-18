@@ -186,7 +186,7 @@ class Environment:
       self.game.entities.create_entity("item", "Gold", 100, 500)
       self.game.entities.create_entity("item", "Gold", 150, 500)
       self.game.entities.create_entity("item", "Potion", -50, 500)
-      self.game.entities.create_entity("npc", "Bob", 250, 500)
+      self.game.entities.create_entity("npc", "Bob", 3850, 500)
       self.game.entities.create_entity("npc", "Bab", 600, 500)
       self.game.entities.create_entity("npc", "Jimmy", 1500, 500)
       self.game.entities.create_entity("actor", "Rock", 0, 1200)

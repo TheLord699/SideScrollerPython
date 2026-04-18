@@ -56,7 +56,7 @@
           "speed": 0.15
         }
       },
-      "message": ["hi", "my name is Bob", "how are you?"]
+      "message": ["look who it is", "you've managed to \nmake it to the end?", "dev note: this level \nis short and smelly"]
     },
     "Bab": {
       "name": "Bab",
