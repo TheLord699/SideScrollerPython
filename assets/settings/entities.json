@@ -150,6 +150,46 @@
       "entity_abilities": ["pushable"],
       "push_force": 70,
       "script": "assets/source/behaviour_scripts/bab.py"
+    },
+    "Jelly": {
+      "name": "Jelly",
+      "health": 30,
+      "amount": 0,
+      "hitbox_offset_y": 11,
+      "hitbox_width": 36,
+      "hitbox_height": 36,
+      "weight": 0.6,
+      "width": 60,
+      "height": 60,
+      "tile_sheet": ["assets/sprites/npc/Basic Asset Pack/Basic Monster Animations/Ochre Jelly/OchreJelly.png", 16, 16],
+      "index": [0, 0],
+      "behavior": "aggressive",
+      "move_speed": 0.7,
+      "jump_force": 10,
+      "aggro_range": 120,
+      "stop_distance": 25,
+      "attack_damage": 0.05,
+      "attack_knockback": 2,
+      "attack_cooldown_max": 12,
+      "states": {
+        "idle": {
+          "start_row": 0,
+          "start_col": 0,
+          "frames": 1,
+          "cols": 1,
+          "speed": 0.1
+        },
+        "walk": {
+          "start_row": 0,
+          "start_col": 0,
+          "frames": 4,
+          "cols": 4,
+          "speed": 0.18
+        }
+      },
+      "entity_abilities": ["pushable"],
+      "push_force": 40,
+      "script": "assets/source/behaviour_scripts/jelly.py"
     }
   },
   "actors": {

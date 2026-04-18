@@ -189,9 +189,9 @@ class Environment:
       self.game.entities.create_entity("npc", "Bob", 250, 500)
       self.game.entities.create_entity("npc", "Bab", 600, 500)
       self.game.entities.create_entity("npc", "Jimmy", 1500, 500)
-      self.game.entities.create_entity("actor", "Rock", 350, 500)
-      self.game.entities.create_entity("enemy", "Bab", 380, 500)
-      self.game.entities.create_entity("enemy", "Bab", 2300, 500)
+      self.game.entities.create_entity("actor", "Rock", 0, 1200)
+      self.game.entities.create_entity("enemy", "Jelly", 380, 500)
+      self.game.entities.create_entity("enemy", "Jelly", 2300, 500)
         
   def run_menu(self):
     self.reset()
