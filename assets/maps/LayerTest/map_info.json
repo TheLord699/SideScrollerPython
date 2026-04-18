@@ -5629,14 +5629,6 @@
       }
     },
     {
-      "x": 200,
-      "y": 500,
-      "type": "entity",
-      "entity_type": "items",
-      "entity_name": "Gold",
-      "layer": 0
-    },
-    {
       "x": 0,
       "y": 17,
       "id": 435,
