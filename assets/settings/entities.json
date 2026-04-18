@@ -184,7 +184,7 @@
           "start_col": 0,
           "frames": 4,
           "cols": 4,
-          "speed": 0.18
+          "speed": 0.145
         }
       },
       "entity_abilities": ["pushable"],
