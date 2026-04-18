@@ -295,7 +295,7 @@ class Entities:
             distance_to_player = math.hypot(entity["x"] - self.game.player.x, entity["y"] - self.game.player.y)
             is_aggro = distance_to_player < entity.get("aggro_range", 200)
 
-            if abs(entity["vel_x"]) > 0.1:
+            if abs(entity["vel_x"]) > 0.1 and entity.get("on_ground", True):
                 new_state = "walk"
                 
                 if self.game.player.current_state == "death":
