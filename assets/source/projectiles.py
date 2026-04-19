@@ -273,6 +273,7 @@ class ProjectileSystem:
                 if projectile.push_force:
                     self.game.player.vel_x = direction_sign * projectile.push_force
                     if self.game.player.vel_y >= 0:
+                    # will add back later
                         #self.game.player.vel_y = -abs(projectile.push_force) * 0.1
                         
                     #else:
