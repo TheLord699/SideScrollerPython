@@ -6,9 +6,8 @@ STATE_WANDER  = "wander"
 STATE_CHASE   = "chase"
 STATE_ATTACK  = "attack"
 
-JUMP_CHANCE        = 0.08
+JUMP_CHANCE = 0.08
 WANDER_JUMP_CHANCE = 0.02
-
 
 def get_player_distance(entity, ai_system):
     player = ai_system.game.player
