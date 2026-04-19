@@ -617,7 +617,7 @@ class UI:
 
         pg.draw.rect(self.game.screen, (185, 185, 185), track_rect)
         pg.draw.rect(self.game.screen, (0, 0, 255), knob_rect)
-        pg.draw.rect(self.game.screen, (235, 235, 235), knob_rect, 3)
+        pg.draw.rect(self.game.screen, (250, 250, 250), knob_rect, 3)
 
         if pg.mouse.get_pressed()[0]:
             if knob_rect.collidepoint(mouse_pos) and not element["grabbed"]:
