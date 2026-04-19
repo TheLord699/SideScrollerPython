@@ -1,14 +1,13 @@
 import math
 import random
 
-STATE_IDLE    = "idle"
-STATE_WANDER  = "wander"
-STATE_CHASE   = "chase"
-STATE_ATTACK  = "attack"
+STATE_IDLE   = "idle"
+STATE_WANDER = "wander"
+STATE_CHASE  = "chase"
+STATE_ATTACK = "attack"
 
-JUMP_CHANCE        = 0.08
-WANDER_JUMP_CHANCE = 0.02
-
+JUMP_CHANCE        = 0.04
+WANDER_JUMP_CHANCE = 0.01
 
 def get_player_distance(entity, ai_system):
     player = ai_system.game.player
@@ -22,13 +21,13 @@ def set_facing(entity, direction):
         entity["facing_direction"] = direction
 
 def init_state(entity):
-    entity.setdefault("jelly_state", STATE_IDLE)
-    entity.setdefault("jelly_idle_timer", random.randint(20, 60))
+    entity.setdefault("slime_state", STATE_IDLE)
+    entity.setdefault("slime_idle_timer", random.randint(30, 90))
     entity.setdefault("facing", 1)
     entity.setdefault("facing_direction", 1)
 
 def set_state(entity, new_state):
-    entity["jelly_state"] = new_state
+    entity["slime_state"] = new_state
 
 def try_jump(entity, force_multiplier=1.0):
     if entity.get("on_ground", False) or entity.get("was_on_ground", False):
@@ -36,13 +35,13 @@ def try_jump(entity, force_multiplier=1.0):
 
 def do_idle(entity, ai_system):
     entity["vel_x"] = 0
-    entity["jelly_idle_timer"] -= 1
+    entity["slime_idle_timer"] -= 1
 
-    if random.random() < 0.005:
-        try_jump(entity, force_multiplier=0.6)
+    if random.random() < 0.002:
+        try_jump(entity, force_multiplier=0.5)
 
-    if entity["jelly_idle_timer"] <= 0:
-        entity["jelly_idle_timer"] = random.randint(20, 60)
+    if entity["slime_idle_timer"] <= 0:
+        entity["slime_idle_timer"] = random.randint(30, 90)
         set_state(entity, STATE_WANDER)
         ai_system.reset_wander_timer(entity)
 
@@ -66,10 +65,10 @@ def do_wander(entity, ai_system):
     set_facing(entity, entity["ai_direction"])
 
     if random.random() < WANDER_JUMP_CHANCE:
-        try_jump(entity, force_multiplier=0.7)
+        try_jump(entity, force_multiplier=0.6)
 
 def do_chase(entity, ai_system, distance, delta_x, delta_y):
-    aggro_range   = entity.get("aggro_range", 120)
+    aggro_range   = entity.get("aggro_range", 200)
     stop_distance = entity.get("stop_distance", 25)
 
     if distance > aggro_range:
@@ -83,10 +82,18 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
 
     if distance > stop_distance:
         if entity.get("on_ground", False):
+            if not ai_system.check_floor_ahead(entity):
+                entity["vel_x"] = 0
+                return
+            
+            if ai_system.check_wall_collision(entity):
+                entity["vel_x"] = 0
+                return
+            
             entity["vel_x"] = direction * entity.get("move_speed", 1) * 1.2
             
         else:
-            entity["vel_x"] += direction * 0.3
+            entity["vel_x"] += direction * 0.2
             entity["vel_x"] = max(-entity.get("move_speed", 1) * 2, min(entity["vel_x"], entity.get("move_speed", 1) * 2))
 
         if random.random() < JUMP_CHANCE:
@@ -94,7 +101,7 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
             try_jump(entity, force_multiplier=up_boost)
 
         if ai_system.check_wall_collision(entity):
-            try_jump(entity, force_multiplier=1.1)
+            try_jump(entity, force_multiplier=1.0)
 
     else:
         entity["vel_x"] *= 0.85
@@ -111,11 +118,11 @@ def do_attack(entity, ai_system, distance, delta_x):
         entity["attack_timer"] = 0
 
     if entity["attack_timer"] <= 0:
-        try_jump(entity, force_multiplier=0.5)
-        entity["vel_x"] = direction * entity.get("move_speed", 1) * 1.5
+        try_jump(entity, force_multiplier=0.4)
+        entity["vel_x"] = direction * entity.get("move_speed", 1) * 1.2
 
         ai_system.ai_attack(entity)
-        entity["attack_timer"] = entity.get("attack_cooldown_max", 12)
+        entity["attack_timer"] = entity.get("attack_cooldown_max", 18)
 
     else:
         entity["attack_timer"] -= 1
@@ -137,11 +144,11 @@ def update(entity, ai_system):
         return
 
     distance, delta_x, delta_y = get_player_distance(entity, ai_system)
-    state = entity["jelly_state"]
+    state = entity["slime_state"]
 
-    if state in (STATE_IDLE, STATE_WANDER) and distance < entity.get("aggro_range", 120):
+    if state in (STATE_IDLE, STATE_WANDER) and distance < entity.get("aggro_range", 200):
         set_state(entity, STATE_CHASE)
-        try_jump(entity, force_multiplier=1.0)
+        try_jump(entity, force_multiplier=0.8)
         return
 
     if state == STATE_IDLE:

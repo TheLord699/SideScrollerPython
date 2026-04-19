@@ -158,13 +158,13 @@
       "hitbox_offset_y": 11,
       "hitbox_width": 36,
       "hitbox_height": 36,
-      "weight": 0.6,
+      "weight": 0.9,
       "width": 60,
       "height": 60,
       "tile_sheet": ["assets/sprites/npc/Basic Asset Pack/Basic Monster Animations/Ochre Jelly/OchreJelly.png", 16, 16],
       "index": [0, 0],
       "behavior": "aggressive",
-      "move_speed": 0.5,
+      "move_speed": 0.7,
       "jump_force": 10,
       "aggro_range": 200,
       "stop_distance": 25,
@@ -188,8 +188,48 @@
         }
       },
       "entity_abilities": ["pushable"],
-      "push_force": 40,
+      "push_force": 20,
       "script": "assets/source/behaviour_scripts/jelly.py"
+    },
+    "Slime": {
+      "name": "Slime",
+      "health": 80,
+      "amount": 0,
+      "hitbox_offset_y": 11,
+      "hitbox_width": 36,
+      "hitbox_height": 36,
+      "weight": 1.4,
+      "width": 60,
+      "height": 60,
+      "tile_sheet": ["assets/sprites/npc/Basic Asset Pack/Basic Monster Animations/Death Slime/DeathSlime.png", 16, 16],
+      "index": [0, 0],
+      "behavior": "aggressive",
+      "move_speed": 0.9,
+      "jump_force": 9,
+      "aggro_range": 200,
+      "stop_distance": 25,
+      "attack_damage": 1.5,
+      "attack_knockback": 1,
+      "attack_cooldown_max": 18,
+      "states": {
+        "idle": {
+          "start_row": 0,
+          "start_col": 0,
+          "frames": 1,
+          "cols": 1,
+          "speed": 0.1
+        },
+        "walk": {
+          "start_row": 0,
+          "start_col": 0,
+          "frames": 4,
+          "cols": 4,
+          "speed": 0.145
+        }
+      },
+      "entity_abilities": ["pushable"],
+      "push_force": 15,
+      "script": "assets/source/behaviour_scripts/slime.py"
     }
   },
   "actors": {
