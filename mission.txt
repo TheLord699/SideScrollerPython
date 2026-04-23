@@ -33,7 +33,6 @@ Do immediately:
 -fix tag pickup/delete conflict
 
 
-- need to make it that you can place anything including entities in the editor, and load entities from the map and not using functions in environment class
 - need all weapons in weapon_inventory to be pre loaded instead of only the weapon currently equipped
 
 
