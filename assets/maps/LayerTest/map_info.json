@@ -8059,15 +8059,6 @@
       "overrides": {}
     },
     {
-      "x": 12.0,
-      "y": 14.0,
-      "type": "entity",
-      "entity_type": "npc",
-      "entity_name": "Bob",
-      "layer": 0,
-      "overrides": {}
-    },
-    {
       "x": 31.0,
       "y": 15.0,
       "type": "entity",
@@ -8104,8 +8095,17 @@
       "overrides": {}
     },
     {
-      "x": 79.0,
-      "y": 12.5,
+      "x": -3.0,
+      "y": 33.0,
+      "type": "entity",
+      "entity_type": "actor",
+      "entity_name": "Rock",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 13.0,
+      "y": 14.0,
       "type": "entity",
       "entity_type": "npc",
       "entity_name": "Bab",
@@ -8113,11 +8113,11 @@
       "overrides": {}
     },
     {
-      "x": -3.0,
-      "y": 33.0,
+      "x": 79.0,
+      "y": 12.5,
       "type": "entity",
-      "entity_type": "actor",
-      "entity_name": "Rock",
+      "entity_type": "npc",
+      "entity_name": "Bob",
       "layer": 0,
       "overrides": {}
     }
