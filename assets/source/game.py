@@ -92,6 +92,7 @@ class Environment:
       if self.joystick is not None:
         print("Controller disconnected")
         self.joystick = None
+
       return
 
     if self.joystick is not None:
@@ -173,28 +174,9 @@ class Environment:
 
   def start_game(self):
     if getattr(self, "current_map", None) != self.maps["TestMap"]:
-      # will load from json
-      self.handle_music("TestMap")
       #self.lighting = True
       self.load_map("TestMap")
-      self.load_background_foreground("assets/maps/LayerTest")
-      
-      self.game.entities.reset()
-      self.game.entities.create_entity("item", "Red Gem", 0, 500)
-      self.game.entities.create_entity("enemy", "Bab", 200, 500)
-      self.game.entities.create_entity("item", "Potion", 50, 500) 
-      self.game.entities.create_entity("item", "Gold", 100, 500)
-      self.game.entities.create_entity("item", "Gold", 150, 500)
-      self.game.entities.create_entity("item", "Potion", -50, 500)
-      self.game.entities.create_entity("npc", "Bob", 3850, 500)
-      self.game.entities.create_entity("enemy", "Bab", 4350, 500)
-      self.game.entities.create_entity("npc", "Bab", 600, 500)
-      self.game.entities.create_entity("npc", "Jimmy", 1500, 500)
-      self.game.entities.create_entity("actor", "Rock", 0, 1200)
-      self.game.entities.create_entity("enemy", "Jelly", 380, 500)
-      self.game.entities.create_entity("enemy", "Slime", 2300, 500)
-      self.game.entities.create_entity("enemy", "Jelly", 2500, 500)
-        
+  
   def run_menu(self):
     self.reset()
     if self.menu == "play":
@@ -210,17 +192,21 @@ class Environment:
     self.last_menu = self.menu
 
   def load_background_foreground(self, map_path):
-    if not self.menu_background_foreground_loaded:
+    if not hasattr(self, "current_background_path"):
+      self.current_background_path = None
+    
+    if self.current_background_path != map_path:
       self.game.background.load(map_path)
       self.game.foreground.load(map_path)
-      self.menu_background_foreground_loaded = True
+      self.current_background_path = map_path
 
   def reset(self):
     if self.menu == "death":
       return 
 
     if self.menu in {"play", "main"} and self.last_menu not in {"settings", "select_menu"}:
-      self.menu_background_foreground_loaded = False
+      if hasattr(self, 'current_background_path'):
+        self.current_background_path = None
       pg.mixer.stop()
 
     self.clear_ui()
@@ -238,10 +224,78 @@ class Environment:
   def load_map(self, map_name):
     self.current_map = self.maps[map_name]
     self.game.map.load(self.current_map)
+    self.load_background_foreground(self.current_map)
+    self.spawn_entities(self.current_map)
+    self.handle_music(map_name)
 
   def change_menu(self, new_menu):
     #self.game.map.tile_hitboxes = []
     return lambda: setattr(self, "menu", new_menu)
+  
+  def spawn_entities(self, map_path):
+    map_info_path = os.path.join(map_path, "map_info.json")
+    if not os.path.exists(map_info_path):
+      return
+
+    try:
+      map_data = load_json(map_info_path)
+
+    except Exception as e:
+      print(f"Error loading map for entity spawn: {e}")
+      return
+
+    placements = map_data.get("entity_placements", [])
+    if not placements:
+      return
+
+    if hasattr(self.game.map, "tile_size") and self.game.map.tile_size:
+      tile_size = self.game.map.tile_size
+        
+    else:
+      tile_size = 16
+    
+    visual_tile_size = tile_size * self.scale
+    type_map = {"items": "item", "npcs": "npc", "enemies": "enemy", "actors": "actor"}
+
+    for placement in placements:
+      raw_type = placement.get("entity_type", "")
+      entity_type = type_map.get(raw_type, raw_type)
+      entity_name = placement.get("entity_name")
+      overrides = placement.get("overrides", {})
+
+      if not entity_type or not entity_name:
+          continue
+
+      tile_x = placement.get("x", 0)
+      tile_y = placement.get("y", 0)
+      
+      world_x = tile_x * visual_tile_size
+      world_y = tile_y * visual_tile_size
+
+      try:
+        entity = self.game.entities.create_entity(entity_type, entity_name, world_x, world_y)
+
+      except Exception as e:
+        print(f"Failed to spawn {entity_type} '{entity_name}': {e}")
+        continue
+
+      if overrides and entity:
+        for key, value in overrides.items():
+          entity[key] = value
+
+        if "health" in overrides and "max_health" not in overrides:
+          entity["max_health"] = entity["health"]
+
+        if ("width" in overrides or "height" in overrides) and entity.get("image"):
+          new_w = entity["width"]
+          new_h = entity["height"]
+          
+          entity["image"] = pg.transform.scale(entity["image"], (new_w, new_h))
+
+          if entity.get("animation_frames"):
+            for state_name, state_data in entity["animation_frames"].items():
+              entity["animation_frames"][state_name]["frames"] = [pg.transform.scale(f, (new_w, new_h)) for f in state_data["frames"]]
+              entity["flipped_frames"][state_name] = [pg.transform.flip(f, True, False) for f in entity["animation_frames"][state_name]["frames"]]
 
   def update(self):
     self.current_time = pg.time.get_ticks()

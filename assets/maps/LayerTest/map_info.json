@@ -468,9 +468,7 @@
       "id": 14,
       "layer": 1,
       "direction": 0,
-      "hitbox": false,
-      "slippy": true,
-      "friction": 0.5
+      "hitbox": false
     },
     {
       "x": 9,
@@ -478,9 +476,7 @@
       "id": 15,
       "layer": 1,
       "direction": 0,
-      "hitbox": false,
-      "slippy": true,
-      "friction": 0.5
+      "hitbox": false
     },
     {
       "x": 1,
@@ -488,9 +484,7 @@
       "id": 41,
       "layer": 1,
       "direction": 0,
-      "hitbox": false,
-      "swimmable": true,
-      "ripple": true
+      "hitbox": false
     },
     {
       "x": 2,
@@ -1666,8 +1660,7 @@
       "id": 354,
       "direction": 0,
       "layer": 0,
-      "hitbox": true,
-      "damage": 2
+      "hitbox": true
     },
     {
       "x": 34,
@@ -1675,8 +1668,7 @@
       "id": 330,
       "direction": 0,
       "layer": 0,
-      "hitbox": true,
-      "damage": 2
+      "hitbox": true
     },
     {
       "x": 34,
@@ -1684,8 +1676,7 @@
       "id": 305,
       "direction": 0,
       "layer": 0,
-      "hitbox": true,
-      "damage": 2
+      "hitbox": true
     },
     {
       "x": 34,
@@ -1693,8 +1684,7 @@
       "id": 280,
       "direction": 0,
       "layer": 0,
-      "hitbox": true,
-      "damage": 2
+      "hitbox": true
     },
     {
       "x": 30,
@@ -1702,8 +1692,7 @@
       "id": 276,
       "direction": 0,
       "layer": 0,
-      "hitbox": true,
-      "damage": 0.5
+      "hitbox": true
     },
     {
       "x": 31,
@@ -8021,6 +8010,116 @@
       "direction": 0,
       "layer": -1,
       "hitbox": false
+    }
+  ],
+  "entity_placements": [
+    {
+      "x": 0.0,
+      "y": 18.0,
+      "type": "entity",
+      "entity_type": "item",
+      "entity_name": "Potion",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 1.0,
+      "y": 18.0,
+      "type": "entity",
+      "entity_type": "item",
+      "entity_name": "Red Gem",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 2.0,
+      "y": 18.0,
+      "type": "entity",
+      "entity_type": "item",
+      "entity_name": "Gold",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 3.0,
+      "y": 18.0,
+      "type": "entity",
+      "entity_type": "item",
+      "entity_name": "Potion",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 8.0,
+      "y": 16.0,
+      "type": "entity",
+      "entity_type": "enemy",
+      "entity_name": "Jelly",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 12.0,
+      "y": 14.0,
+      "type": "entity",
+      "entity_type": "npc",
+      "entity_name": "Bob",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 31.0,
+      "y": 15.0,
+      "type": "entity",
+      "entity_type": "npc",
+      "entity_name": "Jimmy",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 47.0,
+      "y": 12.0,
+      "type": "entity",
+      "entity_type": "enemy",
+      "entity_name": "Slime",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 52.0,
+      "y": 12.0,
+      "type": "entity",
+      "entity_type": "enemy",
+      "entity_name": "Jelly",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 89.0,
+      "y": 12.0,
+      "type": "entity",
+      "entity_type": "enemy",
+      "entity_name": "Bab",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 79.0,
+      "y": 12.5,
+      "type": "entity",
+      "entity_type": "npc",
+      "entity_name": "Bab",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": -3.0,
+      "y": 33.0,
+      "type": "entity",
+      "entity_type": "actor",
+      "entity_name": "Rock",
+      "layer": 0,
+      "overrides": {}
     }
   ]
 }
