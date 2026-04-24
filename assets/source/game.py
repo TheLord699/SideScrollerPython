@@ -269,8 +269,8 @@ class Environment:
       tile_x = placement.get("x", 0)
       tile_y = placement.get("y", 0)
       
-      world_x = tile_x * visual_tile_size
-      world_y = tile_y * visual_tile_size
+      world_x = tile_x * visual_tile_size + visual_tile_size // 2
+      world_y = tile_y * visual_tile_size + visual_tile_size // 2
 
       try:
         entity = self.game.entities.create_entity(entity_type, entity_name, world_x, world_y)

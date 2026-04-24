@@ -356,14 +356,15 @@ def draw_tiles(tiles, all_tile_surfaces, camera_x, camera_y,
             ent_type = tile.get("entity_type", "items")
             ent_name = tile.get("entity_name", "")
             
-            plural_to_singular = {"items": "items", "npcs": "npcs", "enemies": "enemies", "actors": "actors"}
-            lookup_type = plural_to_singular.get(ent_type, ent_type)
+            singular_to_plural = {"item": "items", "npc": "npcs", "enemy": "enemies", "actor": "actors"}
+            lookup_type = singular_to_plural.get(ent_type, ent_type)
             
             ent_info = entity_data.get(lookup_type, {}).get(ent_name)
             preview = get_entity_preview(ent_info, int(visual_size)) if ent_info else None
             
             if preview:
                 screen.blit(preview, (tx, ty))
+                
             else:
                 pg.draw.rect(screen, (200, 100, 200), (tx, ty, visual_size, visual_size))
             
