@@ -350,13 +350,12 @@ class Map:
                 pg.draw.rect(self.game.screen, (0, 0, 255), hitbox_rect, 2)
 
     def update(self):
-        if self.game.environment.menu in {"play", "death", "pause"}:
-            if hasattr(self.game, "player") and self.game.player:
-                self.cam_x = int(self.game.player.cam_x)
-                self.cam_y = int(self.game.player.cam_y)
-                
-            else:
-                self.handle_camera_movement()
-                
-            self.render()
-            self.render_debug(self.game.player.hitbox)
+        #if self.game.environment.menu in {"play", "death", "pause"}:
+        if not getattr(self.game.player, "settings_loaded", False):
+            return
+            
+        self.cam_x = int(self.game.player.cam_x)
+        self.cam_y = int(self.game.player.cam_y)
+            
+        self.render()
+        self.render_debug(self.game.player.hitbox)

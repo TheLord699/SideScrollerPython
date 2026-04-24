@@ -36,6 +36,8 @@ Do immediately:
 
 -----^^^^old^^^^------------------
 
+need to load all ai scripts for a level instead of once they apear on screen
+UI needs a translation func for positions, want to change resolution but dont want to update all UI pos code
 
 
 

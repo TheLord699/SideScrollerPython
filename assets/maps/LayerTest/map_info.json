@@ -8289,5 +8289,9 @@
       "layer": 0,
       "overrides": {}
     }
-  ]
+  ],
+  "player_spawn": {
+    "x": -1.0,
+    "y": 18.0
+  }
 }

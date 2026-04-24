@@ -888,6 +888,9 @@ class Entities:
                 )
                             
     def update(self):
+        if not getattr(self.game.player, "settings_loaded", False):
+            return
+        
         cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
         screen_w, screen_h = self.game.screen_width, self.game.screen_height
         

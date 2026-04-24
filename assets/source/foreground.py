@@ -9,6 +9,7 @@ class Foreground:
         self.game = game
         self.enable_foreground = False
         self.screen_effects = []
+        
         self.load_settings()
 
     def load_settings(self):
@@ -164,9 +165,13 @@ class Foreground:
             print(f"Failed to load foreground info: {error}")
 
     def update_camera(self):
-        if hasattr(self.game, "player"):
-            self.cam_x = self.game.player.cam_x
-            self.cam_y = self.game.player.cam_y
+        if not getattr(self.game.player, "settings_loaded", False):
+            self.cam_x = 0
+            self.cam_y = 0
+            return
+        
+        self.cam_x = self.game.player.cam_x
+        self.cam_y = self.game.player.cam_y
 
     def update_layers(self):
         current_time = self.game.environment.current_time * 0.001

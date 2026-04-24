@@ -27,7 +27,7 @@ VERSION_HISTORY_MAX = 50
 ANIMATION_SPEED = 0.1
 MAX_ANIMATION_FRAMES = 10
 
-ENTITY_TYPES = ["items", "npcs", "enemies", "actors"]
+ENTITY_TYPES = ["items", "npcs", "enemies", "actors", "player"]
 VISUAL_SCALE = 2
 BASE_TILE_SIZE = 16
 
@@ -130,6 +130,15 @@ def load_map(map_name):
         ep.setdefault("overrides", {})
     
     tiles = tiles + entity_placements
+    
+    player_spawn = map_data.get("player_spawn")
+    if player_spawn:
+        tiles.append({
+            "x": player_spawn["x"],
+            "y": player_spawn["y"],
+            "type": "player_spawn",
+            "layer": 0
+        })
 
     return tiles, tilesheets, folder
 
@@ -180,6 +189,18 @@ def load_entity_data():
         return {"items": {}, "npcs": {}, "enemies": {}, "actors": {}}
 
 def get_entity_preview(entity_info: dict, size: int = 40):
+    if entity_info is None:
+        return None
+    
+    if entity_info.get("__player__"):
+        surf = pg.Surface((size, size), pg.SRCALPHA)
+        pg.draw.circle(surf, (100, 180, 255), (size // 2, size // 2), size // 2 - 2)
+        pg.draw.circle(surf, (255, 255, 255), (size // 2, size // 2), size // 2 - 2, 2)
+        
+        label = font_small.render("P", True, (255, 255, 255))
+        surf.blit(label, (size // 2 - label.get_width() // 2, size // 2 - label.get_height() // 2))
+        return surf
+    
     tile_sheet = entity_info.get("tile_sheet")
     index = entity_info.get("index")
     
@@ -190,6 +211,7 @@ def get_entity_preview(entity_info: dict, size: int = 40):
 
     if isinstance(index, (list, tuple)) and len(index) == 2:
         row, col = int(index[0]), int(index[1])
+        
     else:
         return None
 
@@ -227,14 +249,20 @@ def save_map(folder, tiles, tilesheets):
             "tile_dimension": sheet["tile_dimension"]
         })
 
-    map_tiles = [t for t in tiles if t.get("type") != "entity"]
+    map_tiles = [t for t in tiles if t.get("type") not in ("entity", "player_spawn")]
     entity_placements = [t for t in tiles if t.get("type") == "entity"]
+    
+    player_spawns = [t for t in tiles if t.get("type") == "player_spawn"]
+    player_spawn = {"x": player_spawns[-1]["x"], "y": player_spawns[-1]["y"]} if player_spawns else None
 
     map_info = {
         "tilesheets": saved_sheets,
         "tiles": map_tiles,
         "entity_placements": entity_placements
     }
+    
+    if player_spawn:
+        map_info["player_spawn"] = player_spawn
 
     os.makedirs(folder, exist_ok=True)
     
@@ -301,7 +329,7 @@ def draw_tiles(tiles, all_tile_surfaces, camera_x, camera_y,
                show_layers=False, current_layer=0, layer_mode=False, panel_width=256):
     current_time = time.time()
     
-    regular_tiles = [t for t in tiles if t.get("type") != "entity"]
+    regular_tiles = [t for t in tiles if t.get("type") not in ("entity", "player_spawn")]
     
     for tile in sorted(regular_tiles, key=lambda t: t["layer"]):
         visual_size = all_tile_surfaces[tile.get("tilesheet", 0)]["visual_size"] * zoom_level
@@ -346,12 +374,30 @@ def draw_tiles(tiles, all_tile_surfaces, camera_x, camera_y,
             pg.draw.rect(screen, (0, 255, 255), (tx, ty, visual_size, visual_size), 3)
     
     if show_entities:
-        entity_tiles = [t for t in tiles if t.get("type") == "entity"]
+        entity_tiles = [t for t in tiles if t.get("type") in ("entity", "player_spawn")]
         
         for tile in entity_tiles:
             visual_size = all_tile_surfaces[0]["visual_size"] * zoom_level
             tx = tile["x"] * visual_size - camera_x * zoom_level
             ty = tile["y"] * visual_size - camera_y * zoom_level
+            
+            if tile.get("type") == "player_spawn":
+                preview = get_entity_preview({"__player__": True}, int(visual_size))
+                if preview:
+                    screen.blit(preview, (tx, ty))
+                    
+                else:
+                    pg.draw.rect(screen, (100, 180, 255), (tx, ty, visual_size, visual_size))
+                
+                label = font_small.render("SPAWN", True, (255, 255, 255))
+                bg_rect = pg.Rect(tx, ty + visual_size - 16, visual_size, 16)
+                pg.draw.rect(screen, (0, 0, 0), bg_rect)
+                screen.blit(label, (tx + 2, ty + visual_size - 15))
+                
+                if tile in highlighted_tiles:
+                    pg.draw.rect(screen, (0, 255, 255), (tx, ty, visual_size, visual_size), 3)
+                    
+                continue
             
             ent_type = tile.get("entity_type", "items")
             ent_name = tile.get("entity_name", "")
@@ -526,6 +572,23 @@ def draw_entity_selector(entity_data, selected_entity_type, selected_entity,
         label = font_small.render(entity_type.capitalize(), True, (220, 220, 255))
         screen.blit(label, (tab_rect.x + 4, tab_rect.y + 7))
 
+    if selected_entity_type == "player":
+        entry_rect = pg.Rect(panel_x, panel_y + 30, panel_width - 10, 54)
+        is_selected = (selected_entity == "__player__")
+        color = (50, 50, 70) if not is_selected else (75, 75, 110)
+        pg.draw.rect(screen, color, entry_rect)
+        pg.draw.rect(screen, (70, 70, 100), entry_rect, 1)
+        
+        preview = get_entity_preview({"__player__": True}, 44)
+        if preview:
+            screen.blit(preview, (panel_x + 4, panel_y + 37))
+        
+        name_text = font.render("Player Spawn", True, (255, 255, 255))
+        screen.blit(name_text, (panel_x + 54, panel_y + 38))
+        type_text = font_small.render("spawn point", True, (160, 160, 200))
+        screen.blit(type_text, (panel_x + 54, panel_y + 60))
+        return
+
     if entity_data and selected_entity_type in entity_data:
         entities = entity_data[selected_entity_type]
         item_height = 58
@@ -576,6 +639,9 @@ def entity_selector_click(mx, my, scroll_y, panel_width, entity_data, selected_e
             return ENTITY_TYPES[tab_idx], None
         
         return None, None
+    
+    if selected_entity_type == "player":
+        return "player", "__player__"
     
     rel_y = my - panel_y - tab_height
     item_height = 58
@@ -1067,19 +1133,29 @@ while running:
                                     gx = (mx + camera_x * zoom_level) // visual_size
                                     gy = (my + camera_y * zoom_level) // visual_size
 
-                                type_map = {"items": "item", "npcs": "npc", "enemies": "enemy", "actors": "actor"}
+                                if selected_entity == "__player__":
+                                    tiles[:] = [t for t in tiles if t.get("type") != "player_spawn"]
+                                    tiles.append({
+                                        "x": gx,
+                                        "y": gy,
+                                        "type": "player_spawn",
+                                        "layer": current_layer
+                                    })
                                 
-                                new_entity_tile = {
-                                    "x": gx,
-                                    "y": gy,
-                                    "type": "entity",
-                                    "entity_type": type_map.get(selected_entity_type, selected_entity_type),
-                                    "entity_name": selected_entity,
-                                    "layer": current_layer,
-                                    "overrides": {}
-                                }
-                                
-                                tiles.append(new_entity_tile)
+                                else:
+                                    type_map = {"items": "item", "npcs": "npc", "enemies": "enemy", "actors": "actor"}
+                                    
+                                    new_entity_tile = {
+                                        "x": gx,
+                                        "y": gy,
+                                        "type": "entity",
+                                        "entity_type": type_map.get(selected_entity_type, selected_entity_type),
+                                        "entity_name": selected_entity,
+                                        "layer": current_layer,
+                                        "overrides": {}
+                                    }
+                                    
+                                    tiles.append(new_entity_tile)
 
                     else:
                         resize_handle_left = screen.get_width() - current_panel_width - 5

@@ -16,12 +16,10 @@ class Player:
             1: pg.image.load("assets/sprites/particles/smoke1.png").convert_alpha(),
             2: pg.image.load("assets/sprites/particles/smoke2.png").convert_alpha(),
         }
-           
-        self.load_settings()
-        
+                   
     def load_settings(self):
-        self.x = 0 * self.game.environment.scale  / 3
-        self.y = 900 * self.game.environment.scale  / 3
+        self.x = self.game.environment.player_spawn_x
+        self.y = self.game.environment.player_spawn_y
         self.vel_x = 0
         self.vel_y = 0
         self.speed = 5 # 5

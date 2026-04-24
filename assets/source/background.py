@@ -74,9 +74,13 @@ class Background:
 
 	def update_camera(self):
 		if self.game.environment.menu in {"play", "death"}:
-			if hasattr(self.game, "player"):
-				self.cam_x = self.game.player.cam_x
-				self.cam_y = self.game.player.cam_y
+			if not getattr(self.game.player, "settings_loaded", False):
+				self.cam_x = 0
+				self.cam_y = 0
+				return
+        
+			self.cam_x = self.game.player.cam_x
+			self.cam_y = self.game.player.cam_y
 		
 		elif self.game.environment.menu in {"main", "settings", "select_menu"}: 
 			if not self.menu_scrolling:

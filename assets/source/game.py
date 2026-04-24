@@ -244,6 +244,19 @@ class Environment:
       print(f"Error loading map for entity spawn: {e}")
       return
 
+    player_spawn = map_data.get("player_spawn")
+    if player_spawn:
+      if hasattr(self.game.map, "tile_size") and self.game.map.tile_size:
+        tile_size = self.game.map.tile_size
+        
+      else:
+        tile_size = 16
+        
+      visual_tile_size = tile_size * self.scale
+      
+      self.player_spawn_x = player_spawn["x"] * visual_tile_size + visual_tile_size // 2
+      self.player_spawn_y = player_spawn["y"] * visual_tile_size + visual_tile_size // 2
+
     placements = map_data.get("entity_placements", [])
     if not placements:
       return
