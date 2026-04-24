@@ -95,6 +95,7 @@ class Player:
         self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
         self.weapon_inventory = ["basic_sword", "basic_bow"] # temporary, will be replaced with actual inventory system
         self.equipped_weapon = "basic_sword"
+        self.loaded_weapons = set()
         self.state_frames = {
             "idle": {"frames": 6, "speed": 0.15},
             "walking": {"frames": 8, "speed": 0.2},
@@ -211,77 +212,93 @@ class Player:
                 self.flipped_frames[state].append(flipped_image)
 
     def load_weapon_animations(self):
-        if self.equipped_weapon not in self.weapon_info:
+        weapons_to_load = [w for w in self.weapon_inventory if w in self.weapon_info and w not in self.loaded_weapons]
+        unloaded = self.loaded_weapons - set(self.weapon_inventory)
+                
+        if not weapons_to_load and not unloaded:
             return
 
-        weapon_data = self.weapon_info[self.equipped_weapon]
-        first_sequence_state = f"attacking{self.equipped_weapon}1"
+        for weapon in weapons_to_load:
+            weapon_data = self.weapon_info[weapon]
+            first_sequence_state = f"attacking{weapon}1"
 
-        if first_sequence_state in self.frames and self.frames[first_sequence_state]:
-            return
+            if first_sequence_state in self.frames and self.frames[first_sequence_state]:
+                self.loaded_weapons.add(weapon)
+                continue
 
-        for sequence in range(1, weapon_data.get("sequence", 1) + 1):
-            state_name = f"attacking{self.equipped_weapon}{sequence}"
-            frames_count = weapon_data["frames"][sequence - 1]
+            for sequence in range(1, weapon_data.get("sequence", 1) + 1):
+                state_name = f"attacking{weapon}{sequence}"
+                frames_count = weapon_data["frames"][sequence - 1]
 
-            self.frames[state_name] = []
-            self.flipped_frames[state_name] = []
+                self.frames[state_name] = []
+                self.flipped_frames[state_name] = []
 
-            sheet_paths = [
-                f"assets/sprites/player/weapons/attacking_{self.equipped_weapon}{sequence}.png",
-                f"assets/sprites/player/weapons/{self.equipped_weapon}_attack{sequence}.png",
-                f"assets/sprites/player/weapons/{self.equipped_weapon}{sequence}.png"
-            ]
-
-            sheet = None
-            for sheet_path in sheet_paths:
-                try:
-                    sheet = pg.image.load(sheet_path).convert_alpha()
-                    break
-
-                except:
-                    continue
-
-            if sheet is None:
-                fallback_paths = [
-                    f"assets/sprites/player/attacking_animation.png",
-                    f"assets/sprites/player/attacking{sequence}_animation.png"
+                sheet_paths = [
+                    f"assets/sprites/player/weapons/attacking_{weapon}{sequence}.png",
+                    f"assets/sprites/player/weapons/{weapon}_attack{sequence}.png",
+                    f"assets/sprites/player/weapons/{weapon}{sequence}.png"
                 ]
 
-                for fallback_path in fallback_paths:
+                sheet = None
+                for sheet_path in sheet_paths:
                     try:
-                        sheet = pg.image.load(fallback_path).convert_alpha()
-                        print(f"Using fallback animation: {fallback_path}")
+                        sheet = pg.image.load(sheet_path).convert_alpha()
                         break
 
                     except:
                         continue
 
-            if sheet is None:
-                print(f"Failed to load any animation for {state_name}")
-                continue
+                if sheet is None:
+                    fallback_paths = [
+                        f"assets/sprites/player/attacking_animation.png",
+                        f"assets/sprites/player/attacking{sequence}_animation.png"
+                    ]
 
-            scaled_width = self.sheet_width * self.scale_factor
-            scaled_height = self.sheet_height * self.scale_factor
+                    for fallback_path in fallback_paths:
+                        try:
+                            sheet = pg.image.load(fallback_path).convert_alpha()
+                            print(f"Using fallback animation: {fallback_path}")
+                            break
 
-            for frame_index in range(frames_count):
-                frame_rect = pg.Rect(
-                    frame_index * self.sheet_width,
-                    0,
-                    self.sheet_width,
-                    self.sheet_height
-                )
+                        except:
+                            continue
 
-                frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
-                frame_image.blit(sheet, (0, 0), frame_rect)
-                frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
+                if sheet is None:
+                    print(f"Failed to load any animation for {state_name}")
+                    continue
 
-                flipped_image = pg.transform.flip(frame_image, True, False)
+                scaled_width = self.sheet_width * self.scale_factor
+                scaled_height = self.sheet_height * self.scale_factor
 
-                self.frames[state_name].append(frame_image)
-                self.flipped_frames[state_name].append(flipped_image)
+                for frame_index in range(frames_count):
+                    frame_rect = pg.Rect(
+                        frame_index * self.sheet_width,
+                        0,
+                        self.sheet_width,
+                        self.sheet_height
+                    )
 
-        print(f"Loaded animations for {self.equipped_weapon}")
+                    frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
+                    frame_image.blit(sheet, (0, 0), frame_rect)
+                    frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
+
+                    flipped_image = pg.transform.flip(frame_image, True, False)
+
+                    self.frames[state_name].append(frame_image)
+                    self.flipped_frames[state_name].append(flipped_image)
+
+            self.loaded_weapons.add(weapon)
+
+        for weapon in unloaded:
+            for sequence in range(1, self.weapon_info.get(weapon, {}).get("sequence", 1) + 1):
+                state_name = f"attacking{weapon}{sequence}"
+                if state_name in self.frames:
+                    del self.frames[state_name]
+                    
+                if state_name in self.flipped_frames:
+                    del self.flipped_frames[state_name]
+                    
+            self.loaded_weapons.remove(weapon)
 
     def update_state(self):
         for sound_group in self.sounds.values():
@@ -307,6 +324,9 @@ class Player:
 
         if self.current_health < 0:
             self.current_health = 0
+                
+        if not self.equipped_weapon in self.weapon_inventory:
+            self.equipped_weapon = ""
 
         if self.vel_y >= self.game.environment.max_fall_speed:
             self.vel_y = self.game.environment.max_fall_speed

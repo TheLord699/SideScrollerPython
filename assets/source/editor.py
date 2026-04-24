@@ -117,7 +117,6 @@ def load_map(map_name):
         "tile_dimension": map_data.get("tile_dimension", 32)
     }])
 
-    # Strip gameplay attributes from regular tiles
     for tile in tiles:
         tile.pop("damage", None)
         tile.pop("slippy", None)
