@@ -109,9 +109,10 @@ class Environment:
     self.music_channel.play(self.music[new_track], loops=-1)
     self.current_track = new_track
     
-  def save_data(self): # need to save and load map soon
+  def save_data(self): # need to save entities and maybe save map instead of menu soon
     self.game.data_manager.set_setting("seed", self.seed)
     self.game.data_manager.set_setting("volume", self.volume)
+    self.game.data_manager.set_setting("menu", self.menu)
     self.game.data_manager.set_setting("show_indicators", self.show_indicators)
     self.game.data_manager.set_setting("vigorous_optimizations", self.vigorous_optimizations)
     self.game.data_manager.set_setting("enable_particles", self.game.particles.enable_particles)
@@ -140,6 +141,7 @@ class Environment:
     try:
       self.game.player.load_settings()
       self.game.data_manager.load_data()
+      self.menu = self.game.data_manager.get_setting("menu")
       self.seed = self.game.data_manager.get_setting("seed")
       self.volume = self.game.data_manager.get_setting("volume")
       self.show_indicators = self.game.data_manager.get_setting("show_indicators")
@@ -158,8 +160,6 @@ class Environment:
       
       for index, saved_item in enumerate(saved_inventory):
         self.game.player.inventory[index] = saved_item
-
-      self.menu = "play"
       
     except Exception as e:
       self.menu = "select_menu"
