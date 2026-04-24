@@ -78,6 +78,7 @@ class Entities:
     
     def reset(self):
         self.entities.clear()
+        self.game.ai.script_cache = {}
 
     def item(self, item_name):
         if item_name in self.entity_info["items"]:

@@ -37,9 +37,6 @@ Do immediately:
 -----^^^^old^^^^------------------
 
 
-need to unload scrip cache on entity load func
-
-
 
 
 basically the entire project doesnt use inheritance instead just using Composition/aggregatio and it doesnt use decorators

@@ -8270,6 +8270,24 @@
       "entity_name": "Gold",
       "layer": 0,
       "overrides": {}
+    },
+    {
+      "x": 19.0,
+      "y": 32.0,
+      "type": "entity",
+      "entity_type": "enemy",
+      "entity_name": "Bab",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 7.0,
+      "y": 32.0,
+      "type": "entity",
+      "entity_type": "enemy",
+      "entity_name": "Bab",
+      "layer": 0,
+      "overrides": {}
     }
   ]
 }
