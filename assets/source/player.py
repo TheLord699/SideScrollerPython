@@ -419,8 +419,6 @@ class Player:
 
     def render_health(self):
         previous_health = getattr(self, "previous_health", self.current_health)
-        if previous_health == self.current_health:
-            return
 
         if previous_health != self.current_health:
             for health in range(self.max_health):
