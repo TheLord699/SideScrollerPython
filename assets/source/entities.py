@@ -90,6 +90,27 @@ class Entities:
             
         if hasattr(self, "indicator_bg_cache"):
             self.indicator_bg_cache.clear()
+        
+        if hasattr(self, "health_font"):
+            del self.health_font
+            
+        if hasattr(self, "item_font"):
+            del self.item_font
+        
+        if hasattr(self, "arrow_surface"):
+            del self.arrow_surface
+            
+        if hasattr(self, "arrow_scales"):
+            self.arrow_scales.clear()
+            
+        if hasattr(self, "bubble_surface"):
+            del self.bubble_surface
+            
+        if hasattr(self, "bubble_scales"):
+            self.bubble_scales.clear()
+        
+        if hasattr(self, "dragged_entity"):
+            del self.dragged_entity
 
     def item(self, item_name):
         if item_name in self.entity_info["items"]:

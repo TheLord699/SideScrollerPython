@@ -40,7 +40,7 @@ class Environment:
     
     self.missing_texture = pg.image.load("assets/sprites/missing_texture.png").convert_alpha()
     
-    # will switch to load from json
+    # will switch to load from json, prob related to the map
     self.game.ui.load_sheet("item_sheet", "assets/sprites/gui/items/Sheet.png")
     self.game.ui.load_sheet("hearts", "assets/sprites/gui/health/Hearts.png")
     self.game.ui.load_sheet("ui_sheet", "assets/sprites/gui/ui.png")
