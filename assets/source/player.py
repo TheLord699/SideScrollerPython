@@ -1818,35 +1818,6 @@ class Player:
             (self.hitbox.x - self.cam_x, self.hitbox.y - self.cam_y)
         )
     
-    def shoot_ray(self, origin, destination, color=(255, 255, 0), thickness=2):
-        origin = np.array(origin, dtype=float)
-        destination = np.array(destination, dtype=float)
-
-        direction = destination - origin
-        length = np.linalg.norm(direction)
-        if length == 0:
-            return
-
-        direction /= length
-
-        ray_length = 1000
-        end_point = origin + direction * ray_length
-
-        pg.draw.line(self.game.screen, color, origin, end_point, thickness)
-        self.ray_jump(direction)
-    
-    def ray_jump(self, direction):
-        force_magnitude = 15
-        
-        direction_length = np.linalg.norm(direction)
-        if direction_length == 0:
-            return
-            
-        normalized_direction = direction / direction_length
-        
-        self.x -= normalized_direction[0] * force_magnitude
-        self.y -= normalized_direction[1] * force_magnitude
-
     def render_map(self):
         if not self.in_map:
             self.game.ui.remove_ui_element("map_bg")
