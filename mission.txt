@@ -44,6 +44,10 @@ need to implement proper player/water interactions
 player cache isnt emptied
 in environment need to load sheets for map/menu instead of hardcoded sheet load
 
+when you start a level it should store those stats you started with in mem, then when you die and reload, instead of reseting your stats
+it loads the stats you had when you started that level(could expand it to allow for save points mid level) also this would be seperate from the save systyem
+and shouldnt overwride save
+
 
 basically the entire project doesnt use inheritance instead just using Composition/aggregatio and it doesnt use decorators
 
