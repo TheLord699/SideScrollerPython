@@ -15,190 +15,6 @@
   ],
   "tiles": [
     {
-      "x": 48,
-      "y": 26,
-      "id": 2,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 49,
-      "y": 26,
-      "id": 3,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 50,
-      "y": 26,
-      "id": 3,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 51,
-      "y": 26,
-      "id": 3,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 52,
-      "y": 26,
-      "id": 3,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 52,
-      "y": 25,
-      "id": 4,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 50,
-      "y": 25,
-      "id": 2,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 51,
-      "y": 25,
-      "id": 3,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 48,
-      "y": 27,
-      "id": 51,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 48,
-      "y": 28,
-      "id": 76,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 49,
-      "y": 27,
-      "id": 28,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 51,
-      "y": 27,
-      "id": 28,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 52,
-      "y": 27,
-      "id": 28,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 50,
-      "y": 27,
-      "id": 28,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 53,
-      "y": 27,
-      "id": 80,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 52,
-      "y": 28,
-      "id": 80,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 51,
-      "y": 28,
-      "id": 103,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 50,
-      "y": 28,
-      "id": 103,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 49,
-      "y": 28,
-      "id": 103,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 49,
-      "y": 25,
-      "id": 14,
-      "direction": 0,
-      "layer": 1,
-      "hitbox": false
-    },
-    {
-      "x": 52,
-      "y": 25,
-      "id": 14,
-      "direction": 0,
-      "layer": 1,
-      "hitbox": false
-    },
-    {
-      "x": 51,
-      "y": 25,
-      "id": 13,
-      "direction": 0,
-      "layer": 1,
-      "hitbox": false
-    },
-    {
-      "x": 51,
-      "y": 24,
-      "id": 14,
-      "direction": 0,
-      "layer": 1,
-      "hitbox": false
-    },
-    {
       "x": 4,
       "y": 36,
       "id": 3,
@@ -1194,14 +1010,6 @@
       "x": 28,
       "y": 62,
       "id": 3,
-      "direction": 0,
-      "layer": 0,
-      "hitbox": true
-    },
-    {
-      "x": 53,
-      "y": 26,
-      "id": 4,
       "direction": 0,
       "layer": 0,
       "hitbox": true
@@ -2544,6 +2352,186 @@
       "id": 41,
       "tilesheet": 1,
       "direction": 180,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": -4.0,
+      "y": 19.0,
+      "id": 1,
+      "tilesheet": 2,
+      "direction": 0,
+      "layer": 0,
+      "hitbox": true
+    },
+    {
+      "x": -3.0,
+      "y": 19.0,
+      "id": 2,
+      "tilesheet": 2,
+      "direction": 0,
+      "layer": 0,
+      "hitbox": true
+    },
+    {
+      "x": -6.0,
+      "y": 18.0,
+      "id": 2,
+      "tilesheet": 2,
+      "direction": 0,
+      "layer": 0,
+      "hitbox": true
+    },
+    {
+      "x": -7.0,
+      "y": 18.0,
+      "id": 1,
+      "tilesheet": 2,
+      "direction": 0,
+      "layer": 0,
+      "hitbox": true
+    },
+    {
+      "x": 1.0,
+      "y": 15.0,
+      "id": 1,
+      "tilesheet": 2,
+      "direction": 0,
+      "layer": 0,
+      "hitbox": true
+    },
+    {
+      "x": 2.0,
+      "y": 15.0,
+      "id": 2,
+      "tilesheet": 2,
+      "direction": 0,
+      "layer": 0,
+      "hitbox": true
+    },
+    {
+      "x": -7.0,
+      "y": 17.5,
+      "id": 59,
+      "tilesheet": 1,
+      "direction": 0,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": -3.5,
+      "y": 18.5,
+      "id": 59,
+      "tilesheet": 1,
+      "direction": 0,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": -4.0,
+      "y": 18.5,
+      "id": 49,
+      "tilesheet": 1,
+      "direction": 0,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": 1.0,
+      "y": 14.5,
+      "id": 49,
+      "tilesheet": 1,
+      "direction": 0,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": 8.5,
+      "y": 19.5,
+      "id": 41,
+      "tilesheet": 1,
+      "direction": 0,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": 2.0,
+      "y": 15.5,
+      "id": 41,
+      "tilesheet": 1,
+      "direction": 180,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": -6.0,
+      "y": 18.5,
+      "id": 48,
+      "tilesheet": 1,
+      "direction": 180,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": -4.0,
+      "y": 19.5,
+      "id": 51,
+      "tilesheet": 1,
+      "direction": 180,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": -7.0,
+      "y": 18.5,
+      "id": 57,
+      "tilesheet": 1,
+      "direction": 180,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": -3.0,
+      "y": 19.5,
+      "id": 58,
+      "tilesheet": 1,
+      "direction": 180,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": -1.5,
+      "y": 16.5,
+      "id": 3,
+      "tilesheet": 2,
+      "direction": 0,
+      "layer": 0,
+      "hitbox": true
+    },
+    {
+      "x": -1.5,
+      "y": 17.0,
+      "id": 7,
+      "tilesheet": 2,
+      "direction": 0,
+      "layer": 0,
+      "hitbox": true
+    },
+    {
+      "x": -1.5,
+      "y": 17.0,
+      "id": 57,
+      "tilesheet": 1,
+      "direction": 90,
+      "layer": -1,
+      "hitbox": false
+    },
+    {
+      "x": -1.0,
+      "y": 16.5,
+      "id": 59,
+      "tilesheet": 1,
+      "direction": 270,
       "layer": -1,
       "hitbox": false
     }

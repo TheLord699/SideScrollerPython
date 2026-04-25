@@ -175,7 +175,9 @@ class LightSource:
 
             self.light_surface.blit(bloom_surface, (0, 0), special_flags=pg.BLEND_ADD)
 
-        self.temp_surface.fill((self.ambient_light, self.ambient_light, self.ambient_light))
+        blue_darkness = (int(self.ambient_light * 0.85), int(self.ambient_light * 0.85), self.ambient_light)
+        
+        self.temp_surface.fill(blue_darkness)
         self.temp_surface.blit(self.light_surface, (0, 0), special_flags=pg.BLEND_ADD)
         self.game.screen.blit(self.temp_surface, (0, 0), special_flags=pg.BLEND_MULT)
 
