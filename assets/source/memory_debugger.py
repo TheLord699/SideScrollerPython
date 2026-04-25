@@ -1,8 +1,11 @@
+# coded badly in comparison to rest of code base because its just a tool
 import pygame as pg
 import traceback
 import psutil
 import os
 import types
+import weakref
+
 from collections import defaultdict
 
 class MemoryDebugger:
@@ -27,6 +30,8 @@ class MemoryDebugger:
         self.scroll_offsets = defaultdict(int)
 
         self.preview_cache = {}
+        self.max_cache_size = 200
+        self.created_surfaces = []
         
         self.cached_memory_info = []
         self.cache_valid = False
@@ -42,6 +47,18 @@ class MemoryDebugger:
         
         self.terminal_event = pg.USEREVENT + 1
 
+    def clear_caches(self):
+        self.preview_cache.clear()
+        
+        for surf in self.created_surfaces:
+            if isinstance(surf, pg.Surface):
+                surf.fill((0, 0, 0, 0))
+                
+        self.created_surfaces.clear()
+        
+        self.memory_info = []
+        self.cache_valid = False
+
     def toggle(self):
         self.show_memory_info = not self.show_memory_info
         self.menu_state = "main"
@@ -50,8 +67,12 @@ class MemoryDebugger:
         self.selected_object = None
         self.scroll_offsets.clear()
         self.dragging_scrollbar = False
-        self.cache_valid = False
-        self.update()
+        
+        if not self.show_memory_info:
+            self.clear_caches()
+        else:
+            self.cache_valid = False
+            self.update()
 
     def toggle_terminal(self):
         self.terminal_active = not self.terminal_active
@@ -78,7 +99,7 @@ class MemoryDebugger:
                 
             elif event.key == pg.K_BACKSPACE:
                 if self.terminal_input:
-                    self._delayed_backspace = True
+                    self.delayed_backspace = True
                     pg.time.set_timer(self.terminal_event, 50, True)  
                     
             elif event.key == pg.K_UP:
@@ -102,18 +123,18 @@ class MemoryDebugger:
 
         elif event.type == pg.TEXTINPUT:
             if len(self.terminal_input) < 100:
-                self._delayed_input_char = event.text
+                self.delayed_input_char = event.text
                 pg.time.set_timer(self.terminal_event, 50, True)
                 
         elif event.type == self.terminal_event:
-            if hasattr(self, "_delayed_input_char"):
-                self.terminal_input += self._delayed_input_char
+            if hasattr(self, "delayed_input_char"):
+                self.terminal_input += self.delayed_input_char
                 
-                del self._delayed_input_char
+                del self.delayed_input_char
                 
-            if hasattr(self, "_delayed_backspace") and self._delayed_backspace:
+            if hasattr(self, "delayed_backspace") and self.delayed_backspace:
                 self.terminal_input = self.terminal_input[:-1]
-                self._delayed_backspace = False
+                self.delayed_backspace = False
 
     def execute_terminal_command(self):
         if not self.terminal_input.strip():
@@ -452,25 +473,25 @@ class MemoryDebugger:
         visited_objects = set()
 
         game_objects = [
-            ("UI", self.game.ui),
-            ("Environment", self.game.environment),
-            ("Map", self.game.map),
-            ("Player", self.game.player),
-            ("Entities", self.game.entities),
-            ("Background", self.game.background),
-            ("Particles", self.game.particles)
+            ("UI", weakref.ref(self.game.ui)),
+            ("Environment", weakref.ref(self.game.environment)),
+            ("Map", weakref.ref(self.game.map)),
+            ("Player", weakref.ref(self.game.player)),
+            ("Entities", weakref.ref(self.game.entities)),
+            ("Background", weakref.ref(self.game.background)),
+            ("Particles", weakref.ref(self.game.particles))
         ]
 
         def find_surfaces(obj, path, depth=0):
             if depth > 3:
                 return
                 
-            obj_id = id(obj)
-            if obj_id in visited_objects:
-                return
-            visited_objects.add(obj_id)
-            
             try:
+                obj_id = id(obj)
+                if obj_id in visited_objects:
+                    return
+                visited_objects.add(obj_id)
+                
                 if isinstance(obj, pg.Surface):
                     storage_locations[path].append(obj)
                     
@@ -481,14 +502,14 @@ class MemoryDebugger:
                     return
                     
                 elif isinstance(obj, (list, tuple)):
-                    for i, item in enumerate(obj):
+                    for i, item in enumerate(obj[:100]):
                         if depth < 3:
                             find_surfaces(item, f"{path}[{i}]", depth + 1)
                         
                 elif isinstance(obj, dict):
-                    for k, v in obj.items():
+                    for k, v in list(obj.items())[:100]:
                         if depth < 3:
-                            find_surfaces(v, f"{path}['{k}'']", depth + 1)
+                            find_surfaces(v, f"{path}['{k}']", depth + 1)
                         
                 elif hasattr(obj, "__dict__") and not isinstance(obj, (str, int, float, bool)):
                     class_name = obj.__class__.__name__
@@ -496,14 +517,20 @@ class MemoryDebugger:
                         return
                     
                     if depth < 2:
-                        for name, attr in vars(obj).items():
+                        for name, attr in list(vars(obj).items())[:50]:
                             if not name.startswith("__"):
                                 find_surfaces(attr, f"{path}.{name}", depth + 1)
+                                
+            except (ReferenceError, RuntimeError):
+                pass
+            
             except Exception:
                 pass
 
-        for name, obj in game_objects:
-            find_surfaces(obj, name, 0)
+        for name, obj_ref in game_objects:
+            obj = obj_ref()
+            if obj is not None:
+                find_surfaces(obj, name, 0)
 
         return storage_locations
 
@@ -521,6 +548,7 @@ class MemoryDebugger:
             count = len(getattr(self.game.ui, "ui_elements", []))
             info.append(f"UI Elements Count: {count}")
             info.append("")
+            
             for i, element in enumerate(getattr(self.game.ui, "ui_elements", [])[:20]):
                 info.append(f"Element {i}: {str(element)}")
                 
@@ -534,12 +562,14 @@ class MemoryDebugger:
                     
                 else:
                     entity_str = f"Entity {i}: {str(entity)[:100]}"
+                    
                 info.append(entity_str)
                 
         elif self.selected_object == "Particles":
             count = len(getattr(self.game.particles, "particles", []))
             info.append(f"Particles Count: {count}")
             info.append("")
+            
             for i, particle in enumerate(getattr(self.game.particles, "particles", [])[:20]):
                 info.append(f"Particle {i}: {str(particle)}")
 
@@ -550,30 +580,35 @@ class MemoryDebugger:
         visited_objects = set()
 
         game_objects = [
-            ("UI", self.game.ui),
-            ("Environment", self.game.environment),
-            ("Map", self.game.map),
-            ("Player", self.game.player),
-            ("Entities", self.game.entities),
-            ("Background", self.game.background),
-            ("Particles", self.game.particles),
-            ("Foreground", self.game.foreground),
-            ("ProjectilesSystem", self.game.projectiles_system),
-            ("AISystem", self.game.ai),
+            ("UI", weakref.ref(self.game.ui)),
+            ("Environment", weakref.ref(self.game.environment)),
+            ("Map", weakref.ref(self.game.map)),
+            ("Player", weakref.ref(self.game.player)),
+            ("Entities", weakref.ref(self.game.entities)),
+            ("Background", weakref.ref(self.game.background)),
+            ("Particles", weakref.ref(self.game.particles)),
+            ("Foreground", weakref.ref(self.game.foreground)),
+            ("ProjectilesSystem", weakref.ref(self.game.projectiles_system)),
+            ("AISystem", weakref.ref(self.game.ai)),
         ]
 
         def find_surfaces(obj, depth=0):
-            if depth > 7:
+            if depth > 4:
                 return
                 
-            obj_id = id(obj)
-            if obj_id in visited_objects:
-                return
-            
-            visited_objects.add(obj_id)
             try:
+                obj_id = id(obj)
+                if obj_id in visited_objects:
+                    return
+                
+                visited_objects.add(obj_id)
+                
                 if isinstance(obj, pg.Surface):
-                    all_surfaces.append(obj)
+                    try:
+                        if obj.get_width() > 0:
+                            all_surfaces.append(obj)
+                    except:
+                        pass
                     
                 elif isinstance(obj, types.ModuleType):
                     return
@@ -582,13 +617,13 @@ class MemoryDebugger:
                     return
                     
                 elif isinstance(obj, (list, tuple)):
-                    for item in obj:
-                        if depth < 5:
+                    for item in obj[:100]:
+                        if depth < 4:
                             find_surfaces(item, depth + 1)
                         
                 elif isinstance(obj, dict):
-                    for v in obj.values():
-                        if depth < 5:
+                    for v in list(obj.values())[:100]:
+                        if depth < 4:
                             find_surfaces(v, depth + 1)
                         
                 elif hasattr(obj, "__dict__") and not isinstance(obj, (str, int, float, bool)):
@@ -596,40 +631,45 @@ class MemoryDebugger:
                     if class_name in ("module", "builtin_function_or_method", "method", "function"):
                         return
                     
-                    if depth < 4:  # Increased from 2 to 4(might chnage later)
-                        for attr_name, attr in vars(obj).items():
+                    if depth < 3:
+                        for attr_name, attr in list(vars(obj).items())[:50]:
                             if not attr_name.startswith("__"):
                                 find_surfaces(attr, depth + 1)
                             
+            except (ReferenceError, RuntimeError):
+                pass
+            
             except Exception:
                 pass
 
-        for _, obj in game_objects:
-            find_surfaces(obj, 0)
+        for _, obj_ref in game_objects:
+            obj = obj_ref()
+            if obj is not None:
+                find_surfaces(obj, 0)
         
         if hasattr(self.game.entities, "tilesheet_cache"):
             for cache_key, sprites in self.game.entities.tilesheet_cache.items():
-                for sprite in sprites.values():
+                for sprite in list(sprites.values())[:100]:
                     if isinstance(sprite, pg.Surface):
                         all_surfaces.append(sprite)
         
         if hasattr(self.game.entities, "animation_frames"):
-            for entity in getattr(self.game.entities, "entities", []):
+            for entity in getattr(self.game.entities, "entities", [])[:50]:
                 if "animation_frames" in entity:
                     for state_data in entity["animation_frames"].values():
-                        for frame in state_data.get("frames", []):
+                        for frame in state_data.get("frames", [])[:20]:
                             if isinstance(frame, pg.Surface):
                                 all_surfaces.append(frame)
         
         unique_surfaces = []
         seen = set()
-        for surf in all_surfaces:
+        for surf in all_surfaces[:1000]:
             surf_id = id(surf)
             if surf_id not in seen:
                 seen.add(surf_id)
                 unique_surfaces.append(surf)
         
-        return unique_surfaces
+        return unique_surfaces[:500]
 
     def get_ram_usage(self):
         try:
@@ -649,6 +689,7 @@ class MemoryDebugger:
                 "free_ram": free_ram,
                 "ram_percent": ram_percent
             }
+            
         except Exception:
             return None
 
@@ -675,28 +716,58 @@ class MemoryDebugger:
 
         all_surfaces = self.collect_all_surfaces()
         total_surfaces = len(all_surfaces)
-        total_memory = sum(s.get_width() * s.get_height() * (4 if s.get_bytesize() == 4 else 3) for s in all_surfaces)
+        
+        if total_surfaces > 0:
+            sample_size = min(100, total_surfaces)
+            sampled_memory = 0
+            for s in all_surfaces[:sample_size]:
+                try:
+                    sampled_memory += s.get_width() * s.get_height() * 4
+                    
+                except:
+                    pass
+            
+            estimated_total = (sampled_memory / sample_size) * total_surfaces if sample_size > 0 else 0
+            
+        else:
+            estimated_total = 0
 
         info.append("Surface/Image Memory Info:")
         info.append(f"  Total Images Found: {total_surfaces}")
-        info.append(f"  Total Image Memory: {total_memory / 1024:.1f} KB\n")
+        info.append(f"  Estimated Image Memory: {estimated_total / 1024:.1f} KB\n")
         info.append("")
 
         size_groups = self.collect_size_groups()
         if size_groups:
             info.append("Image Size Distribution:")
             for size, surfaces in sorted(size_groups.items(), key=lambda x: len(x[1]), reverse=True)[:10]:
-                mem = sum(s.get_width() * s.get_height() * (4 if s.get_bytesize() == 4 else 3) for s in surfaces)
-                info.append(f"  {size:<10} {len(surfaces):>3} images  {mem / 1024:>7.1f} KB")
+                estimated_mem = 0
+                for s in surfaces[:10]:
+                    try:
+                        estimated_mem += s.get_width() * s.get_height() * 4
+                        
+                    except:
+                        pass
+                    
+                estimated_mem = (estimated_mem / min(10, len(surfaces))) * len(surfaces) if surfaces else 0
+                info.append(f"  {size:<10} {len(surfaces):>3} images  {estimated_mem / 1024:>7.1f} KB")
                 
             info.append("")
 
         storage_locations = self.collect_storage_locations()
         if storage_locations:
             info.append("Storage Locations:")
-            for location, surfaces in storage_locations.items():
-                mem = sum(s.get_width() * s.get_height() * (4 if s.get_bytesize() == 4 else 3) for s in surfaces)
-                info.append(f"  {location}: {len(surfaces)} images ({mem / 1024:.1f} KB)")
+            for location, surfaces in list(storage_locations.items())[:20]:
+                estimated_mem = 0
+                for s in surfaces[:5]:
+                    try:
+                        estimated_mem += s.get_width() * s.get_height() * 4
+                        
+                    except:
+                        pass
+                    
+                estimated_mem = (estimated_mem / min(5, len(surfaces))) * len(surfaces) if surfaces else 0
+                info.append(f"  {location}: {len(surfaces)} images ({estimated_mem / 1024:.1f} KB)")
                 
             info.append("")
 
@@ -801,15 +872,24 @@ class MemoryDebugger:
                     x = 10 + col * (thumb_size + margin)
                     y = y_offset + row * (thumb_size + margin)
 
-                    if surf not in self.preview_cache:
+                    cache_key = (id(surf), thumb_size)
+                    
+                    if cache_key not in self.preview_cache:
+                        if len(self.preview_cache) > self.max_cache_size:
+                            items_to_remove = list(self.preview_cache.keys())[:self.max_cache_size // 2]
+                            for key in items_to_remove:
+                                del self.preview_cache[key]
+                        
                         try:
-                            self.preview_cache[surf] = pg.transform.scale(surf, (thumb_size, thumb_size))
+                            self.preview_cache[cache_key] = pg.transform.scale(surf, (thumb_size, thumb_size))
+                            self.created_surfaces.append(self.preview_cache[cache_key])
                             
                         except Exception:
-                            self.preview_cache[surf] = pg.Surface((thumb_size, thumb_size))
-                            self.preview_cache[surf].fill((100, 0, 0))
+                            self.preview_cache[cache_key] = pg.Surface((thumb_size, thumb_size))
+                            self.preview_cache[cache_key].fill((100, 0, 0))
+                            self.created_surfaces.append(self.preview_cache[cache_key])
 
-                    panel.blit(self.preview_cache[surf], (x, y))
+                    panel.blit(self.preview_cache[cache_key], (x, y))
                     pg.draw.rect(panel, (100, 255, 100), (x, y, thumb_size, thumb_size), 1)
 
         elif self.menu_state == "storage_location":

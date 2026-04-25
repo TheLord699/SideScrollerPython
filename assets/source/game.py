@@ -214,6 +214,9 @@ class Environment:
     self.game.lighting.clear_all_lights()
     self.game.projectiles_system.projectiles = []
     self.game.particles.particles = []
+
+    if hasattr(self.game, "memory_debugger"): # will remove eventually
+      self.game.memory_debugger.clear_caches()
     
     self.current_map = None
 

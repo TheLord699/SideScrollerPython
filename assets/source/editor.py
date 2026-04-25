@@ -1,3 +1,4 @@
+# coded badly in comparison to rest of code base because its just a tool
 import pygame as pg
 import json
 import os
