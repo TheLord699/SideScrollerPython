@@ -155,13 +155,20 @@ class UI:
             return lambda g=getter, s=setter: s(not g())
 
         if spec.startswith("call:"):
-            method_name = spec.split(":", 1)[1]
+            parts = spec.split(":", 1)[1]
+            if ":" in parts:
+                method_name, args_str = parts.split(":", 1)
+                args = [self.coerce_arg(a.strip()) for a in args_str.split(",")]
+            else:
+                method_name = parts
+                args = []
+
             method = getattr(env, method_name, None)
             if method is None:
                 print(f"Unknown method '{method_name}' on env")
                 return None
-            
-            return method
+
+            return lambda m=method, a=args: m(*a)
 
         if spec.startswith("multi:"):
             parts = spec.split(":", 1)[1].split("|")
@@ -175,6 +182,27 @@ class UI:
 
         print(f"Unknown callback spec: '{spec}'")
         return None
+
+    def coerce_arg(self, value):
+        if value == "True":
+            return True
+        
+        if value == "False":
+            return False
+        
+        try:
+            return int(value)
+        
+        except ValueError:
+            pass
+        
+        try:
+            return float(value)
+        
+        except ValueError:
+            pass
+        
+        return value
 
     def resolve_sound(self, path, volume=1.0):
         if not path:

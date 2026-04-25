@@ -2547,5 +2547,29 @@
       "layer": -1,
       "hitbox": false
     }
-  ]
+  ],
+  "entity_placements": [
+    {
+      "x": 10.0,
+      "y": 19.0,
+      "type": "entity",
+      "entity_type": "enemy",
+      "entity_name": "Jelly",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 17.0,
+      "y": 19.0,
+      "type": "entity",
+      "entity_type": "enemy",
+      "entity_name": "Slime",
+      "layer": 0,
+      "overrides": {}
+    }
+  ],
+  "player_spawn": {
+    "x": 0.0,
+    "y": 19.0
+  }
 }

@@ -97,7 +97,7 @@
           "hover_range": 3.5,
           "click_sound": "assets/sounds/ui/01_chest_open_4.wav",
           "click_sound_volume": 2.0,
-          "callback": "change_menu:play",
+          "callback": "call:start_game:TestMap",
           "render_order": 0
         },
         {

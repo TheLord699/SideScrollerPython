@@ -58,6 +58,7 @@ class Environment:
     self.music = {
       "main": pg.mixer.Sound("assets/sounds/music/Alone_In_The_Town.wav"),
       "TestMap": pg.mixer.Sound("assets/sounds/music/Maternal_Heart.wav"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
+      "Test2": pg.mixer.Sound("assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3")
     }
 
     self.menu_config = load_json("assets/settings/menu_config.json")
@@ -67,7 +68,8 @@ class Environment:
 
   def restart_game(self):
     self.game.player.load_settings()
-    self.menu = "play"
+    saved_map = next((k for k, v in self.maps.items() if v == self.current_map), "TestMap")
+    self.start_game(saved_map)
 
   def load_menu(self, menu_name):
     config = self.menu_config["menus"].get(menu_name)
@@ -108,7 +110,7 @@ class Environment:
     self.music_channel.play(self.music[new_track], loops=-1)
     self.current_track = new_track
     
-  def save_data(self): # need to save entities and maybe save map instead of menu soon
+  def save_data(self):
     self.game.data_manager.set_setting("seed", self.seed)
     self.game.data_manager.set_setting("volume", self.volume)
     self.game.data_manager.set_setting("menu", self.menu)
@@ -122,6 +124,7 @@ class Environment:
     self.game.data_manager.set_setting("player_direction", self.game.player.direction)
     self.game.data_manager.set_setting("player_x", self.game.player.x)
     self.game.data_manager.set_setting("player_y", self.game.player.y)
+    self.game.data_manager.set_setting("current_map", next((k for k, v in self.maps.items() if v == self.current_map), None))
 
     inventory_to_save = []
     for item in self.game.player.inventory.values():
@@ -136,8 +139,22 @@ class Environment:
 
     self.game.data_manager.set_setting("player_inventory", inventory_to_save)
 
+    entities_to_save = []
+    for entity in self.game.entities.entities:
+      entities_to_save.append({
+        "entity_type": entity["entity_type"],
+        "name": entity["name"],
+        "x": entity["x"],
+        "y": entity["y"],
+        "health": entity.get("health"),
+        "quantity": entity.get("quantity")
+      })
+
+    self.game.data_manager.set_setting("world_entities", entities_to_save)
+
   def load_data(self):
     self.loaded_save = True
+    self.map_loaded_from_save = False
     try:
       self.game.data_manager.load_data()
       
@@ -174,6 +191,16 @@ class Environment:
       self.game.player.inventory = new_inventory
       self.game.player.settings_loaded = True
 
+      self.saved_world_entities = self.game.data_manager.get_setting("world_entities", None)
+
+      saved_map = self.game.data_manager.get_setting("current_map", None)
+      if saved_map and saved_map in self.maps:
+        self.load_map(saved_map)
+        self.map_loaded_from_save = True
+        
+      else:
+        self.map_loaded_from_save = False
+
     except Exception as e:
       self.menu = "select_menu"
       print(f"Error loading game data: {e}")
@@ -185,21 +212,25 @@ class Environment:
   def death_menu(self):
     self.current_track = None
 
-  def start_game(self):
-    if getattr(self, "current_map", None) != self.maps["TestMap"]:
-      #self.lighting = True
-      self.load_map("TestMap")
+  def start_game(self, map_name="TestMap"):
+    if getattr(self, "map_loaded_from_save", False):
+      self.map_loaded_from_save = False
+      return
+
+    self.menu = "play"
+    self.last_menu = "play"
+    self.reset()
+    self.game.ui.mouse_locked = False
+    self.load_map(map_name)
   
   def run_menu(self):
     self.reset()
-    if self.menu == "play":
-      self.start_game()
-      
-    elif self.menu == "death":
+    if self.menu == "death":
       self.death_menu()
       self.load_menu(self.menu)
       
     else:
+      self.map_loaded_from_save = False
       self.load_menu(self.menu)
       
     self.last_menu = self.menu
@@ -215,7 +246,7 @@ class Environment:
 
   def reset(self):
     if self.menu == "death":
-      return 
+      return
 
     if self.menu in {"play", "main"} and self.last_menu not in {"settings", "select_menu"}:
       if hasattr(self, "current_background_path"):
@@ -223,6 +254,10 @@ class Environment:
       pg.mixer.stop()
 
     self.clear_ui()
+
+    if getattr(self, "map_loaded_from_save", False):
+      return
+
     self.game.entities.reset()
     self.game.lighting.clear_all_lights()
     self.game.projectiles_system.projectiles = []
@@ -278,6 +313,23 @@ class Environment:
         self.player_spawn_y = player_spawn["y"] * visual_tile_size + visual_tile_size // 2
       
       self.loaded_save = False
+
+    if getattr(self, "saved_world_entities", None) is not None:
+      for saved in self.saved_world_entities:
+        try:
+          entity = self.game.entities.create_entity(saved["entity_type"], saved["name"], saved["x"], saved["y"])
+          if entity:
+            if saved.get("health") is not None:
+              entity["health"] = saved["health"]
+              
+            if saved.get("quantity") is not None:
+              entity["quantity"] = saved["quantity"]
+
+        except Exception as e:
+          print(f"Failed to restore entity '{saved['name']}': {e}")
+
+      self.saved_world_entities = None
+      return
 
     placements = map_data.get("entity_placements", [])
     if not placements:
