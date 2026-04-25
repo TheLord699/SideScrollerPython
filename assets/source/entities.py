@@ -81,6 +81,15 @@ class Entities:
     def reset(self):
         self.entities.clear()
         self.game.ai.script_cache = {}
+        
+        self.tilesheet_cache.clear()
+        self.item_sprites.clear()
+        
+        if hasattr(self, "item_text_cache"):
+            self.item_text_cache.clear()
+            
+        if hasattr(self, "indicator_bg_cache"):
+            self.indicator_bg_cache.clear()
 
     def item(self, item_name):
         if item_name in self.entity_info["items"]:

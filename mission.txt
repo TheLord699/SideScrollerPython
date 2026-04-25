@@ -40,6 +40,7 @@ need to load all ai scripts for a level instead of once they apear on screen
 UI needs a translation func for positions, want to change resolution but dont want to update all UI pos code
 mem debugger needs to be able to infer what could be causing leaks
 in editor while in player tab only allow place and delete of player, no other actions on any other tiles
+need to implement proper player/water interactions
 
 
 basically the entire project doesnt use inheritance instead just using Composition/aggregatio and it doesnt use decorators
