@@ -73,6 +73,8 @@ class Entities:
         self.tilesheet = None
         self.scale = self.game.environment.scale 
         
+        self.last_volume = None
+        
         self.entities = []
         self.item_sprites = {}
     
@@ -253,24 +255,23 @@ class Entities:
     def update_entity(self, entity):
         if entity["entity_type"] in {"npc", "enemy"}:
             if entity["health"] < 1: # < 1 instead of <= 0 because players will see health as 0 when smaller than 1 due to truncating in the health bar
-                self.drop_item(entity) # Issue where dropped items arent just items in the code, so they have extra attributes that they shouldnt have
-                # also loads the items tile sheet again?
+                self.drop_item(entity)
                 self.death_particles(entity)
-                self.entities.remove(entity)
+                return True
+            
+        return False
                 
     def update_sounds(self):
-        for sound_group in self.sounds.values():
-            if isinstance(sound_group, list):
-                for sound_dict in sound_group:
-                    sound = sound_dict["sound"]
-                    volume = sound_dict["volume"]
-                    sound.set_volume(self.game.environment.volume / 10 * volume)
-
-            elif isinstance(sound_group, dict):
-                for sound_dict in sound_group.values():
-                    sound = sound_dict["sound"]
-                    volume = sound_dict["volume"]
-                    sound.set_volume(self.game.environment.volume / 10 * volume)
+        if self.last_volume != self.game.environment.volume:
+            self.last_volume = self.game.environment.volume
+            for sound_group in self.sounds.values():
+                if isinstance(sound_group, list):
+                    for sound_dict in sound_group:
+                        sound_dict["sound"].set_volume(self.game.environment.volume / 10 * sound_dict["volume"])
+                        
+                elif isinstance(sound_group, dict):
+                    for sound_dict in sound_group.values():
+                        sound_dict["sound"].set_volume(self.game.environment.volume / 10 * sound_dict["volume"])
         
     def drop_item(self, entity):
         items = ["Red Gem", "Potion", "Gold"]
@@ -614,6 +615,9 @@ class Entities:
                 width, height = self.bubble_surface.get_size()
                 self.bubble_scales[round(s, 1)] = pg.transform.scale(self.bubble_surface, (int(width * s), int(height * s)))
 
+        if not hasattr(self, "indicator_bg_cache"):
+            self.indicator_bg_cache = {}
+
         dx = entity["x"] - self.game.player.x
         dy = entity["y"] - self.game.player.y
         distance_sq = dx * dx + dy * dy
@@ -623,92 +627,86 @@ class Entities:
             
         else:
             indicator_radius = self.game.player.interact_radius.width * 2
-        
+
         indicator_radius_sq = indicator_radius * indicator_radius
 
-        if distance_sq <= indicator_radius_sq:
-            distance = math.sqrt(distance_sq)
-            cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
-            
-            entity_height = entity.get("hitbox_height", entity["height"])
-            screen_x = entity["x"] - cam_x
-            
-            health_bar_shown = entity["health"] > 0 and entity["health"] < entity["max_health"]
-            
-            if entity["entity_type"] == "item":
-                screen_y = entity["y"] - cam_y - entity_height // 2 - 10
-                text_y_offset = -8
-                
-            elif entity["entity_type"] == "npc":
-                if health_bar_shown:
-                    screen_y = entity["y"] - cam_y - entity_height // 2 - 35
-                    
-                else:
-                    screen_y = entity["y"] - cam_y - entity_height // 2 - 10
-                text_y_offset = -6
-                
-            elif entity["entity_type"] == "enemy":
-                if health_bar_shown:
-                    screen_y = entity["y"] - cam_y - entity_height // 2 - 40
-                    
-                else:
-                    screen_y = entity["y"] - cam_y - entity_height // 2 - 20
-                text_y_offset = -6
-                
-            else:
-                screen_y = entity["y"] - cam_y - entity_height // 2 - 10
-                text_y_offset = -8
+        if distance_sq > indicator_radius_sq:
+            return
 
-            max_opacity, min_opacity = 255, 50
-            fade_start = indicator_radius * 0.6
+        distance = math.sqrt(distance_sq)
+        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
 
-            if distance <= fade_start:
-                opacity = max_opacity
-                
-            elif distance <= indicator_radius:
-                fade_range = indicator_radius - fade_start
-                fade_progress = (distance - fade_start) / fade_range
-                opacity = max_opacity - fade_progress * (max_opacity - min_opacity)
-                
-            else:
-                opacity = min_opacity
+        entity_height = entity.get("hitbox_height", entity["height"])
+        screen_x = entity["x"] - cam_x
 
-            time = self.game.environment.current_time / 250
-            scale = round(1.0 + 0.1 * math.sin(time), 1)
+        health_bar_shown = entity["health"] > 0 and entity["health"] < entity["max_health"]
 
-            if entity["entity_type"] == "enemy":
-                arrow = self.arrow_scales.get(scale, self.arrow_surface)
-                arrow.set_alpha(int(opacity))
-                self.game.screen.blit(arrow, (screen_x - arrow.get_width() // 2, screen_y - arrow.get_height() // 2))
-                
-            elif entity["entity_type"] == "npc":
-                bubble = self.bubble_scales.get(scale, self.bubble_surface)
-                bubble.set_alpha(int(opacity))
-                self.game.screen.blit(bubble, (screen_x - bubble.get_width() // 2, screen_y - bubble.get_height() - 6))
+        if entity["entity_type"] == "item":
+            screen_y = entity["y"] - cam_y - entity_height // 2 - 10
+            text_y_offset = -8
+
+        elif entity["entity_type"] == "npc":
+            screen_y = entity["y"] - cam_y - entity_height // 2 - (35 if health_bar_shown else 10)
+            text_y_offset = -6
+
+        elif entity["entity_type"] == "enemy":
+            screen_y = entity["y"] - cam_y - entity_height // 2 - (40 if health_bar_shown else 20)
+            text_y_offset = -6
+
+        else:
+            screen_y = entity["y"] - cam_y - entity_height // 2 - 10
+            text_y_offset = -8
+
+        fade_start = indicator_radius * 0.6
+        if distance <= fade_start:
+            opacity = 255
             
-            elif entity["entity_type"] == "item":
-                if not hasattr(self, "item_font"):
-                    self.item_font = pg.font.Font(self.game.environment.fonts["fantasy"], 11)
-                
-                item_text = entity["name"]
-                
-                if not hasattr(self, "item_text_cache"):
-                    self.item_text_cache = {}
-                
-                if item_text not in self.item_text_cache:
-                    self.item_text_cache[item_text] = self.item_font.render(item_text, True, (255, 255, 255))
-                
-                text_surface = self.item_text_cache[item_text]
-                text_rect = text_surface.get_rect(center=(screen_x, screen_y + text_y_offset))
-                
-                padding = 4
-                bg_rect = text_rect.inflate(padding * 2, padding)
+        else:
+            fade_range = indicator_radius - fade_start
+            fade_progress = (distance - fade_start) / fade_range
+            opacity = 255 - fade_progress * (255 - 50)
+
+        time = self.game.environment.current_time / 250
+        scale = round(1.0 + 0.1 * math.sin(time), 1)
+
+        if entity["entity_type"] == "enemy":
+            arrow = self.arrow_scales.get(scale, self.arrow_surface)
+            arrow.set_alpha(int(opacity))
+            self.game.screen.blit(arrow, (screen_x - arrow.get_width() // 2, screen_y - arrow.get_height() // 2))
+
+        elif entity["entity_type"] == "npc":
+            bubble = self.bubble_scales.get(scale, self.bubble_surface)
+            bubble.set_alpha(int(opacity))
+            self.game.screen.blit(bubble, (screen_x - bubble.get_width() // 2, screen_y - bubble.get_height() - 6))
+
+        elif entity["entity_type"] == "item":
+            if not hasattr(self, "item_font"):
+                self.item_font = pg.font.Font(self.game.environment.fonts["fantasy"], 11)
+
+            item_text = entity["name"]
+
+            if not hasattr(self, "item_text_cache"):
+                self.item_text_cache = {}
+
+            if item_text not in self.item_text_cache:
+                self.item_text_cache[item_text] = self.item_font.render(item_text, True, (255, 255, 255))
+
+            text_surface = self.item_text_cache[item_text]
+            text_rect = text_surface.get_rect(center=(screen_x, screen_y + text_y_offset))
+
+            padding = 4
+            bg_rect = text_rect.inflate(padding * 2, padding)
+            bg_cache_key = (bg_rect.width, bg_rect.height)
+
+            if bg_cache_key not in self.indicator_bg_cache:
                 bg_surface = pg.Surface((bg_rect.width, bg_rect.height), pg.SRCALPHA)
-                bg_surface.fill((0, 0, 0, int(opacity * 0.6)))
-                self.game.screen.blit(bg_surface, (bg_rect.x, bg_rect.y))
-                
-                text_surface.set_alpha(int(opacity))
-                self.game.screen.blit(text_surface, text_rect)
+                bg_surface.fill((0, 0, 0, 153))
+                self.indicator_bg_cache[bg_cache_key] = bg_surface
+
+            self.game.screen.blit(self.indicator_bg_cache[bg_cache_key], (bg_rect.x, bg_rect.y))
+
+            text_surface.set_alpha(int(opacity))
+            self.game.screen.blit(text_surface, text_rect)
 
     def render(self, entity):
         if not entity["image"]:
@@ -899,20 +897,22 @@ class Entities:
         
         self.update_sounds()
         
-        for entity in self.entities[:]:
+        to_remove = []
+        render_padding = 100
+
+        for entity in self.entities:
             entity_x = entity["x"]
             entity_y = entity["y"]
             
             sprite_x = entity_x - cam_x - entity["width"] // 2
             sprite_y = entity_y - cam_y - entity["height"] // 2
             
-            render_padding = 100
             is_on_screen = (
                 sprite_x + entity["width"] >= -render_padding and 
                 sprite_x <= screen_w + render_padding and
                 sprite_y + entity["height"] >= -render_padding and 
                 sprite_y <= screen_h + render_padding
-                )
+            )
             
             if self.game.environment.vigorous_optimizations:
                 if not is_on_screen:
@@ -931,14 +931,21 @@ class Entities:
             
             if entity["entity_type"] in {"npc", "enemy"}:
                 self.game.ai.update_ai(entity)
+
             self.update_collision(entity)
             self.apply_gravity(entity)
             self.apply_horizontal_movement(entity)
             self.update_animation(entity)
-            self.update_entity(entity)
             
+            if self.update_entity(entity):
+                to_remove.append(entity)
+                continue
+
             if is_on_screen:
                 self.render(entity)
                 self.mouse_interact(entity)
                 self.show_hitboxes(entity)
                 self.entity_indicators(entity)
+
+        for entity in to_remove:
+            self.entities.remove(entity)

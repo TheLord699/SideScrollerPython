@@ -128,42 +128,44 @@ class AISystem:
 
         dx = player.x - entity["x"]
         dy = player.y - entity["y"]
-        distance = math.hypot(dx, dy)
-
+        distance_sq = dx * dx + dy * dy
+        
         aggro_range = entity.get("aggro_range", 300)
         stop_distance = entity.get("stop_distance", 50)
 
-        if distance < aggro_range:
-            if distance > stop_distance:
-                new_dir = 1 if dx > 0 else -1
+        if distance_sq >= aggro_range * aggro_range:
+            self.ai_wander(entity)
+            return
 
-                if (
-                    "ai_direction" not in entity
-                    or new_dir != entity["ai_direction"]
-                    or self.check_wall_collision(entity)
-                    or not self.check_floor_ahead(entity)
-                ):
-                    entity["ai_direction"] = new_dir
+        distance = math.sqrt(distance_sq)
 
-                entity["facing"] = entity["ai_direction"]
+        if distance > stop_distance:
+            new_dir = 1 if dx > 0 else -1
 
-                if self.check_floor_ahead(entity):
-                    entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
-                    
-                else:
-                    entity["vel_x"] = 0
-                    
+            if (
+                "ai_direction" not in entity
+                or new_dir != entity["ai_direction"]
+                or self.check_wall_collision(entity)
+                or not self.check_floor_ahead(entity)
+            ):
+                entity["ai_direction"] = new_dir
+
+            entity["facing"] = entity["ai_direction"]
+
+            if self.check_floor_ahead(entity):
+                entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
+                
             else:
                 entity["vel_x"] = 0
 
-            if dy < -50 and entity.get("on_ground", False):
-                entity["vel_y"] = -entity.get("jump_force", 10)
-
-            if distance < stop_distance:
-                self.ai_attack(entity)
-                
         else:
-            self.ai_wander(entity)
+            entity["vel_x"] = 0
+
+        if dy < -50 and entity.get("on_ground", False):
+            entity["vel_y"] = -entity.get("jump_force", 10)
+
+        if distance < stop_distance:
+            self.ai_attack(entity)
 
     def ai_friendly(self, entity):
         if entity.get("knockback_timer", 0) > 0:

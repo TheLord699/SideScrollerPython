@@ -85,6 +85,8 @@ class Player:
 
         self.coyote_time = 8
         self.coyote_timer = 0
+        
+        self.last_volume = None
 
         self.current_state = "idle"
         self.direction = "right"
@@ -299,18 +301,16 @@ class Player:
             self.loaded_weapons.remove(weapon)
 
     def update_state(self):
-        for sound_group in self.sounds.values():
-            if isinstance(sound_group, list):
-                for sound_dict in sound_group:
-                    sound = sound_dict["sound"]
-                    volume = sound_dict["volume"]
-                    sound.set_volume(self.game.environment.volume / 10 * volume)
-
-            elif isinstance(sound_group, dict):
-                for sound_key, sound_dict in sound_group.items():
-                    sound = sound_dict["sound"]
-                    volume = sound_dict["volume"]
-                    sound.set_volume(self.game.environment.volume / 10 * volume)
+        if self.last_volume != self.game.environment.volume:
+            self.last_volume = self.game.environment.volume
+            for sound_group in self.sounds.values():
+                if isinstance(sound_group, list):
+                    for sound_dict in sound_group:
+                        sound_dict["sound"].set_volume(self.game.environment.volume / 10 * sound_dict["volume"])
+                        
+                elif isinstance(sound_group, dict):
+                    for sound_dict in sound_group.values():
+                        sound_dict["sound"].set_volume(self.game.environment.volume / 10 * sound_dict["volume"])
 
         self.current_health = math.floor(self.current_health * 2) / 2
         self.current_health = min(self.current_health, self.max_health)
@@ -419,6 +419,8 @@ class Player:
 
     def render_health(self):
         previous_health = getattr(self, "previous_health", self.current_health)
+        if previous_health == self.current_health:
+            return
 
         if previous_health != self.current_health:
             for health in range(self.max_health):
@@ -503,32 +505,32 @@ class Player:
         )
 
     def add_pickup_tag(self, item_name):
-        if len(self.pickup_tags) >= self.max_tags:
-            self.remove_oldest_tag()
-
-        element_id = f"pickup_tag_{len(self.pickup_tags)}_{self.game.environment.current_time}"
-        text_id = f"pickup_text_{len(self.pickup_tags)}_{self.game.environment.current_time}"
-
         screen_width = self.game.screen.get_width()
         x_pos = screen_width - 100
-        y_pos = 20
+
+        if len(self.pickup_tags) >= self.max_tags:
+            oldest = self.pickup_tags.pop(0)
+            self.game.ui.remove_ui_element(oldest["element_id"])
+            self.game.ui.remove_ui_element(oldest["text_id"])
+            self.reposition_tags(x_pos)
+
+        index = len(self.pickup_tags)
+        creation_time = self.game.environment.current_time
+        element_id = f"pickup_tag_{creation_time}_{index}"
+        text_id = f"pickup_text_{creation_time}_{index}"
 
         self.game.ui.create_ui(
             sprite_sheet_path="item_sheet",
             image_id=self.item_info["items"][item_name]["index"],
-            x=x_pos,
-            y=y_pos,
-            sprite_width=16,
-            sprite_height=16,
-            width=30,
-            height=30,
+            x=x_pos, y=20 + index * 35,
+            sprite_width=16, sprite_height=16,
+            width=30, height=30,
             element_id=element_id,
             render_order=2
         )
 
         self.game.ui.create_ui(
-            x=x_pos + 50,
-            y=y_pos + 15,
+            x=x_pos + 50, y=20 + index * 35 + 15,
             font_size=10,
             font=self.game.environment.fonts["fantasy"],
             element_id=text_id,
@@ -536,70 +538,61 @@ class Player:
             label=item_name
         )
 
-        self.pickup_tags.insert(0, {
+        self.pickup_tags.append({
             "name": item_name,
             "element_id": element_id,
             "text_id": text_id,
-            "creation_time": self.game.environment.current_time
+            "creation_time": creation_time
         })
 
-        self.update_tag_positions()
+    def reposition_tags(self, x_pos=None):
+        if x_pos is None:
+            x_pos = self.game.screen.get_width() - 100
 
-    def update_pickup_tags(self):
-        if not self.pickup_tags:
-            return
-
-        current_time = self.game.environment.current_time
-        expired_tags = [tag for tag in self.pickup_tags if current_time - tag["creation_time"] >= 3000]
-
-        for tag in expired_tags:
-            self.pickup_tags.remove(tag)
+        for slot, tag in enumerate(self.pickup_tags):
             self.game.ui.remove_ui_element(tag["element_id"])
             self.game.ui.remove_ui_element(tag["text_id"])
 
-        if expired_tags:
-            self.update_tag_positions()
-
-    def remove_oldest_tag(self):
-        if self.pickup_tags:
-            oldest = self.pickup_tags.pop()
-            self.game.ui.remove_ui_element(oldest["element_id"])
-            self.game.ui.remove_ui_element(oldest["text_id"])
-
-    def update_tag_positions(self):
-        screen_width = self.game.screen.get_width()
-        x_pos = screen_width - 100
-        start_y = 20
-
-        for tag in self.pickup_tags:
-            self.game.ui.remove_ui_element(tag["element_id"])
-            self.game.ui.remove_ui_element(tag["text_id"])
-
-        for index, tag in enumerate(self.pickup_tags):
-            y_pos = start_y + index * 35
+            tag["element_id"] = f"pickup_tag_{tag['creation_time']}_{slot}"
+            tag["text_id"] = f"pickup_text_{tag['creation_time']}_{slot}"
 
             self.game.ui.create_ui(
                 sprite_sheet_path="item_sheet",
                 image_id=self.item_info["items"][tag["name"]]["index"],
-                x=x_pos,
-                y=y_pos,
-                sprite_width=16,
-                sprite_height=16,
-                width=30,
-                height=30,
+                x=x_pos, y=20 + slot * 35,
+                sprite_width=16, sprite_height=16,
+                width=30, height=30,
                 element_id=tag["element_id"],
                 render_order=2
             )
 
             self.game.ui.create_ui(
-                x=x_pos + 50,
-                y=y_pos + 15,
+                x=x_pos + 50, y=20 + slot * 35 + 15,
                 font_size=10,
                 font=self.game.environment.fonts["fantasy"],
                 element_id=tag["text_id"],
                 render_order=2,
                 label=tag["name"]
             )
+
+    def update_pickup_tags(self):
+        if not self.pickup_tags:
+            return
+
+        current_time = self.game.environment.current_time
+        expired = [tag for tag in self.pickup_tags if current_time - tag["creation_time"] >= 3000]
+
+        if not expired:
+            return
+
+        for tag in expired:
+            self.game.ui.remove_ui_element(tag["element_id"])
+            self.game.ui.remove_ui_element(tag["text_id"])
+
+        expired_ids = {id(tag) for tag in expired}
+        self.pickup_tags = [tag for tag in self.pickup_tags if id(tag) not in expired_ids]
+
+        self.reposition_tags()
 
     def render_item_info(self, id):
         if hasattr(self, "last_rendered_item") and self.last_rendered_item:
@@ -800,15 +793,19 @@ class Player:
                 self.dialogue_just_opened = False
 
     def interact_with_entity(self):
-        for entity in self.game.entities.entities:
+        for entity in list(self.game.entities.entities):
             if entity["entity_type"] == "item":
-                entity_hitbox = pg.Rect(entity["x"] - entity["width"] / 2, entity["y"] - entity["height"] / 2, entity["width"], entity["height"])
+                entity_hitbox = pg.Rect(
+                    entity["x"] - entity["width"] / 2,
+                    entity["y"] - entity["height"] / 2,
+                    entity["width"],
+                    entity["height"]
+                )
 
                 if self.interact_radius.colliderect(entity_hitbox):
                     if len(self.inventory) < self.max_inventory_slots:
                         self.add_item_to_inventory({**entity})
                         self.add_pickup_tag(entity["name"])
-
                         self.game.entities.entities.remove(entity)
 
                         for sound in self.sounds["pickup"]:
@@ -817,11 +814,16 @@ class Player:
                         pickup_sound = random.choice(self.sounds["pickup"])
                         pickup_sound["sound"].play()
 
-            if entity["entity_type"] == "npc":
+            elif entity["entity_type"] == "npc":
                 if not self.on_ground:
                     continue
 
-                entity_hitbox = pg.Rect(entity["x"] - entity["width"] / 2, entity["y"] - entity["height"] / 2, entity["width"], entity["height"])
+                entity_hitbox = pg.Rect(
+                    entity["x"] - entity["width"] / 2,
+                    entity["y"] - entity["height"] / 2,
+                    entity["width"],
+                    entity["height"]
+                )
 
                 if self.interact_radius.colliderect(entity_hitbox):
                     if entity["message"]:
@@ -833,11 +835,7 @@ class Player:
                         self.dialogue_just_opened = True
                         self.in_dialogue = True
 
-                        if entity["x"] < self.x:
-                            self.direction = "left"
-
-                        else:
-                            self.direction = "right"
+                        self.direction = "left" if entity["x"] < self.x else "right"
 
                         for sound in self.sounds["talking"]:
                             sound["sound"].stop()
