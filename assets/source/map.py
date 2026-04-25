@@ -351,7 +351,7 @@ class Map:
 
     def update(self):
         #if self.game.environment.menu in {"play", "death", "pause"}:
-        if not getattr(self.game.player, "settings_loaded", False) or not self.game.environment.menu in {"play"}:
+        if not getattr(self.game.player, "settings_loaded", False) or not self.game.environment.menu in {"play", "death"}:
             return
             
         self.cam_x = int(self.game.player.cam_x)
