@@ -63,7 +63,6 @@ class Environment:
     self.menu_config = load_json("assets/settings/menu_config.json")
 
   def load_game(self):
-    self.game.player.settings_loaded = True
     self.load_data()
 
   def restart_game(self):
@@ -138,29 +137,43 @@ class Environment:
     self.game.data_manager.set_setting("player_inventory", inventory_to_save)
 
   def load_data(self):
+    self.loaded_save = True
     try:
-      self.game.player.load_settings()
       self.game.data_manager.load_data()
-      self.menu = self.game.data_manager.get_setting("menu")
-      self.seed = self.game.data_manager.get_setting("seed")
-      self.volume = self.game.data_manager.get_setting("volume")
-      self.show_indicators = self.game.data_manager.get_setting("show_indicators")
-      self.vigorous_optimizations = self.game.data_manager.get_setting("vigorous_optimizations")
-      self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles")
-      self.game.foreground.enable_foreground = self.game.data_manager.get_setting("enable_foreground")
-      self.game.player.enable_cam_mouse = self.game.data_manager.get_setting("enable_cam_mouse")
-      self.game.player.max_health = self.game.data_manager.get_setting("player_max_health")
-      self.game.player.current_health = self.game.data_manager.get_setting("player_current_health")
-      self.game.player.direction = self.game.data_manager.get_setting("player_direction")
-      self.game.player.x = self.game.data_manager.get_setting("player_x")
-      self.game.player.y = self.game.data_manager.get_setting("player_y")
+      
+      self.menu = self.game.data_manager.get_setting("menu", "main")
+      self.seed = self.game.data_manager.get_setting("seed", int.from_bytes(os.urandom(4), "big"))
+      self.volume = self.game.data_manager.get_setting("volume", 0.5)
+      self.show_indicators = self.game.data_manager.get_setting("show_indicators", True)
+      self.vigorous_optimizations = self.game.data_manager.get_setting("vigorous_optimizations", False)
+      
+      self.player_spawn_x = self.game.data_manager.get_setting("player_x", 0)
+      self.player_spawn_y = self.game.data_manager.get_setting("player_y", 0)
+      
+      self.game.player.load_settings()
+
+      self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles", True)
+      self.game.foreground.enable_foreground = self.game.data_manager.get_setting("enable_foreground", True)
+      self.game.player.enable_cam_mouse = self.game.data_manager.get_setting("enable_cam_mouse", False)
+      self.game.player.max_health = self.game.data_manager.get_setting("player_max_health", 3)
+      self.game.player.current_health = self.game.data_manager.get_setting("player_current_health", self.game.player.max_health)
+      self.game.player.direction = self.game.data_manager.get_setting("player_direction", "right")
 
       saved_inventory = self.game.data_manager.get_setting("player_inventory", [])
-      self.game.player.inventory = {}
-      
+      new_inventory = {}
+
       for index, saved_item in enumerate(saved_inventory):
-        self.game.player.inventory[index] = saved_item
-      
+        if not saved_item:
+          continue
+          
+        base_item = self.game.player.item_info.get("items", {}).get(saved_item["name"], {}).copy()
+        base_item.update(saved_item)
+
+        new_inventory[index] = base_item
+
+      self.game.player.inventory = new_inventory
+      self.game.player.settings_loaded = True
+
     except Exception as e:
       self.menu = "select_menu"
       print(f"Error loading game data: {e}")
@@ -205,7 +218,7 @@ class Environment:
       return 
 
     if self.menu in {"play", "main"} and self.last_menu not in {"settings", "select_menu"}:
-      if hasattr(self, 'current_background_path'):
+      if hasattr(self, "current_background_path"):
         self.current_background_path = None
       pg.mixer.stop()
 
@@ -254,11 +267,17 @@ class Environment:
         
       else:
         tile_size = 16
-        
+          
       visual_tile_size = tile_size * self.scale
       
-      self.player_spawn_x = player_spawn["x"] * visual_tile_size + visual_tile_size // 2
-      self.player_spawn_y = player_spawn["y"] * visual_tile_size + visual_tile_size // 2
+      if getattr(self, "loaded_save", False) and hasattr(self, "player_spawn_x") and hasattr(self, "player_spawn_y"):
+        pass
+        
+      else:
+        self.player_spawn_x = player_spawn["x"] * visual_tile_size + visual_tile_size // 2
+        self.player_spawn_y = player_spawn["y"] * visual_tile_size + visual_tile_size // 2
+      
+      self.loaded_save = False
 
     placements = map_data.get("entity_placements", [])
     if not placements:
@@ -280,7 +299,7 @@ class Environment:
       overrides = placement.get("overrides", {})
 
       if not entity_type or not entity_name:
-          continue
+        continue
 
       tile_x = placement.get("x", 0)
       tile_y = placement.get("y", 0)

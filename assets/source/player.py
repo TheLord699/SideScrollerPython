@@ -46,7 +46,6 @@ class Player:
         self.current_attack_projectile = None
 
         self.max_inventory_slots = 15
-        self.inventory = {}
         self.rendered_inventory_ui_elements = []
         self.inventory_x_offset = self.game.screen_width / 2.5
         self.inventory_y_offset = self.game.screen_height / 2.5
@@ -55,6 +54,7 @@ class Player:
         self.selected_slot = None
         self.inventory_changed = False
         self.inventory_cooldown = 0
+        self.inventory = {}
 
         self.max_health = 3
         self.current_health = self.max_health
