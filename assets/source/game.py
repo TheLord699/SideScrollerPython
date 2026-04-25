@@ -67,8 +67,9 @@ class Environment:
     self.load_data()
 
   def restart_game(self):
-    self.game.player.load_settings()
+    self.loaded_save = False
     saved_map = next((k for k, v in self.maps.items() if v == self.current_map), "TestMap")
+    self.game.player.load_settings()
     self.start_game(saved_map)
 
   def load_menu(self, menu_name):
