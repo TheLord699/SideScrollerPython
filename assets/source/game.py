@@ -388,7 +388,11 @@ class Environment:
     self.get_controller()
     
     if self.current_track:
-      self.music_channel.set_volume(self.volume * 0.05)
+      if self.menu in {"main", "settings", "select_menu"}: # temporary
+        self.music_channel.set_volume(self.volume * 0.1)
+      
+      else:
+        self.music_channel.set_volume(self.volume * 0.05)
     
     if self.menu != self.last_menu:
       self.run_menu()
