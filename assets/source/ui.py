@@ -157,15 +157,25 @@ class UI:
         if spec.startswith("call:"):
             parts = spec.split(":", 1)[1]
             if ":" in parts:
-                method_name, args_str = parts.split(":", 1)
+                method_path, args_str = parts.split(":", 1)
                 args = [self.coerce_arg(a.strip()) for a in args_str.split(",")]
+                
             else:
-                method_name = parts
+                method_path = parts
                 args = []
 
-            method = getattr(env, method_name, None)
+            path_parts = method_path.split(".")
+            obj = env
+            for part in path_parts[:-1]:
+                obj = getattr(obj, part, None)
+                if obj is None:
+                    print(f"Unknown attribute '{part}' in path '{method_path}'")
+                    return None
+                
+            method_name = path_parts[-1]
+            method = getattr(obj, method_name, None)
             if method is None:
-                print(f"Unknown method '{method_name}' on env")
+                print(f"Unknown method '{method_name}' on {obj}")
                 return None
 
             return lambda m=method, a=args: m(*a)
