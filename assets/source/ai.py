@@ -248,7 +248,7 @@ class AISystem:
         entity_y = entity["y"]
         push_x = 0.0
 
-        for other in self.separation_candidates:
+        for other in self.separation_candidates: # some funky behaviour with separation_candidates, will fix
             if other is entity:
                 continue
 
@@ -296,7 +296,8 @@ class AISystem:
         if not (cam_x <= entity["x"] <= cam_x + self.game.screen_width and cam_y <= entity["y"] <= cam_y + self.game.screen_height):
             return
 
-        self.apply_separation(entity)
+        if entity["entity_type"] == "enemy": # will change to allow for all but prevent push in entity specific scripts
+            self.apply_separation(entity)
 
         script_path = entity.get("script")
         if script_path:
