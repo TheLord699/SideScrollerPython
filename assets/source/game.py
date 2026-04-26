@@ -106,6 +106,7 @@ class Environment:
       return
     
     self.music_channel.stop()
+    self.music_channel.set_volume(0)
     self.music_channel.play(self.music[new_track], loops=-1)
     self.current_track = new_track
     
