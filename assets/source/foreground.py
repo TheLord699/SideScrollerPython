@@ -8,14 +8,15 @@ class Foreground:
     def __init__(self, game):
         self.game = game
         self.enable_foreground = False
-        self.screen_effects = []
         
         self.load_settings()
 
     def load_settings(self):
         self.cam_x = 0
         self.cam_y = 0
+        
         self.layers = []
+        self.screen_effects = []
 
     def add_screen_effect(self, effect_type, intensity=1.0, duration=30, color=None):
         effect = {

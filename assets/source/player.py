@@ -32,6 +32,7 @@ class Player:
         self.cam_y = self.y - self.game.screen_height / 1.5
         self.camera_smoothing_factor = 0.1
         self.free_cam = False
+        self.screen_shake_timer = 0
 
         self.scale_factor = self.game.environment.scale
         self.hitbox_width = 5 * self.scale_factor
@@ -1758,11 +1759,11 @@ class Player:
     def shake_camera(self, intensity, duration):
         self.shake_intensity = intensity
         self.shake_duration = duration
-        self.shake_timer = duration
+        self.screen_shake_timer = duration
 
     def update_camera_shake(self):
-        if hasattr(self, "shake_timer") and self.shake_timer > 0:
-            decay = self.shake_timer / self.shake_duration
+        if self.screen_shake_timer > 0:
+            decay = self.screen_shake_timer / self.shake_duration
             
             current_intensity = self.shake_intensity * decay
             
@@ -1776,7 +1777,7 @@ class Player:
             offset_x += (random.random() - 0.5) * current_intensity * 0.5
             offset_y += (random.random() - 0.5) * current_intensity * 0.5
             
-            self.shake_timer -= 1
+            self.screen_shake_timer -= 1
             
             return (offset_x, offset_y)
 
