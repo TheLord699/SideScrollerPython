@@ -36,8 +36,6 @@ class Environment:
     self.seed = int.from_bytes(os.urandom(4), "big")
   
     self.music_channel = pg.mixer.Channel(1)
-    self.music_channel.set_volume(self.volume * 0.1)
-    
     self.missing_texture = pg.image.load("assets/sprites/missing_texture.png").convert_alpha()
     
     # will switch to load from json, prob related to the map
@@ -57,7 +55,7 @@ class Environment:
     }
     self.music = {
       "main": pg.mixer.Sound("assets/sounds/music/Alone_In_The_Town.wav"),
-      "TestMap": pg.mixer.Sound("assets/sounds/music/Maternal_Heart.wav"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
+      "TestMap": pg.mixer.Sound("assets/sounds/music/Silent Hill 2 OST The Day Of Night.mp3"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
       "Test2": pg.mixer.Sound("assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3")
     }
 
@@ -390,7 +388,7 @@ class Environment:
     self.get_controller()
     
     if self.current_track:
-      self.music_channel.set_volume(self.volume * 0.1)
+      self.music_channel.set_volume(self.volume * 0.05)
     
     if self.menu != self.last_menu:
       self.run_menu()
