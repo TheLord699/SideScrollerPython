@@ -514,7 +514,9 @@ class Entities:
             for _ in range(step):
                 entity["y"] += 1
                 if entity["on_ground"]:
+                    entity["vel_y"] = 0
                     break
+                
                 #self.is_on_ground(entity)
             
             entity["vel_y"] += self.game.environment.gravity * entity["weight"]
