@@ -108,6 +108,9 @@ class Entities:
             
         if hasattr(self, "bubble_scales"):
             self.bubble_scales.clear()
+
+        if hasattr(self, "aggro_circle_cache"):
+            self.aggro_circle_cache.clear()
         
         if hasattr(self, "dragged_entity"):
             del self.dragged_entity
@@ -510,9 +513,9 @@ class Entities:
             step = round(max(1, entity["vel_y"]))
             for _ in range(step):
                 entity["y"] += 1
-                if self.is_on_ground(entity): 
-                    entity["vel_y"] = 0
+                if entity["on_ground"]:
                     break
+                #self.is_on_ground(entity)
             
             entity["vel_y"] += self.game.environment.gravity * entity["weight"]
             
@@ -888,17 +891,22 @@ class Entities:
         
         if entity["entity_type"] in {"enemy"}:
             aggro_range = entity.get("aggro_range", 0)
-            
-            detection_surface = pg.Surface((aggro_range*2, aggro_range*2), pg.SRCALPHA)
-            pg.draw.circle(
-                detection_surface, 
-                (255, 165, 0, 30),
-                (aggro_range, aggro_range), 
-                aggro_range
-            )
-            
+
+            if not hasattr(self, "aggro_circle_cache"):
+                self.aggro_circle_cache = {}
+
+            if aggro_range not in self.aggro_circle_cache:
+                detection_surface = pg.Surface((aggro_range * 2, aggro_range * 2), pg.SRCALPHA)
+                pg.draw.circle(
+                    detection_surface,
+                    (255, 165, 0, 30),
+                    (aggro_range, aggro_range),
+                    aggro_range
+                )
+                self.aggro_circle_cache[aggro_range] = detection_surface
+
             self.game.screen.blit(
-                detection_surface,
+                self.aggro_circle_cache[aggro_range],
                 (entity["x"] - aggro_range - cam_x, entity["y"] - aggro_range - cam_y)
             )
             
@@ -926,6 +934,11 @@ class Entities:
         half_h = screen_h // 2
         
         self.update_sounds()
+
+        self.game.ai.separation_candidates = [
+            entity for entity in self.entities
+            if entity["entity_type"] in {"enemy"}
+        ]
         
         to_remove = []
         render_padding = 100
@@ -955,7 +968,7 @@ class Entities:
                     entity_y >= cam_y - half_h and 
                     entity_y <= cam_y + screen_h + half_h
                 )
-                
+                                
                 if not is_near_screen:
                     continue
             

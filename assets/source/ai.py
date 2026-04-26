@@ -17,6 +17,7 @@ class AISystem:
         }
 
         self.script_cache = {}
+        self.separation_candidates = []
 
         random.seed(self.game.environment.seed)
 
@@ -242,6 +243,35 @@ class AISystem:
         else:
             entity["attack_timer"] -= 1
 
+    def apply_separation(self, entity, separation_radius=40, separation_strength=0.25):
+        entity_x = entity["x"]
+        entity_y = entity["y"]
+        push_x = 0.0
+
+        for other in self.separation_candidates:
+            if other is entity:
+                continue
+
+            if other.get("knockback_timer", 0) > 0:
+                continue
+
+            dy = entity_y - other["y"]
+            if abs(dy) >= separation_radius:
+                continue
+
+            dx = entity_x - other["x"]
+            dist = abs(dx)
+            if dist >= separation_radius:
+                continue
+
+            if dist < 0.5:
+                dx = random.uniform(0.5, 1.0) * random.choice([-1, 1])
+                dist = abs(dx)
+
+            push_x += (dx / dist) * (separation_radius - dist) * separation_strength
+
+        entity["vel_x"] += push_x
+
     def update_ai(self, entity):
         if entity.get("knockback_timer", 0) > 0:
             entity["knockback_timer"] -= 1
@@ -252,6 +282,8 @@ class AISystem:
 
         if not (cam_x <= entity["x"] <= cam_x + self.game.screen_width and cam_y <= entity["y"] <= cam_y + self.game.screen_height):
             return
+
+        self.apply_separation(entity)
 
         script_path = entity.get("script")
         if script_path:
