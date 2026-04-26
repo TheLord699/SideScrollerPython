@@ -51,7 +51,7 @@ This project is more of a showcase of different systems:
 📸 Gameplay
 ------------------------------------------------------------
 
-![Gameplay GIF](https://github.com/TheLord699/SideScrollerPython/blob/main/readme_gif.gif?raw=true)
+![Gameplay GIF](https://github.com/TheLord699/SideScrollerPython/blob/main/gameplay.gif?raw=true)
 
 ------------------------------------------------------------
 📸 Screenshots
