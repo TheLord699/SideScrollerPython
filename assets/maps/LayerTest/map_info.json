@@ -8297,6 +8297,15 @@
       "entity_name": "Bab",
       "layer": 0,
       "overrides": {}
+    },
+    {
+      "x": 16.0,
+      "y": 18.0,
+      "type": "entity",
+      "entity_type": "actor",
+      "entity_name": "Chest",
+      "layer": 0,
+      "overrides": {}
     }
   ],
   "player_spawn": {

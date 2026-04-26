@@ -840,6 +840,18 @@ class Player:
 
                         talk_sound = random.choice(self.sounds["talking"])
                         talk_sound["sound"].play()
+            
+            elif entity["entity_type"] == "actor":
+                if entity.get("interactable", True) and (entity.get("interaction") == "scripted" or entity.get("script")):
+                    entity_hitbox = pg.Rect(
+                        entity["x"] - entity["width"] / 2,
+                        entity["y"] - entity["height"] / 2,
+                        entity["width"],
+                        entity["height"]
+                    )
+                    if self.interact_radius.colliderect(entity_hitbox):
+                        self.game.ai.interact_with_actor(entity)
+                        break
 
     def drop_item(self):
         if self.selected_slot is None or self.selected_slot not in self.inventory:

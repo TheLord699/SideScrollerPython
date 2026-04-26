@@ -271,6 +271,19 @@ class AISystem:
             push_x += (dx / dist) * (separation_radius - dist) * separation_strength
 
         entity["vel_x"] += push_x
+    
+    def interact_with_actor(self, entity):
+        script_path = entity.get("script")
+        if not script_path:
+            return
+        
+        module = self.load_script(script_path)
+        if module and hasattr(module, "on_interact"):
+            try:
+                module.on_interact(entity, self.game)
+                
+            except Exception as e:
+                print(f"[AI] Error in on_interact for {script_path}: {e}")
 
     def update_ai(self, entity):
         if entity.get("knockback_timer", 0) > 0:

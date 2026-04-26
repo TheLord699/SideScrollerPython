@@ -9,12 +9,15 @@ class Entities:
         self.game = game
         
         self.tilesheet_cache = {} 
-        
+                
         self.sounds = {
             "hit": [
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_1.wav"), "volume": 2},
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_2.wav"), "volume": 2},
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_3.wav"), "volume": 2}
+            ],
+            "open": [
+                {"sound": pg.mixer.Sound("assets/sounds/player/interact/01_chest_open_1.wav"), "volume": 2.0}
             ]
         }
         
@@ -367,6 +370,7 @@ class Entities:
         if animation_data:
             frames = animation_data["frames"]
             speed = animation_data["speed"]
+            loop = entity.get("states", {}).get(entity["current_state"], {}).get("loop", True)
 
             entity["animation_timer"] += 1
 
@@ -375,7 +379,8 @@ class Entities:
 
             if entity["animation_timer"] >= animation_data["frame_duration"]:
                 entity["animation_timer"] = 0
-                entity["animation_frame"] = (entity["animation_frame"] + 1) % len(frames)
+                if loop or entity["animation_frame"] < len(frames) - 1:
+                    entity["animation_frame"] = (entity["animation_frame"] + 1) % len(frames)
 
             entity["image"] = frames[entity["animation_frame"]]
 
@@ -972,7 +977,7 @@ class Entities:
                 if not is_near_screen:
                     continue
             
-            if entity["entity_type"] in {"npc", "enemy"}:
+            if entity["entity_type"] in {"npc", "enemy"} or (entity["entity_type"] == "actor" and entity.get("script")):
                 self.game.ai.update_ai(entity)
 
             self.update_collision(entity)

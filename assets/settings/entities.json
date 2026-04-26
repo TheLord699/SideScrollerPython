@@ -280,6 +280,39 @@
       "index": [11, 0],
       "entity_abilities": ["pushable"],
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
+    },
+    "Chest": {
+      "name": "Chest",
+      "type": "interactive",
+      "interaction": "scripted",
+      "weight": 1,
+      "width": 100,
+      "hitbox_offset_x": -20,
+      "hitbox_offset_y": 18,
+      "hitbox_width": 60,
+      "hitbox_height": 32,
+      "height": 70,
+      "tile_sheet": ["assets/sprites/props/Chests.png", 48, 32],
+      "index": [0, 0],
+      "entity_abilities": [],
+      "script": "assets/source/behaviour_scripts/chest.py",
+      "states": {
+        "idle": {
+          "start_row": 0,
+          "start_col": 0,
+          "frames": 1,
+          "cols": 1,
+          "speed": 0.1
+        },
+        "open": {
+          "start_row": 1,
+          "start_col": 0,
+          "frames": 5,
+          "cols": 5,
+          "speed": 0.1,
+          "loop": false
+        }
+      }
     }
   }
 }
