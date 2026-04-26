@@ -54,8 +54,8 @@ class Environment:
       "Test2": "assets/maps/LayerTest2/"
     }
     self.music = {
-      "main": pg.mixer.Sound("assets/sounds/music/alone.wav"),
-      "TestMap": pg.mixer.Sound("assets/sounds/music/sh.wav"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
+      "main": pg.mixer.Sound("assets/sounds/music/menu.wav"),
+      "TestMap": pg.mixer.Sound("assets/sounds/music/game1.wav"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
       "Test2": pg.mixer.Sound("assets/sounds/music/maternal.wav")
     }
 
