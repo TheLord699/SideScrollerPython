@@ -8299,8 +8299,26 @@
       "overrides": {}
     },
     {
-      "x": 16.0,
-      "y": 18.0,
+      "x": 92.0,
+      "y": 12.0,
+      "type": "entity",
+      "entity_type": "actor",
+      "entity_name": "Chest",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 44.0,
+      "y": 37.0,
+      "type": "entity",
+      "entity_type": "actor",
+      "entity_name": "Chest",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 3.0,
+      "y": 33.0,
       "type": "entity",
       "entity_type": "actor",
       "entity_name": "Chest",
