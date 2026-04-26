@@ -74,15 +74,6 @@ class Game:
     fps_text = default_font.render(f"FPS: {round(fps)}", True, (255, 255, 255))
     self.screen.blit(fps_text, (self.screen_width - 120, 10))
 
-    ram_usage = self.memory_debugger.get_ram_usage()
-    y_offset = 35
-    x_pos = self.screen_width - 800
-
-    for key, value in ram_usage.items():
-      ram_line = default_font.render(f"{key}: {value}", True, (255, 255, 255))
-      self.screen.blit(ram_line, (x_pos, y_offset))
-      y_offset += 20
-
   def update(self):
     self.environment.update()
     self.background.update()
