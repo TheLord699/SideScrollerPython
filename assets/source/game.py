@@ -55,8 +55,8 @@ class Environment:
     }
     self.music = {
       "main": pg.mixer.Sound("assets/sounds/music/alone.wav"),
-      "TestMap": pg.mixer.Sound("assets/sounds/music/sh.mp3"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
-      "Test2": pg.mixer.Sound("assets/sounds/music/maternal.mp3")
+      "TestMap": pg.mixer.Sound("assets/sounds/music/sh.wav"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
+      "Test2": pg.mixer.Sound("assets/sounds/music/maternal.wav")
     }
 
     self.menu_config = load_json("assets/settings/menu_config.json")
