@@ -989,11 +989,23 @@ class Entities:
                 to_remove.append(entity)
                 continue
 
-            if is_on_screen:
-                self.render(entity)
-                self.mouse_interact(entity)
-                self.show_hitboxes(entity)
-                self.entity_indicators(entity)
-
         for entity in to_remove:
             self.entities.remove(entity)
+        
+        render_priority = {"actor": 0, "npc": 1, "enemy": 2, "item": 3}
+        
+        on_screen_entities = []
+        for entity in self.entities:
+            sprite_x = entity["x"] - cam_x - entity["width"] // 2
+            sprite_y = entity["y"] - cam_y - entity["height"] // 2
+            if (sprite_x + entity["width"] >= -50 and sprite_x <= screen_w + 50 and
+                sprite_y + entity["height"] >= -50 and sprite_y <= screen_h + 50):
+                on_screen_entities.append(entity)
+        
+        on_screen_entities.sort(key=lambda e: render_priority.get(e["entity_type"], 4))
+        
+        for entity in on_screen_entities:
+            self.render(entity)
+            self.mouse_interact(entity)
+            self.show_hitboxes(entity)
+            self.entity_indicators(entity)
