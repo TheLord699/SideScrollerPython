@@ -149,10 +149,10 @@ class Game:
 
             case pg.K_v:
               if self.player.direction == "right":
-                self.entities.create_entity("enemy", "Bab", self.player.x + 100, self.player.y - 15)
+                self.entities.create_entity("actor", "Chest", self.player.x + 100, self.player.y - 15)
 
               else:
-                self.entities.create_entity("enemy", "Bab", self.player.x - 100, self.player.y - 15)
+                self.entities.create_entity("actor", "Chest", self.player.x - 100, self.player.y - 15)
 
             case pg.K_m:
               self.memory_debugger.toggle()
