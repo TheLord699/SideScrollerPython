@@ -9,6 +9,9 @@ You will notice some questionable architectural choices. I started this project 
 and the effort of rewriting doesn't outweigh the benefits tbh. It would make the code cleaner, but this is a hobby
 project and I'm having fun with it, which is what matters to me  :)
 
+you could argue that the code is full of super pragmatic decisions + compramises
+due to old code and python restrictions?
+
 (keep in mind the code doesnt 100% represent my current skill)
 
 I went heavy on composition (inheritance is yucky), and while I did some testing
