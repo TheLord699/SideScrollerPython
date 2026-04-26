@@ -9,6 +9,7 @@ class Entities:
         self.game = game
         
         self.tilesheet_cache = {} 
+        self.render_priority = {"actor": 0, "npc": 1, "enemy": 2, "item": 3}
                 
         self.sounds = {
             "hit": [
@@ -992,8 +993,6 @@ class Entities:
         for entity in to_remove:
             self.entities.remove(entity)
         
-        render_priority = {"actor": 0, "npc": 1, "enemy": 2, "item": 3}
-        
         on_screen_entities = []
         for entity in self.entities:
             sprite_x = entity["x"] - cam_x - entity["width"] // 2
@@ -1002,7 +1001,7 @@ class Entities:
                 sprite_y + entity["height"] >= -50 and sprite_y <= screen_h + 50):
                 on_screen_entities.append(entity)
         
-        on_screen_entities.sort(key=lambda e: render_priority.get(e["entity_type"], 4))
+        on_screen_entities.sort(key=lambda e: self.render_priority.get(e["entity_type"], 4))
         
         for entity in on_screen_entities:
             self.render(entity)
