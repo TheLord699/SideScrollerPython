@@ -54,9 +54,9 @@ class Environment:
       "Test2": "assets/maps/LayerTest2/"
     }
     self.music = {
-      "main": pg.mixer.Sound("assets/sounds/music/Alone_In_The_Town.wav"),
-      "TestMap": pg.mixer.Sound("assets/sounds/music/Silent Hill 2 OST The Day Of Night.mp3"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
-      "Test2": pg.mixer.Sound("assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3")
+      "main": pg.mixer.Sound("assets/sounds/music/alone.wav"),
+      "TestMap": pg.mixer.Sound("assets/sounds/music/sh.mp3"), # "assets/sounds/music/Maternal_Heart.wav" "assets/sounds/music/Aphex_Twin_-_Xtal_HQ.mp3"
+      "Test2": pg.mixer.Sound("assets/sounds/music/maternal.mp3")
     }
 
     self.menu_config = load_json("assets/settings/menu_config.json")
