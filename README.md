@@ -48,6 +48,12 @@ This project is more of a showcase of different systems:
 - Basic combat + movement mechanics
 
 ------------------------------------------------------------
+📸 Gameplay
+------------------------------------------------------------
+
+![Gameplay GIF](https://github.com/TheLord699/SideScrollerPython/blob/main/readme_gif.gif?raw=true)
+
+------------------------------------------------------------
 📸 Screenshots
 ------------------------------------------------------------
 In-game:
