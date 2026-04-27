@@ -99,15 +99,9 @@ This project is more of a showcase of different systems:
 
 You'll need Python installed.
 
-**Dependencies:**
-pygame-ce
-numpy
-psutil
-
-Install with:
 
 ```bash
-pip install pygame-ce numpy psutil
+pip install -r requirements.txt
 ```
 
 ---
