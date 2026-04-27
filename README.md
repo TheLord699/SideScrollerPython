@@ -105,12 +105,3 @@ pip install -r requirements.txt
 ```
 
 ---
-
-## Quirks / Notes
-
-- No dedicated `render()` function in `main.py` (everything's inline)
-- `main.py` is in `/scripts` instead of project root (gulp)
-- Some things are loaded into memory more than once
-- Using `self.game.screen_width / height` for rendering bounds (can switch to `self.game.screen.get_size()`)
-- Entity hitboxes aren't stored in their list → can't reference them across classes
-- Sliding after jumps is intentional (for now)
