@@ -1,15 +1,16 @@
-Side Scroller (Python + Pygame)
-================================
+# Side Scroller (Python + Pygame)
 
-This is my first attempt at creating a side scroller using Pygame-ce.
-It’s also my first time working on a project of this scale, so expect quirks, experiments,
-and plenty of “could be betters.”
+> A side scroller built with Pygame-ce — first project at this scale, so expect quirks, experiments, and plenty of "could be betters."
+
+---
+
+## About
 
 You will notice some questionable architectural choices. I started this project when I was fairly new to coding,
 and the effort of rewriting doesn't outweigh the benefits tbh. It would make the code cleaner, but this is a hobby
-project and I'm having fun with it, which is what matters to me  :)
+project and I'm having fun with it, which is what matters to me : )
 
-you could argue that the code is full of super pragmatic decisions + compramises
+you could argue that the code is full of super pragmatic decisions + compromises
 due to old code and python restrictions?
 
 (keep in mind the code doesnt 100% represent my current skill)
@@ -24,22 +25,21 @@ significant overhead due to object indirection, dynamic lookups, and poor cache 
 
 Instead, I opted for a more pragmatic approach:
 
-* Systems are more targeted and explicit (e.g. per-entity-type updates)
-* Data is grouped where it makes sense rather than fully abstracted
-* Focus is on keeping things fast and maintainable within Python’s constraints
+- Systems are more targeted and explicit (e.g. per-entity-type updates)
+- Data is grouped where it makes sense rather than fully abstracted
+- Focus is on keeping things fast and maintainable within Python's constraints
 
-So while this isn’t a “pure ECS,” it follows similar ideas where useful, without
+So while this isn't a "pure ECS," it follows similar ideas where useful, without
 sacrificing performance or readability.
 
-Note: All assets are from itch.io
+> **Note:** All assets are from [itch.io](https://itch.io). Also use pygame-ce not pygame.
 
-Also use pygame-ce not pygame
+---
 
+## Features / Systems
 
-------------------------------------------------------------
-🚀 Features / Systems
-------------------------------------------------------------
 This project is more of a showcase of different systems:
+
 - Entity system (drag-and-drop with mouse)
 - Inventory system
 - Debugging tools (memory debugger, hitbox view, etc.)
@@ -47,79 +47,76 @@ This project is more of a showcase of different systems:
 - Save/load system
 - Basic combat + movement mechanics
 
-------------------------------------------------------------
-📸 Gameplay
-------------------------------------------------------------
+---
+
+## Gameplay
 
 ![Gameplay GIF](https://github.com/TheLord699/SideScrollerPython/blob/main/gameplay.gif?raw=true)
 
-------------------------------------------------------------
-📸 Screenshots
-------------------------------------------------------------
-In-game:
+---
 
-![image alt](https://github.com/TheLord699/SideScrollerPython/blob/a9c685ae1db8d070a10e447c9e7f7f11895733ff/Title.png?raw=true)
+## Screenshots
 
+**In-game:**
 
-Lighting Example:
+![Title](https://github.com/TheLord699/SideScrollerPython/blob/a9c685ae1db8d070a10e447c9e7f7f11895733ff/Title.png?raw=true)
 
-![image alt](https://github.com/TheLord699/SideScrollerPython/blob/e03d5a201bbb3d47f0805023a4e0e42a7e3cb6c3/Title_light.png?raw=true)
+**Lighting example:**
 
-------------------------------------------------------------
-🎮 Controls
-------------------------------------------------------------
-Save: G
+![Title with lighting](https://github.com/TheLord699/SideScrollerPython/blob/e03d5a201bbb3d47f0805023a4e0e42a7e3cb6c3/Title_light.png?raw=true)
 
-Movement: WASD
+---
 
-Open Map: T
+## Controls
 
-Dash: Shift
+| Action | Key |
+|---|---|
+| Move | `W` `A` `S` `D` |
+| Dash | `Shift` |
+| Attack | `Space` |
+| Pickup item / Talk to NPC | `E` |
+| Consume item | `E` |
+| Drop item | `Q` |
+| Open inventory | `I` |
+| Open map | `T` |
+| Save | `G` |
+| Back to menu | `B` |
+| Open memory debugger | `M` |
+| Close memory debugger | `Esc` |
+| Open terminal (inside debugger) | `Tab` |
 
-Inventory: I
+**Debug / Extra:**
 
-Consume item: E
+| Thing | How |
+|---|---|
+| Toggle lighting | Open terminal → `environment.lighting = True`, then press `N` |
+| Show hitboxes | Open terminal → `debugging = True` |
+| Drag entities | Click + drag with mouse (don't try to pick them up while dragging!) |
 
-Drop item: Q
+---
 
-Attack: Spacebar
+## Installation
 
-Pickup item / Talk to NPC: E
+You'll need Python installed.
 
-Back to menu: B
+**Dependencies:**
+pygame-ce
+numpy
+psutil
 
-Open memory debugger: M
+Install with:
 
-Close memory debugger: ESC
+```bash
+pip install pygame-ce numpy psutil
+```
 
-Open terminal (inside memory debugger): Tab
+---
 
-Debug / Extra:
-- Toggle lighting: open terminal → environment.lighting = True, then press N
+## Quirks / Notes
 
-- Show hitboxes: open terminal → debugging = True
-
-- Drag entities with mouse (don’t try to pick them up while dragging!)
-
-------------------------------------------------------------
-📦 Installation
-------------------------------------------------------------
-You’ll need Python installed.
-
-Dependencies:
-    pygame-ce,
-    numpy,
-    psutil
-
-Install them with:
-    pip install pygame-ce numpy psutil
-
-------------------------------------------------------------
-🛠️ Current Quirks / Notes
-------------------------------------------------------------
-- No dedicated render() function in main.py (everything’s inline)
-- main.py is in the /scripts folder instead of project root (gulp)
+- No dedicated `render()` function in `main.py` (everything's inline)
+- `main.py` is in `/scripts` instead of project root (gulp)
 - Some things are loaded into memory more than once
-- Using self.game.screen_width / height for rendering bounds (can switch to self.game.screen.get_size())
-- Entity hitboxes aren’t stored in their list → can’t reference them across classes
+- Using `self.game.screen_width / height` for rendering bounds (can switch to `self.game.screen.get_size()`)
+- Entity hitboxes aren't stored in their list → can't reference them across classes
 - Sliding after jumps is intentional (for now)
