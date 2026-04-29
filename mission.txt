@@ -36,8 +36,6 @@ Do immediately:
 
 -----^^^^old^^^^------------------
 
-need to load all ai scripts for a level instead of once they apear on screen
-
 UI needs a translation func for positions, want to change resolution but dont want to update all UI pos code
 
 mem debugger needs to be able to infer what could be causing leaks
@@ -52,11 +50,11 @@ need to seperate camera and player
 
 when you start a level it should store those stats you started with in mem, then when you die and reload, instead of reseting your stats
 it loads the stats you had when you started that level(could expand it to allow for save points mid level) also this would be seperate from the save systyem
-and shouldnt overwride save
+and shouldnt overwride save(checkpoint system)
 
 I eventually want some sort of cutscene builder
 
-
+enemy detection zones need to increase in size when player is initially detected or when theyre hit(for like a second)
 
 
 

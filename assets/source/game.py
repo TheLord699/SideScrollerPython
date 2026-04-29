@@ -329,6 +329,7 @@ class Environment:
           print(f"Failed to restore entity '{saved['name']}': {e}")
 
       self.saved_world_entities = None
+      self.game.ai.preload_scripts(self.game.entities.entities)
       return
 
     placements = map_data.get("entity_placements", [])
@@ -383,6 +384,8 @@ class Environment:
             for state_name, state_data in entity["animation_frames"].items():
               entity["animation_frames"][state_name]["frames"] = [pg.transform.scale(f, (new_w, new_h)) for f in state_data["frames"]]
               entity["flipped_frames"][state_name] = [pg.transform.flip(f, True, False) for f in entity["animation_frames"][state_name]["frames"]]
+
+    self.game.ai.preload_scripts(self.game.entities.entities)
 
   def update(self):
     self.current_time = pg.time.get_ticks()

@@ -12,7 +12,7 @@ class Player:
         
         self.enable_cam_mouse = False
         
-        self.smoke_images = { # Ik this is super specific but i dont want to write a particle manager
+        self.smoke_images = { # Ik this is super specific but i dont want to write an image manager
             1: pg.image.load("assets/sprites/particles/smoke1.png").convert_alpha(),
             2: pg.image.load("assets/sprites/particles/smoke2.png").convert_alpha(),
         }

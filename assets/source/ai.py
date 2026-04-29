@@ -46,6 +46,12 @@ class AISystem:
             self.script_cache[script_path] = None
             return None
 
+    def preload_scripts(self, entities):
+        for entity in entities:
+            script_path = entity.get("script")
+            if script_path:
+                self.load_script(script_path)
+
     def check_wall_collision(self, entity):
         hitbox_w = entity.get("hitbox_width", entity["width"])
         hitbox_h = entity.get("hitbox_height", entity["height"])
