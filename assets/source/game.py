@@ -54,7 +54,7 @@ class Environment:
       "Test2": "assets/maps/LayerTest2/"
     }
     self.music = {
-      "main": pg.mixer.Sound("assets/sounds/music/menu.wav"),
+      "main": pg.mixer.Sound("assets/sounds/music/menu3.wav"),
       "TestMap": pg.mixer.Sound("assets/sounds/music/game1.wav"),
       "Test2": pg.mixer.Sound("assets/sounds/music/game2.wav")
     }

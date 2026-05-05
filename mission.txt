@@ -56,7 +56,7 @@ I eventually want some sort of cutscene builder
 
 enemy detection zones need to increase in size when player is initially detected or when theyre hit(for like a second)
 
-
+i want that when within range first do a raycast, if a tile is in the way dont let enemy see player
 
 
 
