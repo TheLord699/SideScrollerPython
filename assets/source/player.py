@@ -1718,11 +1718,11 @@ class Player:
         pg.draw.rect(self.game.screen, (50, 50, 50, 180), (bar_x, bar_y, bar_width, bar_height))
         
         if charge_percent > 0:
-            if charge_percent < 0.5:
-                color = (200, 255, 0)  # Yellow-green for early charge
+            if charge_percent < 0.6:
+                color = (200, 255, 0)
                 
             else:
-                color = (0, 255, 0)    # Bright green for full charge
+                color = (0, 255, 0)
                 
             pg.draw.rect(self.game.screen, color, (bar_x, bar_y, filled_width, bar_height))
 
