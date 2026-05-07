@@ -8320,8 +8320,8 @@
       "x": 4.0,
       "y": 18.0,
       "type": "entity",
-      "entity_type": "actor",
-      "entity_name": "Basic_sword",
+      "entity_type": "item",
+      "entity_name": "Basic sword",
       "layer": 0,
       "overrides": {}
     },
@@ -8329,8 +8329,8 @@
       "x": 5.0,
       "y": 18.0,
       "type": "entity",
-      "entity_type": "actor",
-      "entity_name": "Basic_bow",
+      "entity_type": "item",
+      "entity_name": "Basic bow",
       "layer": 0,
       "overrides": {}
     }

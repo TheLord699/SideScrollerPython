@@ -95,6 +95,7 @@ class Player:
         self.animation_timer = 0
         self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
         self.weapon_inventory = [] # temporary, will be replaced with actual inventory system
+        self.max_weapon_inventory_slots = 2
         self.equipped_weapon = ""
         self.loaded_weapons = set()
         self.state_frames = {
@@ -793,64 +794,60 @@ class Player:
 
     def interact_with_entity(self):
         for entity in list(self.game.entities.entities):
+            entity_hitbox = pg.Rect(
+                entity["x"] - entity["width"] / 2,
+                entity["y"] - entity["height"] / 2,
+                entity["width"],
+                entity["height"]
+            )
+
+            is_interacting = self.interact_radius.colliderect(entity_hitbox)
+
             if entity["entity_type"] == "item":
-                entity_hitbox = pg.Rect(
-                    entity["x"] - entity["width"] / 2,
-                    entity["y"] - entity["height"] / 2,
-                    entity["width"],
-                    entity["height"]
-                )
+                if is_interacting:
+                    if entity["type"] != "weapon":
+                        if len(self.inventory) < self.max_inventory_slots:
+                            self.add_item_to_inventory({**entity})
+                            self.add_pickup_tag(entity["name"])
+                            
+                    else:
+                        if len(self.weapon_inventory) < self.max_weapon_inventory_slots:
+                            internal_name = self.item_info["items"][entity["name"]]["name"]
+                            self.weapon_inventory.append(internal_name)
+                            self.add_pickup_tag(entity["name"])
 
-                if self.interact_radius.colliderect(entity_hitbox):
-                    if len(self.inventory) < self.max_inventory_slots:
-                        self.add_item_to_inventory({**entity})
-                        self.add_pickup_tag(entity["name"])
-                        self.game.entities.entities.remove(entity)
+                    self.game.entities.entities.remove(entity)
 
-                        for sound in self.sounds["pickup"]:
-                            sound["sound"].stop()
+                    for sound in self.sounds["pickup"]:
+                        sound["sound"].stop()
 
-                        pickup_sound = random.choice(self.sounds["pickup"])
-                        pickup_sound["sound"].play()
+                    random.choice(self.sounds["pickup"])["sound"].play()
 
             elif entity["entity_type"] == "npc":
                 if not self.on_ground:
                     continue
 
-                entity_hitbox = pg.Rect(
-                    entity["x"] - entity["width"] / 2,
-                    entity["y"] - entity["height"] / 2,
-                    entity["width"],
-                    entity["height"]
-                )
+                if is_interacting and entity["message"]:
+                    if self.just_closed_dialogue:
+                        return
 
-                if self.interact_radius.colliderect(entity_hitbox):
-                    if entity["message"]:
-                        if self.just_closed_dialogue:
-                            return
+                    self.dialogue_with = entity
+                    self.dialogue_index = 0
+                    self.dialogue_just_opened = True
+                    self.in_dialogue = True
 
-                        self.dialogue_with = entity
-                        self.dialogue_index = 0
-                        self.dialogue_just_opened = True
-                        self.in_dialogue = True
+                    self.direction = "left" if entity["x"] < self.x else "right"
 
-                        self.direction = "left" if entity["x"] < self.x else "right"
+                    for sound in self.sounds["talking"]:
+                        sound["sound"].stop()
 
-                        for sound in self.sounds["talking"]:
-                            sound["sound"].stop()
+                    random.choice(self.sounds["talking"])["sound"].play()
 
-                        talk_sound = random.choice(self.sounds["talking"])
-                        talk_sound["sound"].play()
-            
             elif entity["entity_type"] == "actor":
-                if entity.get("interactable", True) and (entity.get("interaction") == "scripted" or entity.get("script")):
-                    entity_hitbox = pg.Rect(
-                        entity["x"] - entity["width"] / 2,
-                        entity["y"] - entity["height"] / 2,
-                        entity["width"],
-                        entity["height"]
-                    )
-                    if self.interact_radius.colliderect(entity_hitbox):
+                if entity.get("interactable", True) and (
+                    entity.get("interaction") == "scripted" or entity.get("script")
+                ):
+                    if is_interacting:
                         self.game.ai.interact_with_actor(entity)
                         break
 
