@@ -243,7 +243,7 @@
       "height": 30,
       "index": [8, 0],
       "script": "assets/source/behaviour_scripts/items/basic_sword.py",
-      "tile_sheet": ["assets/sprites/gui/items/items/Sheet.png", 16, 16]
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
     "Basic_bow": {
       "name": "Basic bow",

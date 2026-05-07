@@ -8299,24 +8299,6 @@
       "overrides": {}
     },
     {
-      "x": 4.0,
-      "y": 18.0,
-      "type": "entity",
-      "entity_type": "actor",
-      "entity_name": "Basic_bow",
-      "layer": 0,
-      "overrides": {}
-    },
-    {
-      "x": 5.0,
-      "y": 18.0,
-      "type": "entity",
-      "entity_type": "actor",
-      "entity_name": "Basic_sword",
-      "layer": 0,
-      "overrides": {}
-    },
-    {
       "x": 52.0,
       "y": 12.0,
       "type": "entity",
@@ -8331,6 +8313,24 @@
       "type": "entity",
       "entity_type": "enemy",
       "entity_name": "Bab",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 4.0,
+      "y": 18.0,
+      "type": "entity",
+      "entity_type": "actor",
+      "entity_name": "Basic_sword",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 5.0,
+      "y": 18.0,
+      "type": "entity",
+      "entity_type": "actor",
+      "entity_name": "Basic_bow",
       "layer": 0,
       "overrides": {}
     }
