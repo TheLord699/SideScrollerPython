@@ -317,7 +317,7 @@ class Entities:
         self.game.entities.create_entity("item", item, entity["x"], entity["y"])
     
     def update_animation(self, entity):
-        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        cam_x, cam_y = self.game.camera.x, self.game.camera.y
         screen_width, screen_height = self.game.screen_width, self.game.screen_height
 
         sprite_x = entity["x"] - cam_x - entity["width"] // 2
@@ -597,7 +597,7 @@ class Entities:
         if not hasattr(self, "health_font"):
             self.health_font = pg.font.Font(self.game.environment.fonts["fantasy"], 13)
 
-        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        cam_x, cam_y = self.game.camera.x, self.game.camera.y
         
         entity_height = entity.get("hitbox_height", entity["height"])
         bar_width = entity.get("hitbox_width", entity["width"])
@@ -673,7 +673,7 @@ class Entities:
             return
 
         distance = math.sqrt(distance_sq)
-        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        cam_x, cam_y = self.game.camera.x, self.game.camera.y
 
         entity_height = entity.get("hitbox_height", entity["height"])
         screen_x = entity["x"] - cam_x
@@ -751,7 +751,7 @@ class Entities:
         if not entity["image"]:
             return
         
-        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        cam_x, cam_y = self.game.camera.x, self.game.camera.y
         
         sprite_x = entity["x"] - cam_x - entity["width"] // 2
         sprite_y = entity["y"] - cam_y - entity["height"] // 2
@@ -809,8 +809,8 @@ class Entities:
 
     def mouse_interact(self, entity):
         mouse_x, mouse_y = pg.mouse.get_pos()
-        mouse_world_x = mouse_x + self.game.player.cam_x
-        mouse_world_y = mouse_y + self.game.player.cam_y
+        mouse_world_x = mouse_x + self.game.camera.x
+        mouse_world_y = mouse_y + self.game.camera.y
         
         hitbox_w = entity.get("hitbox_width", entity["width"])
         hitbox_h = entity.get("hitbox_height", entity["height"])
@@ -851,7 +851,7 @@ class Entities:
         if not self.game.debugging:
             return
         
-        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        cam_x, cam_y = self.game.camera.x, self.game.camera.y
         hitbox_w = entity.get("hitbox_width", entity["width"])
         hitbox_h = entity.get("hitbox_height", entity["height"])
         offset_x = entity.get("hitbox_offset_x", 0)
@@ -933,7 +933,7 @@ class Entities:
         if not getattr(self.game.player, "settings_loaded", False):
             return
         
-        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        cam_x, cam_y = self.game.camera.x, self.game.camera.y
         screen_w, screen_h = self.game.screen_width, self.game.screen_height
         
         half_w = screen_w // 2

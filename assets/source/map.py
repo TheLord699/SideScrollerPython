@@ -353,8 +353,8 @@ class Map:
         if not getattr(self.game.player, "settings_loaded", False) or not self.game.environment.menu in {"play", "death"}:
             return
             
-        self.cam_x = int(self.game.player.cam_x)
-        self.cam_y = int(self.game.player.cam_y)
+        self.cam_x = int(self.game.camera.x)
+        self.cam_y = int(self.game.camera.y)
             
         self.render()
         self.render_debug(self.game.player.hitbox)

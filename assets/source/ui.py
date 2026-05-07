@@ -17,10 +17,10 @@ class UI:
         element_type = cfg.get("type")
 
         shared = dict(
-            x=self.resolve_expr(cfg.get("x", 0), env),
-            y=self.resolve_expr(cfg.get("y", 0), env),
-            width=self.resolve_expr(cfg.get("width", 0), env),
-            height=self.resolve_expr(cfg.get("height", 0), env),
+            x=self.resolve_expr(cfg.get("x", 0), env, axis="x"),
+            y=self.resolve_expr(cfg.get("y", 0), env, axis="y"),
+            width=self.resolve_expr(cfg.get("width", 0), env, axis="x"),
+            height=self.resolve_expr(cfg.get("height", 0), env, axis="y"),
             element_id=cfg["id"],
             centered=cfg.get("centered", False),
             render_order=cfg.get("render_order", 0),
@@ -73,8 +73,23 @@ class UI:
         else:
             print(f"Unknown element type '{element_type}' for id '{cfg.get('id')}'")
 
-    def resolve_expr(self, value, env=None):
+    BASE_WIDTH = 800
+    BASE_HEIGHT = 600
+
+    def tx(self, x):
+        return x * self.game.screen_width / self.BASE_WIDTH
+
+    def ty(self, y):
+        return y * self.game.screen_height / self.BASE_HEIGHT
+
+    def resolve_expr(self, value, env=None, axis=None):
         if not isinstance(value, str):
+            if axis == "x":
+                return self.tx(value)
+            
+            elif axis == "y":
+                return self.ty(value)
+            
             return value
         
         try:

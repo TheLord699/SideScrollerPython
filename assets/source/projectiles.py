@@ -140,8 +140,8 @@ class ProjectileSystem:
         return False
 
     def is_offscreen(self, projectile):
-        camera_x = self.game.player.cam_x
-        camera_y = self.game.player.cam_y
+        camera_x = self.game.camera.x
+        camera_y = self.game.camera.y
         
         screen_width = self.game.screen_width
         screen_height = self.game.screen_height
@@ -156,8 +156,8 @@ class ProjectileSystem:
         return not visual_rect.colliderect(screen_rect)
 
     def should_update(self, projectile):
-        camera_x = self.game.player.cam_x
-        camera_y = self.game.player.cam_y
+        camera_x = self.game.camera.x
+        camera_y = self.game.camera.y
         
         screen_width = self.game.screen_width
         screen_height = self.game.screen_height
@@ -170,8 +170,8 @@ class ProjectileSystem:
         return update_bounds.collidepoint(projectile.x, projectile.y)
 
     def should_render(self, projectile):
-        camera_x = self.game.player.cam_x
-        camera_y = self.game.player.cam_y
+        camera_x = self.game.camera.x
+        camera_y = self.game.camera.y
         
         screen_width = self.game.screen_width
         screen_height = self.game.screen_height
@@ -224,7 +224,7 @@ class ProjectileSystem:
                 if entity["entity_type"] in {"enemy", "npc"} and entity["health"] > 0:
                     entity["health"] -= projectile.damage
                     entity["damage_effect"] = 1
-                    self.game.player.shake_camera(intensity=4.4, duration=25) # 3.2
+                    self.game.camera.shake(intensity=4.4, duration=25) # 3.2
                     self.game.entities.spawn_hit_particles(entity)
                     for sound_data in self.game.entities.sounds["hit"]:
                         sound_data["sound"].stop()
@@ -371,8 +371,8 @@ class ProjectileSystem:
             if not projectile.alive:
                 continue
 
-            camera_x = self.game.player.cam_x
-            camera_y = self.game.player.cam_y
+            camera_x = self.game.camera.x
+            camera_y = self.game.camera.y
             rect = self.get_rect(projectile)
 
             if debugging:

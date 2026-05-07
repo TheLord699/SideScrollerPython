@@ -138,8 +138,8 @@ class LightSource:
         return pg.transform.smoothscale(blurred_surface, surface.get_size())
 
     def render_light(self, light):
-        screen_x = int(light["x"] - self.game.player.cam_x)
-        screen_y = int(light["y"] - self.game.player.cam_y)
+        screen_x = int(light["x"] - self.game.camera.x)
+        screen_y = int(light["y"] - self.game.camera.y)
         radius = light["radius"]
         
         sw, sh = self.game.screen_width, self.game.screen_height

@@ -296,8 +296,8 @@ class AISystem:
             entity["knockback_timer"] -= 1
             return
             
-        cam_x = self.game.player.cam_x
-        cam_y = self.game.player.cam_y
+        cam_x = self.game.camera.x
+        cam_y = self.game.camera.y
 
         if not (cam_x <= entity["x"] <= cam_x + self.game.screen_width and cam_y <= entity["y"] <= cam_y + self.game.screen_height):
             return

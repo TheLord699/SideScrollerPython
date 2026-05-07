@@ -17,6 +17,7 @@ from light_source import LightSource
 from ai import AISystem
 from projectiles import ProjectileSystem
 from window_manager import WindowManager
+from camera import Camera
 
 class Game:
   def __init__(self):
@@ -41,7 +42,7 @@ class Game:
     self.version = "0.6.5-dev"
     icon = pg.image.load("assets/sprites/misc/bug.png")
 
-    self.screen_width, self.screen_height = 800, 600 # 1137
+    self.screen_width, self.screen_height = 1137, 600 # 1137
     # optional fullscreen(doesnt change resolution, just stretches it), might remove later
     self.window_manager = WindowManager(self.screen_width, self.screen_height, f"SideScroller {self.version}", icon, use_opengl=False)
     self.screen = self.window_manager.screen
@@ -61,6 +62,7 @@ class Game:
     self.projectiles_system = ProjectileSystem(self)
     self.map = Map(self)
     self.player = Player(self)
+    self.camera = Camera(self)
     self.entities = Entities(self)
     self.background = Background(self)
     self.foreground = Foreground(self)

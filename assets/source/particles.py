@@ -165,7 +165,7 @@ class Particles:
 
     def render_particle(self, surface, particle):
         screen_width, screen_height = self.game.screen_width, self.game.screen_height
-        cam_x, cam_y = self.game.player.cam_x, self.game.player.cam_y
+        cam_x, cam_y = self.game.camera.x, self.game.camera.y
 
         screen_x = particle["rect"].x - cam_x
         screen_y = particle["rect"].y - cam_y

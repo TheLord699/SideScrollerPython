@@ -58,6 +58,8 @@ enemy detection zones need to increase in size when player is initially detected
 
 i want that when within range first do a raycast, if a tile is in the way dont let enemy see player
 
+for cutscene builder we will have a dict of cams i think, then we will store lerp values and wait values + move to next cam on a var check and interpolate between the cams
+
 
 
 note to self: stop using copywritten music >:(

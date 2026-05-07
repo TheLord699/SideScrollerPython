@@ -28,11 +28,7 @@ class Player:
         self.jump_strength = 10 # 10
         self.friction = 0
 
-        self.cam_x = self.x - self.game.screen_width / 2
-        self.cam_y = self.y - self.game.screen_height / 1.5
-        self.camera_smoothing_factor = 0.1
-        self.free_cam = False
-        self.screen_shake_timer = 0
+        self.game.camera.load_settings(self.x, self.y)
 
         self.scale_factor = self.game.environment.scale
         self.hitbox_width = 5 * self.scale_factor
@@ -432,8 +428,8 @@ class Player:
             row = heart // self.health_per_row
             col = heart % self.health_per_row
 
-            x_position = self.inventory_x_offset + col * self.health_spacing - 300
-            y_position = self.inventory_y_offset + row * self.health_spacing - 220
+            x_position = self.inventory_x_offset + col * self.health_spacing - self.game.ui.tx(300)
+            y_position = self.inventory_y_offset + row * self.health_spacing - self.game.ui.ty(220)
 
             if heart + 1 <= self.current_health:
                 image_path = [0, 0]
@@ -506,7 +502,7 @@ class Player:
 
     def add_pickup_tag(self, item_name):
         screen_width = self.game.screen.get_width()
-        x_pos = screen_width - 100
+        x_pos = screen_width - self.game.ui.tx(100)
 
         if len(self.pickup_tags) >= self.max_tags:
             oldest = self.pickup_tags.pop(0)
@@ -522,7 +518,7 @@ class Player:
         self.game.ui.create_ui(
             sprite_sheet_path="item_sheet",
             image_id=self.item_info["items"][item_name]["index"],
-            x=x_pos, y=20 + index * 35,
+            x=x_pos, y=self.game.ui.ty(20 + index * 35),
             sprite_width=16, sprite_height=16,
             width=30, height=30,
             element_id=element_id,
@@ -530,7 +526,7 @@ class Player:
         )
 
         self.game.ui.create_ui(
-            x=x_pos + 50, y=20 + index * 35 + 15,
+            x=x_pos + self.game.ui.tx(50), y=self.game.ui.ty(20 + index * 35 + 15),
             font_size=10,
             font=self.game.environment.fonts["fantasy"],
             element_id=text_id,
@@ -547,7 +543,7 @@ class Player:
 
     def reposition_tags(self, x_pos=None):
         if x_pos is None:
-            x_pos = self.game.screen.get_width() - 100
+            x_pos = self.game.screen.get_width() - self.game.ui.tx(100)
 
         for slot, tag in enumerate(self.pickup_tags):
             self.game.ui.remove_ui_element(tag["element_id"])
@@ -559,7 +555,7 @@ class Player:
             self.game.ui.create_ui(
                 sprite_sheet_path="item_sheet",
                 image_id=self.item_info["items"][tag["name"]]["index"],
-                x=x_pos, y=20 + slot * 35,
+                x=x_pos, y=self.game.ui.ty(20 + slot * 35),
                 sprite_width=16, sprite_height=16,
                 width=30, height=30,
                 element_id=tag["element_id"],
@@ -567,7 +563,7 @@ class Player:
             )
 
             self.game.ui.create_ui(
-                x=x_pos + 50, y=20 + slot * 35 + 15,
+                x=x_pos + self.game.ui.tx(50), y=self.game.ui.ty(20 + slot * 35 + 15),
                 font_size=10,
                 font=self.game.environment.fonts["fantasy"],
                 element_id=tag["text_id"],
@@ -1709,8 +1705,8 @@ class Player:
         bar_height = 4
         filled_width = int(bar_width * charge_percent)
         
-        bar_x = self.hitbox.centerx - self.cam_x - bar_width // 2
-        bar_y = self.hitbox.y - self.cam_y - 12
+        bar_x = self.hitbox.centerx - self.game.camera.x - bar_width // 2
+        bar_y = self.hitbox.y - self.game.camera.y - 12
         
         pg.draw.rect(self.game.screen, (50, 50, 50, 180), (bar_x, bar_y, bar_width, bar_height))
         
@@ -1744,7 +1740,7 @@ class Player:
                 image = pg.transform.flip(image, True, False)
 
         img_w, img_h = image.get_size()
-        cam_x, cam_y = self.cam_x, self.cam_y
+        cam_x, cam_y = self.game.camera.x, self.game.camera.y
         hb_cx, hb_cy = self.hitbox.centerx, self.hitbox.centery
         
         sprite_x = hb_cx - cam_x - img_w // 2 + self.flip_offset[self.direction]
@@ -1754,56 +1750,13 @@ class Player:
         self.game.screen.blit(image, (sprite_x, sprite_y))
         
     def shake_camera(self, intensity, duration):
-        self.shake_intensity = intensity
-        self.shake_duration = duration
-        self.screen_shake_timer = duration
+        self.game.camera.shake(intensity, duration)
 
     def update_camera_shake(self):
-        if self.screen_shake_timer > 0:
-            decay = self.screen_shake_timer / self.shake_duration
-            
-            current_intensity = self.shake_intensity * decay
-            
-            time = self.game.environment.current_time / 100
-            angle_x = time * 15
-            angle_y = time * 13
-            
-            offset_x = math.sin(angle_x) * current_intensity
-            offset_y = math.sin(angle_y) * current_intensity
-            
-            offset_x += (random.random() - 0.5) * current_intensity * 0.5
-            offset_y += (random.random() - 0.5) * current_intensity * 0.5
-            
-            self.screen_shake_timer -= 1
-            
-            return (offset_x, offset_y)
-
-        return (0, 0)
+        return self.game.camera.update_shake()
 
     def update_camera(self):
-        if self.free_cam:
-            return
-        
-        if self.enable_cam_mouse:
-            mouse_dist_from_player_x = (pg.mouse.get_pos()[0] + self.cam_x) - self.x
-            mouse_dist_from_player_y = (pg.mouse.get_pos()[1] + self.cam_y) - self.y
-        
-            target_cam_x = self.x - self.game.screen_width / 2 + mouse_dist_from_player_x * 0.1
-            target_cam_y = self.y - self.game.screen_height / 1.5 + mouse_dist_from_player_y * 0.1
-        
-        else:
-            target_cam_x = self.x - self.game.screen_width / 2
-            target_cam_y = self.y - self.game.screen_height / 1.5
-
-        base_cam_x = self.cam_x + (target_cam_x - self.cam_x) * self.camera_smoothing_factor
-        base_cam_y = self.cam_y + (target_cam_y - self.cam_y) * self.camera_smoothing_factor
-
-        base_cam_x = max(min(base_cam_x, target_cam_x + self.game.screen_width / 4), target_cam_x - self.game.screen_width / 4)
-        base_cam_y = max(min(base_cam_y, target_cam_y + self.game.screen_height / 4), target_cam_y - self.game.screen_height / 7)
-
-        shake_offset_x, shake_offset_y = self.update_camera_shake()
-        self.cam_x = base_cam_x + shake_offset_x
-        self.cam_y = base_cam_y + shake_offset_y
+        self.game.camera.update()
 
     def render_hitboxes(self):
         if not self.game.debugging:
@@ -1815,8 +1768,8 @@ class Player:
         self.game.screen.blit(
             interact_surface,
             (
-                self.interact_radius.centerx - self.cam_x - self.interact_radius.width // 2,
-                self.interact_radius.centery - self.cam_y - self.interact_radius.height // 2
+                self.interact_radius.centerx - self.game.camera.x - self.interact_radius.width // 2,
+                self.interact_radius.centery - self.game.camera.y - self.interact_radius.height // 2
             )
         )
 
@@ -1825,7 +1778,7 @@ class Player:
         hitbox_surface.fill(hitbox_color)
         self.game.screen.blit(
             hitbox_surface,
-            (self.hitbox.x - self.cam_x, self.hitbox.y - self.cam_y)
+            (self.hitbox.x - self.game.camera.x, self.hitbox.y - self.game.camera.y)
         )
     
     def render_map(self):
@@ -1983,23 +1936,7 @@ class Player:
         return tile_image
 
     def handle_free_cam(self):
-        if not self.free_cam:
-            return
-        
-        keys = pg.key.get_pressed()
-        speed = 10
-        
-        if keys[pg.K_UP]:
-            self.cam_y -= speed
-            
-        if keys[pg.K_DOWN]:
-            self.cam_y += speed
-            
-        if keys[pg.K_LEFT]:
-            self.cam_x -= speed
-            
-        if keys[pg.K_RIGHT]:
-            self.cam_x += speed
+        self.game.camera.handle_free_cam()
 
     def update(self):
         if self.game.environment.menu in {"play", "death", "pause"}:
