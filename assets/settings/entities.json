@@ -149,7 +149,7 @@
       },
       "entity_abilities": ["pushable"],
       "push_force": 70,
-      "script": "assets/source/behaviour_scripts/bab.py"
+      "script": "assets/source/behaviour_scripts/enemies/bab.py"
     },
     "Jelly": {
       "name": "Jelly",
@@ -189,7 +189,7 @@
       },
       "entity_abilities": ["pushable"],
       "push_force": 20,
-      "script": "assets/source/behaviour_scripts/jelly.py"
+      "script": "assets/source/behaviour_scripts/enemies/jelly.py"
     },
     "Slime": {
       "name": "Slime",
@@ -229,7 +229,7 @@
       },
       "entity_abilities": ["pushable"],
       "push_force": 15,
-      "script": "assets/source/behaviour_scripts/slime.py"
+      "script": "assets/source/behaviour_scripts/enemies/slime.py"
     }
   },
   "actors": {
@@ -242,8 +242,8 @@
       "width": 30,
       "height": 30,
       "index": [8, 0],
-      "script": "assets/source/behaviour_scripts/basic_sword.py",
-      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
+      "script": "assets/source/behaviour_scripts/items/basic_sword.py",
+      "tile_sheet": ["assets/sprites/gui/items/items/Sheet.png", 16, 16]
     },
     "Basic_bow": {
       "name": "Basic bow",
@@ -254,7 +254,7 @@
       "width": 30,
       "height": 30,
       "index": [8, 4],
-      "script": "assets/source/behaviour_scripts/basic_bow.py",
+      "script": "assets/source/behaviour_scripts/items/basic_bow.py",
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
     "Rock": {
@@ -319,7 +319,7 @@
       "tile_sheet": ["assets/sprites/props/Chests.png", 48, 32],
       "index": [0, 0],
       "entity_abilities": [],
-      "script": "assets/source/behaviour_scripts/chest.py",
+      "script": "assets/source/behaviour_scripts/actors/chest.py",
       "states": {
         "idle": {
           "start_row": 0,
