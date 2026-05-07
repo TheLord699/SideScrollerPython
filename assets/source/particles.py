@@ -277,10 +277,11 @@ class Particles:
         
         self.particles = deque([p for p in self.particles if p["age"] < p["lifespan"]], maxlen=self.max_particles)
 
-    def clear(self):
+    def clear(self):     
         for particle in self.particles:
             self.recycle_particle(particle)
-            
+                
+        del self.surface_cache
         self.particles.clear()
     
     def set_max_particles(self, max_particles):

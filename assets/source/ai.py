@@ -302,9 +302,6 @@ class AISystem:
         if not (cam_x <= entity["x"] <= cam_x + self.game.screen_width and cam_y <= entity["y"] <= cam_y + self.game.screen_height):
             return
 
-        if entity["entity_type"] == "enemy": # will change to allow for all but prevent push in entity specific scripts
-            self.apply_separation(entity)
-
         script_path = entity.get("script")
         if script_path:
             module = self.load_script(script_path)
@@ -316,7 +313,7 @@ class AISystem:
                 except Exception as exc:
                     print(f"[AI] Error in script '{script_path}': {exc}")
                     
-                return
+            return
 
         behavior = entity.get("behavior")
         if behavior and behavior in self.behaviors:

@@ -1,5 +1,6 @@
 import pygame as pg
 import os
+import gc
 
 from helper_methods import load_json
 
@@ -216,7 +217,8 @@ class Environment:
     if getattr(self, "map_loaded_from_save", False):
       self.map_loaded_from_save = False
       return
-
+    
+    gc.collect() #  forces garbage collection
     self.menu = "play"
     self.last_menu = "play"
     self.reset()

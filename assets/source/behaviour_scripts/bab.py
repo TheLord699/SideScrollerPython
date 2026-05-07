@@ -87,50 +87,53 @@ def do_alert(entity, ai_system):
         set_state(entity, STATE_CHASE)
 
 def do_chase(entity, ai_system, distance, delta_x, delta_y):
-    aggro_range = entity.get("aggro_range", 300)
+    aggro_range   = entity.get("aggro_range", 300)
     stop_distance = entity.get("stop_distance", 50)
 
-    if distance < aggro_range:
-        if distance > stop_distance:
-            new_direction = 1 if delta_x > 0 else -1
-            entity["ai_direction"] = new_direction
-            set_facing(entity, new_direction)
+    if distance >= aggro_range:
+        do_wander(entity, ai_system)
+        return False
 
-            if not ai_system.check_floor_ahead(entity):
-                entity["vel_x"] = 0
-                if abs(delta_x) < 150 and abs(delta_x) > 50 and entity.get("on_ground", False):
-                    entity["vel_y"] = -entity.get("jump_force", 10)
-                return
-            
-            if ai_system.check_wall_collision(entity):
-                entity["vel_x"] = 0
-                return
+    if distance > stop_distance:
+        new_direction = 1 if delta_x > 0 else -1
+        entity["ai_direction"] = new_direction
+        set_facing(entity, new_direction)
 
-            target_vel_x = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
-            
-            if not entity.get("chase_initialized", True):
-                entity["vel_x"] = target_vel_x
-                entity["chase_initialized"] = True
+        if not ai_system.check_floor_ahead(entity):
+            entity["vel_x"] = 0
+            if abs(delta_x) < 150 and abs(delta_x) > 50 and entity.get("on_ground", False):
+                entity["vel_y"] = -entity.get("jump_force", 10)
+            return True
+
+        if ai_system.check_wall_collision(entity):
+            entity["vel_x"] = 0
+            return True
+
+        target_vel_x = entity["ai_direction"] * entity.get("move_speed", 1) * 1.5
+
+        if not entity.get("chase_initialized", True):
+            entity["vel_x"] = target_vel_x
+            entity["chase_initialized"] = True
+
+        else:
+            acceleration = entity.get("acceleration", 0.5)
+            if abs(entity["vel_x"] - target_vel_x) > acceleration:
+                entity["vel_x"] += (1 if target_vel_x > entity["vel_x"] else -1) * acceleration
                 
             else:
-                acceleration = entity.get("acceleration", 0.5)
-                if abs(entity["vel_x"] - target_vel_x) > acceleration:
-                    entity["vel_x"] += (1 if target_vel_x > entity["vel_x"] else -1) * acceleration
-                    
-                else:
-                    entity["vel_x"] = target_vel_x
-                
-        else:
-            entity["vel_x"] *= 0.9
+                entity["vel_x"] = target_vel_x
 
-        if delta_y < -50 and entity.get("on_ground", False):
-            entity["vel_y"] = -entity.get("jump_force", 10)
-
-        if distance < stop_distance:
-            set_state(entity, STATE_ATTACK)
-            
     else:
-        do_wander(entity, ai_system)
+        entity["vel_x"] *= 0.9
+
+    if delta_y < -50 and entity.get("on_ground", False):
+        entity["vel_y"] = -entity.get("jump_force", 10)
+
+    if distance < stop_distance:
+        set_state(entity, STATE_ATTACK)
+        return False
+
+    return True
 
 def do_attack(entity, ai_system, distance, delta_x):
     entity["ai_direction"] = 1 if delta_x > 0 else -1
@@ -233,18 +236,17 @@ def update(entity, ai_system):
         set_state(entity, STATE_ALERT)
         entity["bab_alert_timer"] = entity.get("alert_duration", 15)
         entity["ai_direction"] = 1 if delta_x > 0 else -1
-        
         set_facing(entity, entity["ai_direction"])
         entity["vel_x"] = entity["ai_direction"] * entity.get("move_speed", 1)
-        
         return
 
-    if state == STATE_CHASE:
-        do_chase(entity, ai_system, distance, delta_x, delta_y)
-        
+    elif state == STATE_CHASE:
+        if do_chase(entity, ai_system, distance, delta_x, delta_y):
+            ai_system.apply_separation(entity)
+
     elif state == STATE_ATTACK:
         do_attack(entity, ai_system, distance, delta_x)
-        
+
     else:
         handler = STATE_HANDLERS.get(state)
         if handler:

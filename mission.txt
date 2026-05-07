@@ -58,8 +58,6 @@ enemy detection zones need to increase in size when player is initially detected
 
 i want that when within range first do a raycast, if a tile is in the way dont let enemy see player
 
-some bullshit with Slimes not having seperation applied ( wtf is the problem)
-
 
 
 note to self: stop using copywritten music >:(

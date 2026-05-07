@@ -1,9 +1,9 @@
 import math
 import random
 
-STATE_IDLE   = "idle"
+STATE_IDLE = "idle"
 STATE_WANDER = "wander"
-STATE_CHASE  = "chase"
+STATE_CHASE = "chase"
 STATE_ATTACK = "attack"
 
 JUMP_CHANCE = 0.04
@@ -74,7 +74,7 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
     if distance > aggro_range:
         do_wander(entity, ai_system)
         set_state(entity, STATE_WANDER)
-        return
+        return False
 
     direction = 1 if delta_x > 0 else -1
     entity["ai_direction"] = direction
@@ -84,11 +84,11 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
         if entity.get("on_ground", False):
             if not ai_system.check_floor_ahead(entity):
                 entity["vel_x"] = 0
-                return
+                return True
             
             if ai_system.check_wall_collision(entity):
                 entity["vel_x"] = 0
-                return
+                return True
             
             entity["vel_x"] = direction * entity.get("move_speed", 1) * 1.2
             
@@ -106,6 +106,9 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
     else:
         entity["vel_x"] *= 0.85
         set_state(entity, STATE_ATTACK)
+        return False
+
+    return True
 
 def do_attack(entity, ai_system, distance, delta_x):
     direction = 1 if delta_x > 0 else -1
@@ -158,7 +161,8 @@ def update(entity, ai_system):
         do_wander(entity, ai_system)
 
     elif state == STATE_CHASE:
-        do_chase(entity, ai_system, distance, delta_x, delta_y)
+        if do_chase(entity, ai_system, distance, delta_x, delta_y):
+            ai_system.apply_separation(entity)
 
     elif state == STATE_ATTACK:
         do_attack(entity, ai_system, distance, delta_x)

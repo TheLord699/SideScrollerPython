@@ -233,6 +233,30 @@
     }
   },
   "actors": {
+    "Basic_sword": {
+      "name": "Basic sword",
+      "type": "interactive",
+      "interaction": "scripted",
+      "amount": 1,
+      "weight": 1.3,
+      "width": 30,
+      "height": 30,
+      "index": [8, 0],
+      "script": "assets/source/behaviour_scripts/basic_sword.py",
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
+    },
+    "Basic_bow": {
+      "name": "Basic bow",
+      "type": "interactive",
+      "interaction": "scripted",
+      "amount": 1,
+      "weight": 1,
+      "width": 30,
+      "height": 30,
+      "index": [8, 4],
+      "script": "assets/source/behaviour_scripts/basic_bow.py",
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
+    },
     "Rock": {
       "name": "Rock",
       "health": 100,

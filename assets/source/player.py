@@ -94,8 +94,8 @@ class Player:
         self.current_frame = 0
         self.animation_timer = 0
         self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
-        self.weapon_inventory = ["basic_sword", "basic_bow"] # temporary, will be replaced with actual inventory system
-        self.equipped_weapon = "basic_sword"
+        self.weapon_inventory = [] # temporary, will be replaced with actual inventory system
+        self.equipped_weapon = ""
         self.loaded_weapons = set()
         self.state_frames = {
             "idle": {"frames": 6, "speed": 0.15},

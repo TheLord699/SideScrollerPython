@@ -2,7 +2,6 @@ import pygame as pg
 import json
 import os
 import time
-import random
 
 class Map:
     def __init__(self, game):
