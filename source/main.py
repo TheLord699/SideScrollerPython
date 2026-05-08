@@ -1,6 +1,5 @@
 import pygame as pg
 import psutil
-import sys
 import os
 
 from background import Background 
@@ -22,14 +21,6 @@ from camera import Camera
 class Game:
   def __init__(self):
     pg.init()
-        
-    if getattr(sys, "frozen", False):
-      base_path = sys._MEIPASS
-      
-    else:
-      base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-      
-    os.chdir(base_path)
     
     try:
       psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS) # windows only (probably gonna remove all together for final build... Gulp)

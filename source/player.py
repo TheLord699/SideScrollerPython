@@ -1313,8 +1313,8 @@ class Player:
 
             if self.current_frame >= draw_start:
                 self.charge_timer = min(self.charge_timer + 1, full_ticks)
-                t = self.charge_timer / full_ticks
-                self.current_frame = min(draw_start + int(t * (full_frame - draw_start)), full_frame)
+                charge_progress = self.charge_timer / full_ticks
+                self.current_frame = min(draw_start + int(charge_progress * (full_frame - draw_start)), full_frame)
                 self.charging = True
 
                 if not self.charge_sound_played:
@@ -1330,8 +1330,8 @@ class Player:
 
         else:
             if self.attacking and self.charging:
-                charge = min(1.0, self.charge_timer / max(full_ticks, 1))
-                self.fire_projectile(weapon_data, charge=charge, min_vel_mult=min_vel_mult)
+                charge_amount  = min(1.0, self.charge_timer / max(full_ticks, 1))
+                self.fire_projectile(weapon_data, charge=charge_amount , min_vel_mult=min_vel_mult)
                 for s in self.sounds.get(shoot_key, []):
                     s["sound"].play()
 

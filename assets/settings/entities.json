@@ -136,7 +136,6 @@
       "height": 90,
       "tile_sheet": ["assets/sprites/npc/fox.png", 32, 32],
       "index": [0, 0],
-      "behavior": "aggressive",
       "move_speed": 1.2,
       "jump_force": 8,
       "aggro_range": 150,
@@ -169,7 +168,7 @@
       },
       "entity_abilities": ["pushable"],
       "push_force": 70,
-      "script": "assets/source/behaviour_scripts/enemies/bab.py"
+      "script": "source/behaviour_scripts/enemies/bab.py"
     },
     "Jelly": {
       "name": "Jelly",
@@ -183,7 +182,6 @@
       "height": 60,
       "tile_sheet": ["assets/sprites/npc/Basic Asset Pack/Basic Monster Animations/Ochre Jelly/OchreJelly.png", 16, 16],
       "index": [0, 0],
-      "behavior": "aggressive",
       "move_speed": 0.7,
       "jump_force": 10,
       "aggro_range": 200,
@@ -209,7 +207,7 @@
       },
       "entity_abilities": ["pushable"],
       "push_force": 20,
-      "script": "assets/source/behaviour_scripts/enemies/jelly.py"
+      "script": "source/behaviour_scripts/enemies/jelly.py"
     },
     "Slime": {
       "name": "Slime",
@@ -223,7 +221,6 @@
       "height": 60,
       "tile_sheet": ["assets/sprites/npc/Basic Asset Pack/Basic Monster Animations/Death Slime/DeathSlime.png", 16, 16],
       "index": [0, 0],
-      "behavior": "aggressive",
       "move_speed": 0.9,
       "jump_force": 9,
       "aggro_range": 200,
@@ -249,7 +246,7 @@
       },
       "entity_abilities": ["pushable"],
       "push_force": 15,
-      "script": "assets/source/behaviour_scripts/enemies/slime.py"
+      "script": "source/behaviour_scripts/enemies/slime.py"
     }
   },
   "actors": {
@@ -315,7 +312,7 @@
       "tile_sheet": ["assets/sprites/props/Chests.png", 48, 32],
       "index": [0, 0],
       "entity_abilities": [],
-      "script": "assets/source/behaviour_scripts/actors/chest.py",
+      "script": "source/behaviour_scripts/actors/chest.py",
       "states": {
         "idle": {
           "start_row": 0,

@@ -91,7 +91,7 @@ This project is more of a showcase of different systems:
 |---|---|
 | Toggle lighting | Open terminal → `environment.lighting = True`, then press `N` |
 | Show hitboxes | Open terminal → `debugging = True` |
-| Drag entities | Click + drag with mouse (don't try to pick them up while dragging!) |
+| Drag entities | Click + drag with mouse |
 
 ---
 

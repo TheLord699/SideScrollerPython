@@ -6,8 +6,6 @@
 
 -somethings are loaded into memory more than once
 
--want to completley re-write certain systyems like entities and entities.json format
-
 -Note: using self.game.screen_width and height for rendering bounds for now but can change to, self.game.screen.get_size()
 
 -Note: entity hitboxes arent saved into their list so you arent able to refrence in other classes
@@ -22,10 +20,6 @@ have rewrite all objects/entities to inherit or relate to an ECS so that i dont 
 -----^^^^very_old^^^^------------------
 
 Do immediately:
-
--fix caching and unloading of caches(UI)
-
--make caching automatic and uncaching manual in reset(game)
 
 -fix entity ground collision code(it prevents the entities from jumping)
 
@@ -60,6 +54,9 @@ i want that when within range first do a raycast, if a tile is in the way dont l
 
 for cutscene builder we will have a dict of cams i think, then we will store lerp values and wait values + move to next cam on a var check and interpolate between the cams
 
+need to polish pickup tag text
+
+need to add air meter when in liquids like water 
 
 
 note to self: stop using copywritten music >:(
@@ -83,6 +80,12 @@ note to self: stop using copywritten music >:(
 
 
 basically the entire project doesnt use inheritance instead just using Composition/aggregatio and it doesnt use decorators
+
+
+
+
+
+---------old----------------------
 
 # if everything is updated under 2ms then the game should run at solid 60(8 updates)
 
