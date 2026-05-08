@@ -13,18 +13,18 @@ class UI:
         
         self.mouse_locked = False
 
-    def build_element_from_config(self, cfg, env):
+    def build_element_from_config(self, cfg, game_context):
         element_type = cfg.get("type")
 
         shared = dict(
-            x=self.resolve_expr(cfg.get("x", 0), env, axis="x"),
-            y=self.resolve_expr(cfg.get("y", 0), env, axis="y"),
-            width=self.resolve_expr(cfg.get("width", 0), env, axis="x"),
-            height=self.resolve_expr(cfg.get("height", 0), env, axis="y"),
+            x=self.resolve_expr(cfg.get("x", 0), game_context, axis="x"),
+            y=self.resolve_expr(cfg.get("y", 0), game_context, axis="y"),
+            width=self.resolve_expr(cfg.get("width", 0), game_context, axis="x"),
+            height=self.resolve_expr(cfg.get("height", 0), game_context, axis="y"),
             element_id=cfg["id"],
             centered=cfg.get("centered", False),
             render_order=cfg.get("render_order", 0),
-            font=env.fonts.get(cfg["font"]) if cfg.get("font") else None,
+            font=game_context.fonts.get(cfg["font"]) if cfg.get("font") else None,
             font_size=cfg.get("font_size", 24),
             text_color=tuple(cfg["text_color"]) if cfg.get("text_color") else (255, 255, 255),
             alpha=cfg.get("alpha"),
@@ -48,8 +48,8 @@ class UI:
 
         if element_type in ("label", "button", "dynamic_button"):
             label_str = cfg.get("label", "")
-            callback = self.resolve_callback(cfg.get("callback"), env) if element_type != "label" else None
-            label, dynamic_value = self.resolve_label(label_str, env)
+            callback = self.resolve_callback(cfg.get("callback"), game_context) if element_type != "label" else None
+            label, dynamic_value = self.resolve_label(label_str, game_context)
             self.create_ui(
                 **shared, **sprite_kwargs,
                 is_button=element_type != "label",
@@ -59,14 +59,14 @@ class UI:
             )
 
         elif element_type == "slider":
-            variable = self.resolve_callback(cfg.get("variable"), env)
+            variable = self.resolve_callback(cfg.get("variable"), game_context)
             self.create_ui(
                 **shared,
                 is_slider=True,
-                min_value=self.resolve_expr(cfg.get("min_value", 0), env),
-                max_value=self.resolve_expr(cfg.get("max_value", 100), env),
-                initial_value=self.resolve_expr(cfg.get("initial_value", 50), env),
-                step_size=self.resolve_expr(cfg.get("step_size", 1), env),
+                min_value=self.resolve_expr(cfg.get("min_value", 0), game_context),
+                max_value=self.resolve_expr(cfg.get("max_value", 100), game_context),
+                initial_value=self.resolve_expr(cfg.get("initial_value", 50), game_context),
+                step_size=self.resolve_expr(cfg.get("step_size", 1), game_context),
                 variable=variable
             )
 
@@ -82,7 +82,7 @@ class UI:
     def ty(self, y):
         return y * self.game.screen_height / self.BASE_HEIGHT
 
-    def resolve_expr(self, value, env=None, axis=None):
+    def resolve_expr(self, value, game_context=None, axis=None):
         if not isinstance(value, str):
             if axis == "x":
                 return self.tx(value)
@@ -98,10 +98,10 @@ class UI:
             
             expr = (value.replace("screen_width", str(sw)).replace("screen_height", str(sh)))
 
-            if env is not None:
-                expr = expr.replace("env.", "env_proxy.")
-                env_proxy = env
-                return eval(expr, {"env_proxy": env_proxy, "sw": sw, "sh": sh})
+            if game_context is not None:
+                expr = expr.replace("game_context.", "game_context_proxy.")
+                game_context_proxy = game_context
+                return eval(expr, {"game_context_proxy": game_context_proxy, "sw": sw, "sh": sh})
             
             return eval(expr)
         
@@ -109,7 +109,7 @@ class UI:
             print(f"Error resolving expression '{value}': {e}")
             return 0
 
-    def resolve_label(self, label, env):
+    def resolve_label(self, label, game_context):
         vars_found = re.findall(r"\{([^}]+)\}", label)
         
         if not vars_found:
@@ -121,7 +121,7 @@ class UI:
             
             return str(raw)
 
-        def make_lambda(template, vars, env=env):
+        def make_lambda(template, vars, game_context=game_context):
             parsed = []
             for var in vars:
                 if "?" in var:
@@ -134,14 +134,14 @@ class UI:
 
                 parts = attr_path.split(".", 1)
                 if len(parts) == 1:
-                    getter = lambda e=env, a=attr_path: getattr(e, a, "")
+                    getter = lambda gc=game_context, a=attr_path: getattr(gc, a, "")
                     
                 elif parts[0] == "game":
-                    getter = lambda e=env, a=parts[1]: getattr(e.game, a, "")
+                    getter = lambda gc=game_context, a=parts[1]: getattr(gc.game, a, "")
                     
                 else:
                     obj_name, sub_attr = parts
-                    getter = lambda e=env, o=obj_name, a=sub_attr: getattr(getattr(e.game, o, None), a, "")
+                    getter = lambda gc=game_context, o=obj_name, a=sub_attr: getattr(getattr(gc.game, o, None), a, "")
 
                 parsed.append(("{" + var + "}", getter, true_text, false_text))
 
@@ -155,18 +155,18 @@ class UI:
 
         return None, make_lambda(label, vars_found)
 
-    def resolve_callback(self, spec, env):
+    def resolve_callback(self, spec, game_context):
         if not spec:
             return None
 
         if spec.startswith("change_menu:"):
             target = spec.split(":", 1)[1]
-            return env.change_menu(target)
+            return game_context.change_menu(target)
 
         if spec.startswith("toggle:"):
             attr_path = spec.split(":", 1)[1]
-            setter = self.build_attr_setter(attr_path, env)
-            getter = self.build_attr_getter(attr_path, env)
+            setter = self.build_attr_setter(attr_path, game_context)
+            getter = self.build_attr_getter(attr_path, game_context)
             return lambda g=getter, s=setter: s(not g())
 
         if spec.startswith("call:"):
@@ -180,7 +180,7 @@ class UI:
                 args = []
 
             path_parts = method_path.split(".")
-            obj = env
+            obj = game_context
             for part in path_parts[:-1]:
                 obj = getattr(obj, part, None)
                 if obj is None:
@@ -197,13 +197,13 @@ class UI:
 
         if spec.startswith("multi:"):
             parts = spec.split(":", 1)[1].split("|")
-            callbacks = [self.resolve_callback(p, env) for p in parts]
+            callbacks = [self.resolve_callback(p, game_context) for p in parts]
             callbacks = [c for c in callbacks if c is not None]
             return lambda cbs=callbacks: [cb() for cb in cbs]
 
         if spec.startswith("update_slider:"):
             element_id = spec.split(":", 1)[1]
-            return lambda value, eid=element_id: env.update_slider_value(eid, value)
+            return lambda value, eid=element_id: game_context.update_slider_value(eid, value)
 
         print(f"Unknown callback spec: '{spec}'")
         return None
@@ -243,23 +243,23 @@ class UI:
             
         return {"sound": self.loaded_sounds[path], "volume": volume}
 
-    def build_attr_getter(self, attr_path, env):
+    def build_attr_getter(self, attr_path, game_context):
         parts = attr_path.split(".", 1)
         if len(parts) == 1:
-            return lambda: getattr(env, attr_path)
+            return lambda: getattr(game_context, attr_path)
         
         else:
             obj_name, sub_attr = parts
-            return lambda: getattr(getattr(env.game, obj_name), sub_attr)
+            return lambda: getattr(getattr(game_context.game, obj_name), sub_attr)
 
-    def build_attr_setter(self, attr_path, env):
+    def build_attr_setter(self, attr_path, game_context):
         parts = attr_path.split(".", 1)
         if len(parts) == 1:
-            return lambda v: setattr(env, attr_path, v)
+            return lambda v: setattr(game_context, attr_path, v)
         
         else:
             obj_name, sub_attr = parts
-            return lambda v: setattr(getattr(env.game, obj_name), sub_attr, v)
+            return lambda v: setattr(getattr(game_context.game, obj_name), sub_attr, v)
 
     def load_sheet(self, sheet_name, path):
         if sheet_name in self.loaded_sheets:

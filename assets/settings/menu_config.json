@@ -164,7 +164,7 @@
           "height": 20,
           "min_value": 0.0,
           "max_value": 1.1,
-          "initial_value": "env.volume",
+          "initial_value": "game_context.volume",
           "step_size": 0.01,
           "click_sound": "assets/sounds/ui/01_chest_open_4.wav",
           "click_sound_volume": 2.0,
