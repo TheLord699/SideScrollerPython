@@ -126,6 +126,8 @@ class Environment:
     self.game.data_manager.set_setting("player_x", self.game.player.x)
     self.game.data_manager.set_setting("player_y", self.game.player.y)
     self.game.data_manager.set_setting("current_map", next((k for k, v in self.maps.items() if v == self.current_map), None))
+    self.game.data_manager.set_setting("equipped_weapon", self.game.player.equipped_weapon)
+    self.game.data_manager.set_setting("weapon_inventory", self.game.player.weapon_inventory)
 
     inventory_to_save = []
     for item in self.game.player.inventory.values():
@@ -170,6 +172,8 @@ class Environment:
       
       self.game.player.load_settings()
 
+      self.game.player.weapon_inventory = self.game.data_manager.get_setting("weapon_inventory", [])
+      self.game.player.equipped_weapon = self.game.data_manager.get_setting("equipped_weapon", "")
       self.game.particles.enable_particles = self.game.data_manager.get_setting("enable_particles", True)
       self.game.foreground.enable_foreground = self.game.data_manager.get_setting("enable_foreground", True)
       self.game.player.enable_cam_mouse = self.game.data_manager.get_setting("enable_cam_mouse", False)

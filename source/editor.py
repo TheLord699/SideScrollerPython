@@ -6,7 +6,6 @@ import sys
 import shutil
 import time
 
-from PIL import Image
 from datetime import datetime
 
 pg.init()
@@ -60,6 +59,8 @@ entity_preview_cache = {}
 
 editing_animation = False
 current_animated_tile = None
+
+show_docs = False
 
 class VersionEntry:
     def __init__(self, timestamp, comment, data):
@@ -936,6 +937,86 @@ def commit_instance_edit(tile, key, raw_value, entity_data):
         except ValueError:
             overrides[key] = raw_value
 
+def draw_documentation():
+    overlay = pg.Surface(screen.get_size(), pg.SRCALPHA)
+    overlay.fill((0, 0, 0, 200))
+    screen.blit(overlay, (0, 0))
+    
+    doc_width, doc_height = 800, 600
+    x = (screen.get_width() - doc_width) // 2
+    y = (screen.get_height() - doc_height) // 2
+    pg.draw.rect(screen, (40, 40, 50), (x, y, doc_width, doc_height))
+    pg.draw.rect(screen, (100, 100, 120), (x, y, doc_width, doc_height), 2)
+    
+    title = font.render("Tile Map Editor - Keyboard Shortcuts", True, (255, 255, 200))
+    screen.blit(title, (x + 20, y + 20))
+    
+    shortcuts = [
+        ("General", ""),
+        ("Q", "Save map"),
+        ("E", "Save version (with comment)"),
+        ("V", "Open version history"),
+        ("T", "Toggle entity panel"),
+        ("Y", "Toggle entities visibility (tile editing mode)"),
+        ("I", "Edit entity instance / tile animation"),
+        ("ESC", "Clear selections, close panels"),
+        ("", ""),
+        ("Tile Editing", ""),
+        ("Left / Right", "Previous / next tile in sheet"),
+        ("0", "Reset brush to tile 0"),
+        ("R", "Rotate brush 90°"),
+        ("H", "Toggle hitbox placement"),
+        ("K / L", "Decrease / increase layer"),
+        ("Z", "Show layer numbers"),
+        ("X", "Layer mode (edit only current layer)"),
+        ("G", "Show hitboxes"),
+        ("P", "Precision mode (half‑tile placement)"),
+        ("Ctrl + C", "Copy highlighted tiles"),
+        ("Ctrl + V", "Paste copied tiles"),
+        ("Shift + Click", "Add tile to selection"),
+        ("Right click", "Remove tile (or delete entity)"),
+        ("", ""),
+        ("Camera & View", ""),
+        ("W/A/S/D", "Pan camera"),
+        ("Ctrl + Wheel", "Zoom in/out"),
+        ("", ""),
+        ("Entity Panel", ""),
+        ("Click entity", "Select brush / place mode"),
+        ("Click again", "Cancel placement"),
+        ("I (on entity)", "Open instance property editor"),
+        ("Delete (in editor)", "Delete entity"),
+        ("", ""),
+        ("Animation Editor", ""),
+        ("F", "Add current tile as frame"),
+        ("Delete", "Remove frame"),
+        ("Space", "Play / pause preview"),
+        ("Arrow keys", "Select frame"),
+        ("Up / Down", "Change speed"),
+        ("Enter / ESC", "Save / cancel"),
+        ("", ""),
+        ("F1 / ?", "Show this help")
+    ]
+    
+    line_height = 24
+    col1_x = x + 30
+    col2_x = x + 260
+    y_offset = y + 60
+    
+    for key, desc in shortcuts:
+        if key == "":
+            y_offset += 10
+            continue
+        key_surf = font_small.render(key, True, (220, 220, 100))
+        desc_surf = font_small.render(desc, True, (200, 200, 200))
+        screen.blit(key_surf, (col1_x, y_offset))
+        screen.blit(desc_surf, (col2_x, y_offset))
+        y_offset += line_height
+        if y_offset > y + doc_height - 40:
+            break
+    
+    close_text = font_small.render("Press F1 or ? again to close", True, (180, 180, 180))
+    screen.blit(close_text, (x + doc_width - 200, y + doc_height - 30))
+
 print("=== Tile Map Editor ===")
 
 mode = ask_input("Edit existing map? (yes/no)", "no").lower()
@@ -1173,7 +1254,7 @@ while running:
                                 selected_tile_info["selected_frame"] = 0
                                 selected_tile_info["pause_preview"] = False
                         
-                        else:
+                        elif not resizing_panel:                            
                             if precision_mode:
                                 gx = round((mx + camera_x * zoom_level) / visual_size * 2) / 2
                                 gy = round((my + camera_y * zoom_level) / visual_size * 2) / 2
@@ -1203,8 +1284,7 @@ while running:
                             }
                             
                             tiles.append(new_tile)
-                            highlighted_tiles = ([new_tile] if not pg.key.get_pressed()[pg.K_LSHIFT]
-                                                 else highlighted_tiles + [new_tile])
+                            highlighted_tiles = ([new_tile] if not pg.key.get_pressed()[pg.K_LSHIFT] else highlighted_tiles + [new_tile])
 
                 elif event.button == 3:
                     if not show_version_menu and not (instance_panel_open and mx < instance_panel_width):
@@ -1251,7 +1331,8 @@ while running:
             elif event.type == pg.MOUSEMOTION:
                 if (mouse_held and not show_version_menu and not show_entity_panel
                     and mx < screen.get_width() - current_panel_width
-                    and not (instance_panel_open and mx < instance_panel_width)):
+                    and not (instance_panel_open and mx < instance_panel_width)
+                    and not resizing_panel):
                     
                     if precision_mode:
                         gx = round((mx + camera_x * zoom_level) / visual_size * 2) / 2
@@ -1297,6 +1378,13 @@ while running:
                                                      min(new_width, screen.get_width() - 200))
 
             elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_F1 or (event.key == pg.K_SLASH and pg.key.get_pressed()[pg.K_LSHIFT]):
+                    show_docs = not show_docs
+                    continue
+
+                if show_docs:
+                    continue
+
                 if event.key == pg.K_y:
                     show_entities = not show_entities
                     if not show_entities:
@@ -1411,6 +1499,9 @@ while running:
                     comment = ask_input("Enter save comment (optional)", "")
                     save_version(map_folder, tiles, tilesheets, comment)
                     versions = load_versions(map_folder)
+                
+                elif event.key == pg.K_0:
+                    selected_tile_info['tile'] = 0
 
                 elif event.key == pg.K_ESCAPE:
                     show_version_menu = False
@@ -1480,10 +1571,10 @@ while running:
                     elif event.key == pg.K_g:
                         display_hitboxes = not display_hitboxes
                     
-                    elif event.key == pg.K_0 and highlighted_tiles:
+                    elif event.key == pg.K_c and pg.key.get_pressed()[pg.K_LCTRL] and highlighted_tiles:
                         copied_tiles = highlighted_tiles.copy()
                     
-                    elif event.key == pg.K_c and copied_tiles:
+                    elif event.key == pg.K_v and pg.key.get_pressed()[pg.K_LCTRL] and copied_tiles:
                         min_x = min(t["x"] for t in copied_tiles)
                         min_y = min(t["y"] for t in copied_tiles)
                         
@@ -1618,6 +1709,9 @@ while running:
         if mode_flags:
             mode_text = font.render(" | ".join(mode_flags), True, (180, 255, 180))
             screen.blit(mode_text, (10, 10 + text.get_height() + 4))
+        
+        help_hint = font_small.render("Press F1 or ? for help", True, (150, 150, 150))
+        screen.blit(help_hint, (screen.get_width() - help_hint.get_width() - 10, 10))
 
     if show_version_menu:
         draw_version_menu(versions, version_scroll_offset, selected_version_index)
@@ -1633,6 +1727,9 @@ while running:
                 if handle_animation_editor_events(event, current_animated_tile, selected_tile_info, all_tile_surfaces):
                     editing_animation = False
                     current_animated_tile = None
+
+    if show_docs:
+        draw_documentation()
 
     if instance_panel_open and mx < instance_panel_width:
         pg.mouse.set_cursor(pg.SYSTEM_CURSOR_IBEAM)
