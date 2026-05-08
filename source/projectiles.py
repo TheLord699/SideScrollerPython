@@ -327,7 +327,7 @@ class ProjectileSystem:
                 continue
 
             if projectile.follow is None and not projectile.embedded:
-                if self.game.environment.vigorous_optimizations:
+                if self.game.game_context.vigorous_optimizations:
                     if self.is_offscreen(projectile):
                         if self.should_update(projectile):
                             self.release(projectile, projectile_index)

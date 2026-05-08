@@ -35,7 +35,7 @@ class Camera:
 
             current_intensity = self.shake_intensity * decay
 
-            time = self.game.environment.current_time / 100
+            time = self.game.game_context.current_time / 100
             angle_x = time * 15
             angle_y = time * 13
 

@@ -19,7 +19,7 @@ class AISystem:
         self.script_cache = {}
         self.separation_candidates = []
 
-        random.seed(self.game.environment.seed)
+        random.seed(self.game.game_context.seed)
 
     def load_script(self, script_path):
         if script_path in self.script_cache:

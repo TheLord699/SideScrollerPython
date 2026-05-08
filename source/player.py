@@ -18,8 +18,8 @@ class Player:
         }
                    
     def load_settings(self):
-        self.x = self.game.environment.player_spawn_x
-        self.y = self.game.environment.player_spawn_y
+        self.x = self.game.game_context.player_spawn_x
+        self.y = self.game.game_context.player_spawn_y
         self.vel_x = 0
         self.vel_y = 0
         self.speed = 5 # 5
@@ -30,7 +30,7 @@ class Player:
 
         self.game.camera.load_settings(self.x, self.y)
 
-        self.scale_factor = self.game.environment.scale
+        self.scale_factor = self.game.game_context.scale
         self.hitbox_width = 5 * self.scale_factor
         self.hitbox_height = 15 * self.scale_factor
         self.hitbox = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
@@ -164,7 +164,7 @@ class Player:
         self.in_inventory = False
         self.just_closed_dialogue = False
 
-        random.seed(self.game.environment.seed)
+        random.seed(self.game.game_context.seed)
 
         self.item_info = load_json(os.path.join("assets", "settings", "entities.json"))
 
@@ -299,16 +299,16 @@ class Player:
             self.loaded_weapons.remove(weapon)
 
     def update_state(self):
-        if self.last_volume != self.game.environment.volume:
-            self.last_volume = self.game.environment.volume
+        if self.last_volume != self.game.game_context.volume:
+            self.last_volume = self.game.game_context.volume
             for sound_group in self.sounds.values():
                 if isinstance(sound_group, list):
                     for sound_dict in sound_group:
-                        sound_dict["sound"].set_volume(self.game.environment.volume / 10 * sound_dict["volume"])
+                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
                         
                 elif isinstance(sound_group, dict):
                     for sound_dict in sound_group.values():
-                        sound_dict["sound"].set_volume(self.game.environment.volume / 10 * sound_dict["volume"])
+                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
 
         self.current_health = math.floor(self.current_health * 2) / 2
         self.current_health = min(self.current_health, self.max_health)
@@ -324,8 +324,8 @@ class Player:
         if not self.equipped_weapon in self.weapon_inventory:
             self.equipped_weapon = ""
 
-        if self.vel_y >= self.game.environment.max_fall_speed:
-            self.vel_y = self.game.environment.max_fall_speed
+        if self.vel_y >= self.game.game_context.max_fall_speed:
+            self.vel_y = self.game.game_context.max_fall_speed
 
         if self.attack_timer > self.attack_timeout:
             self.attack_sequence = 1
@@ -340,10 +340,10 @@ class Player:
                 self.vel_x = 0
 
         if self.actual_horizontal_movement and self.on_ground and not self.current_state in {"death"}:
-            if self.game.environment.current_time - self.last_step_time > self.step_interval:
+            if self.game.game_context.current_time - self.last_step_time > self.step_interval:
                 walking_sound = random.choice(self.sounds["walking"])
                 walking_sound["sound"].play()
-                self.last_step_time = self.game.environment.current_time
+                self.last_step_time = self.game.game_context.current_time
 
                 flip_offset = 14 if self.direction == "right" else 0
 
@@ -378,9 +378,9 @@ class Player:
         if self.current_state == "death":
             return
 
-        if self.game.environment.current_time - self.last_damage_time >= self.invinsibility_duration:
+        if self.game.game_context.current_time - self.last_damage_time >= self.invinsibility_duration:
             self.current_health -= damage
-            self.last_damage_time = self.game.environment.current_time
+            self.last_damage_time = self.game.game_context.current_time
             self.knockback_timer = 12 
 
             self.game.foreground.add_screen_effect("hurt", intensity=0.7, duration=20)
@@ -413,7 +413,7 @@ class Player:
         self.dialogue_with = None
         self.game.ui.remove_ui_element("dialogue_boarder")
         self.game.ui.remove_ui_element("dialogue_name")
-        self.game.environment.menu = "death"
+        self.game.game_context.menu = "death"
 
     def render_health(self):
         previous_health = getattr(self, "previous_health", self.current_health)
@@ -511,7 +511,7 @@ class Player:
             self.reposition_tags(x_pos)
 
         index = len(self.pickup_tags)
-        creation_time = self.game.environment.current_time
+        creation_time = self.game.game_context.current_time
         element_id = f"pickup_tag_{creation_time}_{index}"
         text_id = f"pickup_text_{creation_time}_{index}"
 
@@ -528,7 +528,7 @@ class Player:
         self.game.ui.create_ui(
             x=x_pos + self.game.ui.tx(50), y=self.game.ui.ty(20 + index * 35 + 15),
             font_size=10,
-            font=self.game.environment.fonts["fantasy"],
+            font=self.game.game_context.fonts["fantasy"],
             element_id=text_id,
             render_order=2,
             label=item_name
@@ -565,7 +565,7 @@ class Player:
             self.game.ui.create_ui(
                 x=x_pos + self.game.ui.tx(50), y=self.game.ui.ty(20 + slot * 35 + 15),
                 font_size=10,
-                font=self.game.environment.fonts["fantasy"],
+                font=self.game.game_context.fonts["fantasy"],
                 element_id=tag["text_id"],
                 render_order=2,
                 label=tag["name"]
@@ -575,7 +575,7 @@ class Player:
         if not self.pickup_tags:
             return
 
-        current_time = self.game.environment.current_time
+        current_time = self.game.game_context.current_time
         expired = [tag for tag in self.pickup_tags if current_time - tag["creation_time"] >= 3000]
 
         if not expired:
@@ -609,7 +609,7 @@ class Player:
                 x=self.game.screen_width / 6, y=self.game.screen_height / 2,
                 centered=True, width=60, height=60,
                 element_id="item_info",
-                render_order=1, font=self.game.environment.fonts["fantasy"],
+                render_order=1, font=self.game.game_context.fonts["fantasy"],
                 label=f"{self.inventory[id]["name"]} x{self.inventory[id]["quantity"]} Value:{self.inventory[id]["value"]}"
             )
             self.rendered_inventory_ui_elements.append(self.inventory[id]["name"])
@@ -685,19 +685,19 @@ class Player:
                 self.last_rendered_item = None
 
     def on_inventory_click(self, slot):
-        if self.selected_slot is None and slot in self.inventory and (self.game.environment.current_time - self.inventory_cooldown >= 150):
+        if self.selected_slot is None and slot in self.inventory and (self.game.game_context.current_time - self.inventory_cooldown >= 150):
             self.selected_slot = slot
             self.render_item_info(slot)
 
-        elif self.selected_slot == slot and (self.game.environment.current_time - self.inventory_cooldown >= 150):
+        elif self.selected_slot == slot and (self.game.game_context.current_time - self.inventory_cooldown >= 150):
             self.selected_slot = None
             self.render_inventory()
-            self.inventory_cooldown = self.game.environment.current_time
+            self.inventory_cooldown = self.game.game_context.current_time
 
             drop_sound = random.choice(self.sounds["pickup"])
             drop_sound["sound"].play()
 
-        elif self.selected_slot is not None and slot != self.selected_slot and (self.game.environment.current_time - self.inventory_cooldown >= 150):
+        elif self.selected_slot is not None and slot != self.selected_slot and (self.game.game_context.current_time - self.inventory_cooldown >= 150):
             if slot in self.inventory:
                 self.inventory[self.selected_slot], self.inventory[slot] = self.inventory[slot], self.inventory[self.selected_slot]
 
@@ -710,7 +710,7 @@ class Player:
             self.refresh_inventory()
             self.selected_slot = None
             self.inventory_changed = True
-            self.inventory_cooldown = self.game.environment.current_time
+            self.inventory_cooldown = self.game.game_context.current_time
 
     def hitbox_set(self):
         self.hitbox = pg.Rect(
@@ -762,7 +762,7 @@ class Player:
                     scale_multiplier=1,
                     label=message_text,
                     font_size=20,
-                    font=self.game.environment.fonts["fantasy"],
+                    font=self.game.game_context.fonts["fantasy"],
                     render_order=0,
                     is_dialogue=True,
                     typing_speed=25
@@ -783,7 +783,7 @@ class Player:
                     font_size=15,
                     scale_multiplier=1,
                     label=self.dialogue_with.get("name", "???"),
-                    font=self.game.environment.fonts["fantasy"],
+                    font=self.game.game_context.fonts["fantasy"],
                     render_order=1
                 )
                 self.dialogue_just_opened = False
@@ -980,7 +980,7 @@ class Player:
 
     def handle_gravity(self):
         self.on_ground = False
-        self.vel_y += self.game.environment.gravity * self.weight
+        self.vel_y += self.game.game_context.gravity * self.weight
         self.hitbox_set()
 
         bottom_middle_x = self.hitbox.centerx
@@ -1117,7 +1117,7 @@ class Player:
     def handle_controls(self):
         keys = pg.key.get_pressed()
         mouse_buttons = pg.mouse.get_pressed()
-        self.joystick = self.game.environment.joystick
+        self.joystick = self.game.game_context.joystick
 
         controller = {}
         if self.joystick:
@@ -1636,7 +1636,7 @@ class Player:
             )
 
     def dash(self):
-        current_time = self.game.environment.current_time
+        current_time = self.game.game_context.current_time
 
         if hasattr(self, "last_dash_time") and current_time - self.last_dash_time < 500:
             return
@@ -1688,7 +1688,7 @@ class Player:
             dash_sound["sound"].play()
 
     def render_charge_bar(self):
-        if not self.game.environment.show_indicators:
+        if not self.game.game_context.show_indicators:
             return
         
         if not self.charging or self.equipped_weapon not in self.weapon_info:
@@ -1725,8 +1725,8 @@ class Player:
         
         if (self.current_state not in self.frames or
             not self.frames[self.current_state] or
-            (self.game.environment.current_time - self.last_damage_time < self.invinsibility_duration and
-            not self.current_state == "death" and (self.game.environment.current_time // 100) % 2 == 0)):
+            (self.game.game_context.current_time - self.last_damage_time < self.invinsibility_duration and
+            not self.current_state == "death" and (self.game.game_context.current_time // 100) % 2 == 0)):
             return
 
         frame_idx = min(self.current_frame, len(self.frames[self.current_state]) - 1)
@@ -1939,7 +1939,7 @@ class Player:
         self.game.camera.handle_free_cam()
 
     def update(self):
-        if self.game.environment.menu in {"play", "death", "pause"}:
+        if self.game.game_context.menu in {"play", "death", "pause"}:
             if not hasattr(self, "settings_loaded") or not self.settings_loaded:
                 self.load_settings()
                 self.settings_loaded = True

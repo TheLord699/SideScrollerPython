@@ -19,9 +19,9 @@ class LightSource:
         # might remove later
         self.max_cache_size = 100
 
-        self.ambient_light = self.game.environment.max_darkness
-        self.enable_bloom = self.game.environment.bloom
-        self.bloom_tint = self.game.environment.bloom_tint
+        self.ambient_light = self.game.game_context.max_darkness
+        self.enable_bloom = self.game.game_context.bloom
+        self.bloom_tint = self.game.game_context.bloom_tint
 
         self.resize_light_surface()
 
@@ -192,7 +192,7 @@ class LightSource:
         self.active_lights.clear()
 
     def update(self):
-        if not self.game.environment.lighting:
+        if not self.game.game_context.lighting:
             return
         
         self.clear_moving_lights()

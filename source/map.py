@@ -20,7 +20,7 @@ class Map:
         self.grid_offset_x = 0
         self.grid_offset_y = 0
         
-        self.map_scale = self.game.environment.scale
+        self.map_scale = self.game.game_context.scale
         self.base_tile_size = 16
         self.visual_tile_size = self.base_tile_size * self.map_scale
         
@@ -349,8 +349,8 @@ class Map:
                 pg.draw.rect(self.game.screen, (0, 0, 255), hitbox_rect, 2)
 
     def update(self):
-        #if self.game.environment.menu in {"play", "death", "pause"}:
-        if not getattr(self.game.player, "settings_loaded", False) or not self.game.environment.menu in {"play", "death"}:
+        #if self.game.game_context.menu in {"play", "death", "pause"}:
+        if not getattr(self.game.player, "settings_loaded", False) or not self.game.game_context.menu in {"play", "death"}:
             return
             
         self.cam_x = int(self.game.camera.x)

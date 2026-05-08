@@ -27,7 +27,7 @@ class Entities:
             2: pg.image.load("assets/sprites/particles/smoke2.png").convert_alpha(),
         }
            
-        random.seed(self.game.environment.seed)
+        random.seed(self.game.game_context.seed)
         
         self.load_entity_info()
         self.load_settings()
@@ -75,7 +75,7 @@ class Entities:
         self.vel_y = 0
         
         self.tilesheet = None
-        self.scale = self.game.environment.scale 
+        self.scale = self.game.game_context.scale 
         
         self.last_volume = None
         
@@ -158,7 +158,7 @@ class Entities:
             self.load_tilesheet(template["tile_sheet"][0], template["tile_sheet"][1], template["tile_sheet"][2])
         
         index_key = tuple(template.get("index")) if isinstance(template.get("index"), list) else template.get("index")
-        raw_image = self.item_sprites.get(index_key, self.game.environment.missing_texture.copy())
+        raw_image = self.item_sprites.get(index_key, self.game.game_context.missing_texture.copy())
         
         target_width = template.get("width", 32)
         target_height = template.get("height", 32)
@@ -299,16 +299,16 @@ class Entities:
         return False
                 
     def update_sounds(self):
-        if self.last_volume != self.game.environment.volume:
-            self.last_volume = self.game.environment.volume
+        if self.last_volume != self.game.game_context.volume:
+            self.last_volume = self.game.game_context.volume
             for sound_group in self.sounds.values():
                 if isinstance(sound_group, list):
                     for sound_dict in sound_group:
-                        sound_dict["sound"].set_volume(self.game.environment.volume / 10 * sound_dict["volume"])
+                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
                         
                 elif isinstance(sound_group, dict):
                     for sound_dict in sound_group.values():
-                        sound_dict["sound"].set_volume(self.game.environment.volume / 10 * sound_dict["volume"])
+                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
         
     def drop_item(self, entity):
         items = ["Red Gem", "Potion", "Gold"]
@@ -523,10 +523,10 @@ class Entities:
                     entity["vel_y"] = 0
                     break
             
-            entity["vel_y"] += self.game.environment.gravity * entity["weight"]
+            entity["vel_y"] += self.game.game_context.gravity * entity["weight"]
             
-            if entity["vel_y"] > self.game.environment.max_fall_speed:
-                entity["vel_y"] = self.game.environment.max_fall_speed 
+            if entity["vel_y"] > self.game.game_context.max_fall_speed:
+                entity["vel_y"] = self.game.game_context.max_fall_speed 
 
     def apply_horizontal_movement(self, entity):
         steps = max(1, int(abs(entity["vel_x"])))
@@ -588,14 +588,14 @@ class Entities:
         return False
         
     def health_bar(self, entity):
-        if not self.game.environment.show_indicators:
+        if not self.game.game_context.show_indicators:
             return False
         
         if entity["health"] <= 0 or entity["health"] == entity["max_health"]:
             return False
 
         if not hasattr(self, "health_font"):
-            self.health_font = pg.font.Font(self.game.environment.fonts["fantasy"], 13)
+            self.health_font = pg.font.Font(self.game.game_context.fonts["fantasy"], 13)
 
         cam_x, cam_y = self.game.camera.x, self.game.camera.y
         
@@ -623,7 +623,7 @@ class Entities:
         return True
 
     def entity_indicators(self, entity):
-        if not self.game.environment.show_indicators:
+        if not self.game.game_context.show_indicators:
             return
         
         if not hasattr(self, "arrow_surface"):
@@ -705,7 +705,7 @@ class Entities:
             fade_progress = (distance - fade_start) / fade_range
             opacity = 255 - fade_progress * (255 - 50)
 
-        time = self.game.environment.current_time / 250
+        time = self.game.game_context.current_time / 250
         scale = round(1.0 + 0.1 * math.sin(time), 1)
 
         if entity["entity_type"] == "enemy":
@@ -720,7 +720,7 @@ class Entities:
 
         elif entity["entity_type"] == "item":
             if not hasattr(self, "item_font"):
-                self.item_font = pg.font.Font(self.game.environment.fonts["fantasy"], 11)
+                self.item_font = pg.font.Font(self.game.game_context.fonts["fantasy"], 11)
 
             item_text = entity["name"]
 
@@ -963,7 +963,7 @@ class Entities:
                 sprite_y <= screen_h + render_padding
             )
             
-            if self.game.environment.vigorous_optimizations:
+            if self.game.game_context.vigorous_optimizations:
                 if not is_on_screen:
                     continue
                 

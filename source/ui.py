@@ -283,7 +283,7 @@ class UI:
         
         except Exception as e:
             print(f"Error loading image from {image_path}: {e}")
-            return self.game.environment.missing_texture.copy()
+            return self.game.game_context.missing_texture.copy()
     
     def load_font(self, font_path, size=24):
         font_key = f"{font_path}_{size}"
@@ -325,7 +325,7 @@ class UI:
 
             if image_path:
                 original_image = self.load_image(image_path, alpha)
-                if original_image == self.game.environment.missing_texture:
+                if original_image == self.game.game_context.missing_texture:
                     missing_texture = True
                     
                 original_image = pg.transform.scale(original_image, (width, height))
@@ -358,7 +358,7 @@ class UI:
             show_missing_texture = (missing_texture or original_image is None) and not is_slider and not ((label or dynamic_value) and not is_button)
             
             if show_missing_texture:
-                original_image = self.game.environment.missing_texture.copy()
+                original_image = self.game.game_context.missing_texture.copy()
                 original_image = pg.transform.scale(original_image, (width, height))
 
             dynamic_display = None
@@ -375,9 +375,9 @@ class UI:
                 full_text = display_label
                 current_text = ""
                 typing_index = 0
-                last_typing_time = self.game.environment.current_time
+                last_typing_time = self.game.game_context.current_time
                 typing_complete = False
-                advance_timer = self.game.environment.current_time
+                advance_timer = self.game.game_context.current_time
                 
             else:
                 full_text = None
@@ -491,7 +491,7 @@ class UI:
         if not element["is_dialogue"] or element["typing_complete"]:
             return
 
-        current_time = self.game.environment.current_time
+        current_time = self.game.game_context.current_time
         
         time_since_last = current_time - element["last_typing_time"]
         time_per_char = 1000 / element["typing_speed"]
@@ -632,7 +632,7 @@ class UI:
             if element["click_sound"]:
                 sound = element["click_sound"]["sound"]
                 volume = element["click_sound"]["volume"]
-                sound.set_volume(self.game.environment.volume / 10 * volume)
+                sound.set_volume(self.game.game_context.volume / 10 * volume)
                 sound.play()
 
         elif element.get("scaled") and (not hovered or not mouse_pressed[0]):
@@ -658,7 +658,7 @@ class UI:
                 if element["release_sound"]:
                     sound = element["release_sound"]["sound"]
                     volume = element["release_sound"]["volume"]
-                    sound.set_volume(self.game.environment.volume / 10 * volume)
+                    sound.set_volume(self.game.game_context.volume / 10 * volume)
                     sound.play()
 
         else:
@@ -678,14 +678,14 @@ class UI:
                 if element["click_sound"]:
                     sound = element["click_sound"]["sound"]
                     volume = element["click_sound"]["volume"]
-                    sound.set_volume(self.game.environment.volume / 10 * volume)
+                    sound.set_volume(self.game.game_context.volume / 10 * volume)
                     sound.play()
         
         else:
             if element["grabbed"] and element["release_sound"]:
                 sound = element["release_sound"]["sound"]
                 volume = element["release_sound"]["volume"]
-                sound.set_volume(self.game.environment.volume / 10 * volume)
+                sound.set_volume(self.game.game_context.volume / 10 * volume)
                 sound.play()
                 
             element["grabbed"] = False

@@ -474,7 +474,7 @@ class MemoryDebugger:
 
         game_objects = [
             ("UI", weakref.ref(self.game.ui)),
-            ("Environment", weakref.ref(self.game.environment)),
+            ("GameContext", weakref.ref(self.game.game_context)),
             ("Map", weakref.ref(self.game.map)),
             ("Player", weakref.ref(self.game.player)),
             ("Entities", weakref.ref(self.game.entities)),
@@ -581,7 +581,7 @@ class MemoryDebugger:
 
         game_objects = [
             ("UI", weakref.ref(self.game.ui)),
-            ("Environment", weakref.ref(self.game.environment)),
+            ("GameContext", weakref.ref(self.game.game_context)),
             ("Map", weakref.ref(self.game.map)),
             ("Player", weakref.ref(self.game.player)),
             ("Entities", weakref.ref(self.game.entities)),

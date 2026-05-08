@@ -4,7 +4,7 @@ import gc
 
 from helper_methods import load_json
 
-class Environment:
+class GameContext:
   def __init__(self, game):
     self.game = game
     

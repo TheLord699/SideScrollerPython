@@ -73,7 +73,7 @@ class Background:
 			print(f"Failed to load background info: {e}")
 
 	def update_camera(self):
-		if self.game.environment.menu in {"play", "death"}:
+		if self.game.game_context.menu in {"play", "death"}:
 			if not getattr(self.game.player, "settings_loaded", False):
 				self.cam_x = 0
 				self.cam_y = 0
@@ -82,7 +82,7 @@ class Background:
 			self.cam_x = self.game.camera.x
 			self.cam_y = self.game.camera.y
 		
-		elif self.game.environment.menu in {"main", "settings", "select_menu"}: 
+		elif self.game.game_context.menu in {"main", "settings", "select_menu"}: 
 			if not self.menu_scrolling:
 				self.cam_x = 0
 				self.cam_y = 0
@@ -97,7 +97,7 @@ class Background:
 			self.menu_scrolling = False
 
 	def update_layers(self):
-		current_time = self.game.environment.current_time * 0.002
+		current_time = self.game.game_context.current_time * 0.002
 		
 		for index, bg in enumerate(self.layers):
 			move_speed = bg["move_speed"]

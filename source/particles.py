@@ -6,11 +6,11 @@ class Particles:
     def __init__(self, game):
         self.game = game
         
-        self.particles = deque(maxlen=game.environment.max_particles)
+        self.particles = deque(maxlen=game.game_context.max_particles)
         self.pool = []
         
         self.enable_particles = True
-        self.max_particles = game.environment.max_particles
+        self.max_particles = game.game_context.max_particles
         
         self.surface_cache = {}
         
@@ -174,7 +174,7 @@ class Particles:
         if screen_x + w < 0 or screen_x > screen_width or screen_y + h < 0 or screen_y > screen_height:
             return
 
-        if self.game.environment.menu not in {"play", "death", "pause"}:
+        if self.game.game_context.menu not in {"play", "death", "pause"}:
             return
 
         screen_pos = (screen_x, screen_y)

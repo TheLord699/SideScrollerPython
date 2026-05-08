@@ -4,7 +4,7 @@ import os
 
 from background import Background 
 from foreground import Foreground
-from environment import Environment
+from game_context import GameContext
 from player import Player
 from entities import Entities
 from map import Map
@@ -48,7 +48,7 @@ class Game:
   def init_objects(self):
     self.data_manager = DataManager()
     self.ui = UI(self)
-    self.environment = Environment(self)
+    self.game_context = GameContext(self)
     self.ai = AISystem(self)
     self.projectiles_system = ProjectileSystem(self)
     self.map = Map(self)
@@ -68,7 +68,7 @@ class Game:
     self.screen.blit(fps_text, (self.screen_width - 120, 10))
 
   def update(self):
-    self.environment.update()
+    self.game_context.update()
     self.background.update()
     self.map.update()
     self.entities.update()
@@ -79,7 +79,7 @@ class Game:
     self.foreground.update()
     self.ui.update()
     # testing lights
-    if self.environment.lighting:
+    if self.game_context.lighting:
       player_light = (
         self.player.x + self.player.hitbox_width / 2,
         self.player.y + self.player.hitbox_height / 2,
@@ -125,10 +125,10 @@ class Game:
               self.player.current_health = self.player.max_health
 
             case pg.K_b:
-              self.environment.menu = "main"
+              self.game_context.menu = "main"
             
             case pg.K_g:
-              self.environment.save_data()
+              self.game_context.save_data()
               print("Game data saved.")
 
             case pg.K_v:
@@ -169,6 +169,6 @@ class Game:
       self.window_manager.draw_scaled()
 
       pg.display.flip()
-      self.clock.tick(self.environment.fps)
+      self.clock.tick(self.game_context.fps)
 
     pg.quit()
