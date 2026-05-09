@@ -304,6 +304,7 @@
       "interaction": "scripted",
       "weight": 1,
       "width": 100,
+      "projectile_target": false,
       "hitbox_offset_x": -20,
       "hitbox_offset_y": 18,
       "hitbox_width": 60,

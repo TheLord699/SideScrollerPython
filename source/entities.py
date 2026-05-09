@@ -182,6 +182,7 @@ class Entities:
             "vel_y": 0,
             "on_ground": False,
             "push_force": template.get("push_force", 20),
+            "projectile_target": template.get("projectile_target", True),
             "value": template.get("value", 0),
             "health": template.get("health", 100 if entity_type in ("npc", "enemy", "actor") else 0),
             "max_health": template.get("health", 100 if entity_type in ("npc", "enemy", "actor") else 0),

@@ -203,7 +203,7 @@ class ProjectileSystem:
             
         if projectile.owner == "player":
             for entity in self.game.entities.entities:
-                if entity["entity_type"] not in {"enemy", "npc", "actor"}:
+                if entity["entity_type"] not in {"enemy", "npc", "actor"} or not entity["projectile_target"]:
                     continue
                 
                 entity_id = id(entity)
