@@ -44,8 +44,6 @@ class Player:
 
         self.max_inventory_slots = 15
         self.rendered_inventory_ui_elements = []
-        self.inventory_x_offset = self.game.screen_width / 2.5
-        self.inventory_y_offset = self.game.screen_height / 2.5
         self.items_per_row = 5
         self.item_spacing = 40
         self.selected_slot = None
@@ -428,8 +426,8 @@ class Player:
             row = heart // self.health_per_row
             col = heart % self.health_per_row
 
-            x_position = self.inventory_x_offset + col * self.health_spacing - self.game.ui.tx(300)
-            y_position = self.inventory_y_offset + row * self.health_spacing - self.game.ui.ty(220)
+            x_position = self.game.screen_width * 0.025 + col * self.health_spacing
+            y_position = self.game.screen_height * 0.033 + row * self.health_spacing
 
             if heart + 1 <= self.current_health:
                 image_path = [0, 0]
@@ -501,8 +499,7 @@ class Player:
         )
 
     def add_pickup_tag(self, item_name):
-        screen_width = self.game.screen.get_width()
-        x_pos = screen_width - self.game.ui.tx(100)
+        x_pos = self.game.screen_width - 100
 
         if len(self.pickup_tags) >= self.max_tags:
             oldest = self.pickup_tags.pop(0)
@@ -518,7 +515,7 @@ class Player:
         self.game.ui.create_ui(
             sprite_sheet_path="item_sheet",
             image_id=self.item_info["items"][item_name]["index"],
-            x=x_pos, y=self.game.ui.ty(20 + index * 35),
+            x=x_pos, y=self.game.screen_height * 0.033 + index * 35,
             sprite_width=16, sprite_height=16,
             width=30, height=30,
             element_id=element_id,
@@ -526,7 +523,7 @@ class Player:
         )
 
         self.game.ui.create_ui(
-            x=x_pos + self.game.ui.tx(50), y=self.game.ui.ty(20 + index * 35 + 15),
+            x=x_pos + 50, y=self.game.screen_height * 0.033 + index * 35 + 15,
             font_size=10,
             font=self.game.game_context.fonts["fantasy"],
             element_id=text_id,
@@ -543,7 +540,7 @@ class Player:
 
     def reposition_tags(self, x_pos=None):
         if x_pos is None:
-            x_pos = self.game.screen.get_width() - self.game.ui.tx(100)
+            x_pos = self.game.screen_width - 100
 
         for slot, tag in enumerate(self.pickup_tags):
             self.game.ui.remove_ui_element(tag["element_id"])
@@ -555,7 +552,7 @@ class Player:
             self.game.ui.create_ui(
                 sprite_sheet_path="item_sheet",
                 image_id=self.item_info["items"][tag["name"]]["index"],
-                x=x_pos, y=self.game.ui.ty(20 + slot * 35),
+                x=x_pos, y=self.game.screen_height * 0.033 + slot * 35,
                 sprite_width=16, sprite_height=16,
                 width=30, height=30,
                 element_id=tag["element_id"],
@@ -563,7 +560,7 @@ class Player:
             )
 
             self.game.ui.create_ui(
-                x=x_pos + self.game.ui.tx(50), y=self.game.ui.ty(20 + slot * 35 + 15),
+                x=x_pos + 50, y=self.game.screen_height * 0.033 + slot * 35 + 15,
                 font_size=10,
                 font=self.game.game_context.fonts["fantasy"],
                 element_id=tag["text_id"],
@@ -598,7 +595,7 @@ class Player:
         if self.selected_slot is not None:
             self.game.ui.create_ui(
                 sprite_sheet_path="item_sheet", image_id=self.item_info["items"][self.inventory[id]["name"]]["index"],
-                x=self.game.screen_width / 5, y=self.game.screen_height / 2.2, sprite_width=16, sprite_height=16,
+                x=self.game.screen_width * 0.2, y=self.game.screen_height * 0.5, sprite_width=16, sprite_height=16,
                 centered=True, width=60, height=60,
                 alpha=True,
                 element_id=self.inventory[id]["name"],
@@ -606,7 +603,7 @@ class Player:
             )
 
             self.game.ui.create_ui(
-                x=self.game.screen_width / 6, y=self.game.screen_height / 2,
+                x=self.game.screen_width * 0.2, y=self.game.screen_height * 0.6,
                 centered=True, width=60, height=60,
                 element_id="item_info",
                 render_order=1, font=self.game.game_context.fonts["fantasy"],
@@ -629,8 +626,8 @@ class Player:
             row = slot // self.items_per_row
             col = slot % self.items_per_row
 
-            x_position = self.inventory_x_offset + col * self.item_spacing
-            y_position = self.inventory_y_offset + row * self.item_spacing
+            x_position = self.game.screen_width * 0.5 - 2 * self.item_spacing + col * self.item_spacing
+            y_position = self.game.screen_height * 0.5 - self.item_spacing + row * self.item_spacing
 
             slot_element_id = f"slot:{slot}"
 
@@ -655,8 +652,8 @@ class Player:
                 row = item_slot // self.items_per_row
                 col = item_slot % self.items_per_row
 
-                x_position = self.inventory_x_offset + col * self.item_spacing
-                y_position = self.inventory_y_offset + row * self.item_spacing
+                x_position = self.game.screen_width * 0.5 - 2 * self.item_spacing + col * self.item_spacing
+                y_position = self.game.screen_height * 0.5 - self.item_spacing + row * self.item_spacing
 
                 item_element_id = f"item:{item["name"]}"
                 self.game.ui.create_ui(
@@ -749,8 +746,8 @@ class Player:
                 self.game.ui.create_ui(
                     sprite_sheet_path="ui_sheet",
                     image_id=[33, 0],
-                    x=self.game.screen_width / 2,
-                    y=self.game.screen_height / 1.15,
+                    x=self.game.screen_width * 0.5,
+                    y=self.game.screen_height * 0.87,
                     sprite_width=95,
                     sprite_height=32,
                     centered=True,
@@ -769,16 +766,10 @@ class Player:
                 )
 
                 self.game.ui.create_ui(
-                    sprite_sheet_path="ui_sheet",
-                    x=self.game.screen_width / 5,
-                    y=self.game.screen_height / 1.5,
-                    sprite_width=95,
-                    sprite_height=32,
-                    centered=True,
+                    x=self.game.screen_width * 0.5 - 250,
+                    y=self.game.screen_height * 0.87 - 120,
                     width=300,
                     height=150,
-                    alpha=True,
-                    is_button=False,
                     element_id="dialogue_name",
                     font_size=15,
                     scale_multiplier=1,

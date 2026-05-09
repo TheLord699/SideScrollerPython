@@ -8,8 +8,8 @@
         {
           "type": "label",
           "id": "version",
-          "x": -40,
-          "y": -30,
+          "anchor": [0.0, 0.0],
+          "offset": [-30, -20],
           "width": 200,
           "height": 100,
           "label": "ver: {game.version}",
@@ -20,20 +20,21 @@
         {
           "type": "label",
           "id": "title",
-          "x": "screen_width/2.6",
-          "y": 100,
+          "anchor": [0.5, 0.0],
+          "offset": [0, 100],
           "width": 200,
           "height": 100,
           "label": "Generic Side Scroller",
           "font": "fantasy",
           "font_size": 28,
-          "render_order": 0
+          "render_order": 0,
+          "centered": true
         },
         {
           "type": "button",
           "id": "play_button",
-          "x": "screen_width/2",
-          "y": 250,
+          "anchor": [0.5, 0.417],
+          "offset": [0, 0],
           "width": 200,
           "height": 100,
           "centered": true,
@@ -54,8 +55,8 @@
         {
           "type": "button",
           "id": "settings_button",
-          "x": "screen_width/2",
-          "y": 400,
+          "anchor": [0.5, 0.667],
+          "offset": [0, 0],
           "width": 200,
           "height": 100,
           "centered": true,
@@ -75,14 +76,13 @@
         }
       ]
     },
-
     "select_menu": {
       "elements": [
         {
           "type": "button",
           "id": "new_game_button",
-          "x": "screen_width/2",
-          "y": 250,
+          "anchor": [0.5, 0.417],
+          "offset": [0, 0],
           "width": 200,
           "height": 100,
           "centered": true,
@@ -103,8 +103,8 @@
         {
           "type": "button",
           "id": "load_button",
-          "x": "screen_width/2",
-          "y": 400,
+          "anchor": [0.5, 0.667],
+          "offset": [0, 0],
           "width": 200,
           "height": 100,
           "centered": true,
@@ -125,8 +125,8 @@
         {
           "type": "button",
           "id": "back_button",
-          "x": "screen_width/7",
-          "y": 500,
+          "anchor": [0.143, 0.833],
+          "offset": [0, 0],
           "width": 100,
           "height": 100,
           "centered": true,
@@ -144,22 +144,21 @@
         }
       ]
     },
-
     "settings": {
       "elements": [
         {
           "type": "label",
           "id": "volume_text",
-          "x": "screen_width/2",
-          "y": 120,
+          "anchor": [0.5, 0.2],
+          "offset": [0, 0],
           "label": "Volume",
           "font": "fantasy"
         },
         {
           "type": "slider",
           "id": "volume_slider",
-          "x": "screen_width/2.65",
-          "y": 170,
+          "anchor": [0.5, 0.283],
+          "offset": [-100, 0],
           "width": 200,
           "height": 20,
           "min_value": 0.0,
@@ -173,8 +172,8 @@
         {
           "type": "dynamic_button",
           "id": "indicator_button",
-          "x": "screen_width/2+110",
-          "y": 270,
+          "anchor": [0.5, 0.45],
+          "offset": [110, 0],
           "width": 200,
           "height": 100,
           "centered": true,
@@ -196,8 +195,8 @@
         {
           "type": "dynamic_button",
           "id": "particle_button",
-          "x": "screen_width/2-110",
-          "y": 270,
+          "anchor": [0.5, 0.45],
+          "offset": [-110, 0],
           "width": 200,
           "height": 100,
           "centered": true,
@@ -219,8 +218,8 @@
         {
           "type": "dynamic_button",
           "id": "foreground_button",
-          "x": "screen_width/2-110",
-          "y": 395,
+          "anchor": [0.5, 0.658],
+          "offset": [-110, 0],
           "width": 200,
           "height": 100,
           "centered": true,
@@ -242,8 +241,8 @@
         {
           "type": "dynamic_button",
           "id": "cam_follow_mouse_button",
-          "x": "screen_width/2+110",
-          "y": 395,
+          "anchor": [0.5, 0.658],
+          "offset": [110, 0],
           "width": 200,
           "height": 100,
           "centered": true,
@@ -265,8 +264,8 @@
         {
           "type": "dynamic_button",
           "id": "vigorous_optimizations_button",
-          "x": "screen_width/2",
-          "y": 520,
+          "anchor": [0.5, 0.867],
+          "offset": [0, 0],
           "width": 250,
           "height": 100,
           "centered": true,
@@ -288,9 +287,8 @@
         {
           "type": "label",
           "id": "message",
-          "x": "screen_width/2+132",
-          "y": 470,
-          "centered": true,
+          "anchor": [0.42, 0.75],
+          "offset": [200, 20],
           "width": 250,
           "height": 100,
           "font_size": 15,
@@ -300,8 +298,8 @@
         {
           "type": "button",
           "id": "back_button",
-          "x": "screen_width/7",
-          "y": 500,
+          "anchor": [0.143, 0.833],
+          "offset": [0, 0],
           "width": 100,
           "height": 100,
           "centered": true,
@@ -319,26 +317,26 @@
         }
       ]
     },
-
     "death": {
       "elements": [
         {
           "type": "label",
           "id": "Death_message",
-          "x": "screen_width/2.6",
-          "y": 150,
+          "anchor": [0.5, 0.25],
+          "offset": [0, 0],
           "width": 200,
           "height": 100,
           "label": "You Died",
           "font": "fantasy",
           "font_size": 35,
-          "render_order": 0
+          "render_order": 0,
+          "centered": true
         },
         {
           "type": "button",
           "id": "restart_button",
-          "x": "screen_width/2",
-          "y": 350,
+          "anchor": [0.5, 0.583],
+          "offset": [0, 0],
           "width": 200,
           "height": 100,
           "centered": true,

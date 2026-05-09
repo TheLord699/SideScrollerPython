@@ -16,11 +16,12 @@ class UI:
     def build_element_from_config(self, cfg, game_context):
         element_type = cfg.get("type")
 
+        x, y = self.resolve_position(cfg, game_context)
         shared = dict(
-            x=self.resolve_expr(cfg.get("x", 0), game_context, axis="x"),
-            y=self.resolve_expr(cfg.get("y", 0), game_context, axis="y"),
-            width=self.resolve_expr(cfg.get("width", 0), game_context, axis="x"),
-            height=self.resolve_expr(cfg.get("height", 0), game_context, axis="y"),
+            x=x,
+            y=y,
+            width=self.resolve_expr(cfg.get("width", 0), game_context),
+            height=self.resolve_expr(cfg.get("height", 0), game_context),
             element_id=cfg["id"],
             centered=cfg.get("centered", False),
             render_order=cfg.get("render_order", 0),
@@ -73,23 +74,20 @@ class UI:
         else:
             print(f"Unknown element type '{element_type}' for id '{cfg.get('id')}'")
 
-    BASE_WIDTH = 800
-    BASE_HEIGHT = 600
+    def resolve_position(self, cfg, game_context):
+        sw = self.game.screen_width
+        sh = self.game.screen_height
 
-    def tx(self, x):
-        return x * self.game.screen_width / self.BASE_WIDTH
+        anchor = cfg.get("anchor")
+        offset = cfg.get("offset", [0, 0])
 
-    def ty(self, y):
-        return y * self.game.screen_height / self.BASE_HEIGHT
+        if anchor is not None:
+            return anchor[0] * sw + offset[0], anchor[1] * sh + offset[1]
 
-    def resolve_expr(self, value, game_context=None, axis=None):
+        return self.resolve_expr(cfg.get("x", 0), game_context), self.resolve_expr(cfg.get("y", 0), game_context)
+
+    def resolve_expr(self, value, game_context=None):
         if not isinstance(value, str):
-            if axis == "x":
-                return self.tx(value)
-            
-            elif axis == "y":
-                return self.ty(value)
-            
             return value
         
         try:
@@ -440,7 +438,7 @@ class UI:
             }
 
             if centered:
-                ui_element["rect"] = original_image.get_rect(center=(x, y)) if original_image else pg.Rect(x, y, width, height)
+                ui_element["rect"] = original_image.get_rect(center=(x, y)) if original_image else pg.Rect(x - width / 2, y - height / 2, width, height)
                 
             else:
                 ui_element["rect"] = pg.Rect(x, y, width, height)

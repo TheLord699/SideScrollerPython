@@ -1,3 +1,4 @@
+# not being used for now, will likely later utilise the OpneGL rendering for steam overlay
 import pygame as pg
 import OpenGL.GL as gl
 import numpy as np
