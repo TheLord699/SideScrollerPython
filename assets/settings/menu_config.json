@@ -21,7 +21,7 @@
           "type": "label",
           "id": "title",
           "anchor": [0.5, 0.0],
-          "offset": [0, 100],
+          "offset": [0, 150],
           "width": 200,
           "height": 100,
           "label": "Generic Side Scroller",
@@ -321,7 +321,7 @@
         {
           "type": "label",
           "id": "Death_message",
-          "anchor": [0.5, 0.25],
+          "anchor": [0.5, 0.35],
           "offset": [0, 0],
           "width": 200,
           "height": 100,
