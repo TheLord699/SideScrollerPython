@@ -222,7 +222,7 @@ class GameContext:
       self.map_loaded_from_save = False
       return
     
-    gc.collect() #  forces garbage collection
+    gc.collect() # forces garbage collection
     self.menu = "play"
     self.last_menu = "play"
     self.reset()
