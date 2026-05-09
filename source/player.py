@@ -627,7 +627,7 @@ class Player:
             col = slot % self.items_per_row
 
             x_position = self.game.screen_width * 0.5 - 2 * self.item_spacing + col * self.item_spacing
-            y_position = self.game.screen_height * 0.5 - self.item_spacing + row * self.item_spacing
+            y_position = self.game.screen_height * 0.45 - self.item_spacing + row * self.item_spacing
 
             slot_element_id = f"slot:{slot}"
 
@@ -653,7 +653,7 @@ class Player:
                 col = item_slot % self.items_per_row
 
                 x_position = self.game.screen_width * 0.5 - 2 * self.item_spacing + col * self.item_spacing
-                y_position = self.game.screen_height * 0.5 - self.item_spacing + row * self.item_spacing
+                y_position = self.game.screen_height * 0.45 - self.item_spacing + row * self.item_spacing
 
                 item_element_id = f"item:{item["name"]}"
                 self.game.ui.create_ui(
