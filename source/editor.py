@@ -17,7 +17,7 @@ font_small = pg.font.SysFont("Consolas", 13)
 
 MAPS_ROOT = "assets/maps"
 TILESHEETS_ROOT = "assets/sprites/maps/tile_sheets"
-ENTITIES_FILE = "assets/settings/entities.json"
+ENTITIES_FILE = "assets/settings/entities_config.json"
 
 TILE_PANEL_WIDTH = 256
 MIN_TILE_PANEL_WIDTH = 150

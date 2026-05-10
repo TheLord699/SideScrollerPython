@@ -164,7 +164,7 @@ class Player:
 
         random.seed(self.game.game_context.seed)
 
-        self.item_info = load_json(os.path.join("assets", "settings", "entities.json"))
+        self.item_info = load_json(os.path.join("assets", "settings", "entities_config.json"))
 
         self.load_frames()
 

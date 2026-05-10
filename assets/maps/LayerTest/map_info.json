@@ -8083,15 +8083,6 @@
   ],
   "entity_placements": [
     {
-      "x": 2.0,
-      "y": 18.0,
-      "type": "entity",
-      "entity_type": "item",
-      "entity_name": "Gold",
-      "layer": 0,
-      "overrides": {}
-    },
-    {
       "x": 8.0,
       "y": 16.0,
       "type": "entity",
@@ -8218,42 +8209,6 @@
       "overrides": {}
     },
     {
-      "x": -1.0,
-      "y": 18.0,
-      "type": "entity",
-      "entity_type": "item",
-      "entity_name": "Potion",
-      "layer": 0,
-      "overrides": {}
-    },
-    {
-      "x": 0.0,
-      "y": 18.0,
-      "type": "entity",
-      "entity_type": "item",
-      "entity_name": "Red Gem",
-      "layer": 0,
-      "overrides": {}
-    },
-    {
-      "x": 1.0,
-      "y": 18.0,
-      "type": "entity",
-      "entity_type": "item",
-      "entity_name": "Potion",
-      "layer": 0,
-      "overrides": {}
-    },
-    {
-      "x": 3.0,
-      "y": 18.0,
-      "type": "entity",
-      "entity_type": "item",
-      "entity_name": "Gold",
-      "layer": 0,
-      "overrides": {}
-    },
-    {
       "x": 19.0,
       "y": 32.0,
       "type": "entity",
@@ -8317,7 +8272,7 @@
       "overrides": {}
     },
     {
-      "x": 4.0,
+      "x": 1.0,
       "y": 18.0,
       "type": "entity",
       "entity_type": "item",
@@ -8326,11 +8281,20 @@
       "overrides": {}
     },
     {
-      "x": 5.0,
+      "x": 2.0,
       "y": 18.0,
       "type": "entity",
       "entity_type": "item",
       "entity_name": "Basic bow",
+      "layer": 0,
+      "overrides": {}
+    },
+    {
+      "x": 22.0,
+      "y": 18.0,
+      "type": "entity",
+      "entity_type": "actor",
+      "entity_name": "Chest",
       "layer": 0,
       "overrides": {}
     }

@@ -11,7 +11,7 @@ class Entities:
         self.tilesheet_cache = {} 
         self.render_priority = {"actor": 0, "npc": 1, "enemy": 2, "item": 3}
                 
-        self.sounds = {
+        self.sounds = { # will grab sounds from the entities.json soon instead of hardcoding paths(will also allow me to have specific sounds for entities)
             "hit": [
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_1.wav"), "volume": 2},
                 {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_2.wav"), "volume": 2},
@@ -33,7 +33,7 @@ class Entities:
         self.load_settings()
 
     def load_entity_info(self):
-        with open("assets/settings/entities.json", "r") as f:
+        with open("assets/settings/entities_config.json", "r") as f:
             self.entity_info = json.load(f)
 
     def load_tilesheet(self, path, tile_width, tile_height):
