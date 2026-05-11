@@ -18,51 +18,53 @@ class Player:
         }
                    
     def load_settings(self):
+        cfg = load_json(os.path.join("assets", "settings", "player_config.json"))
+
         self.x = self.game.game_context.player_spawn_x
         self.y = self.game.game_context.player_spawn_y
         self.vel_x = 0
         self.vel_y = 0
-        self.speed = 5 # 5
-        self.dash_speed = 100 # 100
-        self.weight = 1 # 1
-        self.jump_strength = 10 # 10
-        self.friction = 0
+        self.speed = cfg["movement"]["speed"] # 5
+        self.dash_speed = cfg["movement"]["dash_speed"] # 100
+        self.weight = cfg["movement"]["weight"] # 1
+        self.jump_strength = cfg["movement"]["jump_strength"] # 10
+        self.friction = cfg["movement"]["friction"]
 
         self.game.camera.load_settings(self.x, self.y)
 
         self.scale_factor = self.game.game_context.scale
-        self.hitbox_width = 5 * self.scale_factor
-        self.hitbox_height = 15 * self.scale_factor
+        self.hitbox_width = cfg["hitbox"]["width_units"] * self.scale_factor
+        self.hitbox_height = cfg["hitbox"]["height_units"] * self.scale_factor
         self.hitbox = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
         self.interact_radius = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
         self.blocked_horizontally = False
 
-        self.attack_timeout = 30
+        self.attack_timeout = cfg["combat"]["attack_timeout"]
         self.attack_sequence = 1
         self.attack_timer = 0
         self.current_attack_projectile = None
 
-        self.max_inventory_slots = 15
+        self.max_inventory_slots = cfg["inventory"]["max_slots"]
         self.rendered_inventory_ui_elements = []
-        self.items_per_row = 5
-        self.item_spacing = 40
+        self.items_per_row = cfg["inventory"]["items_per_row"]
+        self.item_spacing = cfg["inventory"]["item_spacing"]
         self.selected_slot = None
         self.inventory_changed = False
         self.inventory_cooldown = 0
         self.inventory = {}
 
-        self.max_health = 3
+        self.max_health = cfg["health"]["max_health"]
         self.current_health = self.max_health
-        self.health_per_row = 10
-        self.health_spacing = 35
-        self.invinsibility_duration = 900
+        self.health_per_row = cfg["health"]["health_per_row"]
+        self.health_spacing = cfg["health"]["health_spacing"]
+        self.invinsibility_duration = cfg["health"]["invincibility_duration"]
         self.last_damage_time = -self.invinsibility_duration * 2
 
         self.pickup_tags = []
-        self.max_tags = 3
+        self.max_tags = cfg["inventory"]["max_tags"]
 
         self.last_step_time = 0
-        self.step_interval = 300
+        self.step_interval = cfg["footsteps"]["step_interval"]
         self.actual_horizontal_movement = False
 
         self.in_dialogue = False
@@ -70,17 +72,17 @@ class Player:
         self.dialogue_with = None
 
         self.in_map = False
-        self.map_scale_factor = 5
+        self.map_scale_factor = cfg["map"]["scale_factor"]
         self.map_offset_x = 0
         self.map_offset_y = 0
         self.map_dragging = False
 
         self.fall_time = 0
-        self.max_fall_time = 500
+        self.max_fall_time = cfg["movement"]["max_fall_time"]
 
-        self.coyote_time = 8
+        self.coyote_time = cfg["movement"]["coyote_time"]
         self.coyote_timer = 0
-        
+
         self.last_volume = None
 
         self.current_state = "idle"
@@ -89,68 +91,21 @@ class Player:
         self.animation_timer = 0
         self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
         self.weapon_inventory = [] # temporary, will be replaced with actual inventory system
-        self.max_weapon_inventory_slots = 2
+        self.max_weapon_inventory_slots = cfg["combat"]["max_weapon_inventory_slots"]
         self.equipped_weapon = ""
         self.loaded_weapons = set()
-        self.state_frames = {
-            "idle": {"frames": 6, "speed": 0.15},
-            "walking": {"frames": 8, "speed": 0.2},
-            "jump": {"frames": 3, "speed": 0.15},
-            "hurt": {"frames": 4, "speed": 0.10},
-            "death": {"frames": 4, "speed": 0.15},
-        }
+        self.state_frames = cfg["animation"]["states"]
         self.frames = {state: [] for state in self.state_frames}
 
-        self.sounds = {
-            "jump": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/movement/12_human_jump_2.wav"), "volume": 2.0}
-            ],
-            "attack": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/attack/swing1.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/player/attack/swing2.wav"), "volume": 2.0}
-            ],
-            "land": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/movement/13_human_jump_land_1.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/player/movement/13_human_jump_land_2.wav"), "volume": 2.0}
-            ],
-            "inventory": {
-                "open": {"sound": pg.mixer.Sound("assets/sounds/player/interact/01_chest_open_1.wav"), "volume": 2.0},
-                "close": {"sound": pg.mixer.Sound("assets/sounds/player/interact/02_chest_close_1.wav"), "volume": 2.0}
-            },
-            "pickup": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/interact/04_sack_open_1.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/player/interact/04_sack_open_2.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/player/interact/04_sack_open_3.wav"), "volume": 2.0}
-            ],
-            "walking": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/movement/16_human_walk_stone_1.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/player/movement/16_human_walk_stone_2.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/player/movement/16_human_walk_stone_3.wav"), "volume": 2.0}
-            ],
-            "talking": [
-                {"sound": pg.mixer.Sound("assets/sounds/entity/npc/talking_0.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/entity/npc/talking_2.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/entity/npc/talking_3.wav"), "volume": 2.0}
-            ],
-            "consume": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/interact/consume.wav"), "volume": 2.0}
-            ],
-            "hit": [
-                {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_1.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_2.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_3.wav"), "volume": 2.0}
-            ],
-            "dash": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/movement/15_human_dash_1.wav"), "volume": 2.0},
-                {"sound": pg.mixer.Sound("assets/sounds/player/movement/15_human_dash_2.wav"), "volume": 2.0}
-            ],
-            "bow_draw": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/attack/bow_draw.wav"), "volume": 2.0}
-            ],
-            "bow_shoot": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/attack/bow_shoot.wav"), "volume": 2.0}
-            ]
-        }
+        raw_sounds = cfg["sounds"]
+        self.sounds = {}
+
+        for key, entries in raw_sounds.items():
+            if isinstance(entries, list):
+                self.sounds[key] = [{"sound": pg.mixer.Sound(e["path"]), "volume": e["volume"]} for e in entries]
+                
+            else:
+                self.sounds[key] = {k: {"sound": pg.mixer.Sound(e["path"]), "volume": e["volume"]} for k, e in entries.items()}
 
         self.charging = False
         self.charge_timer = 0
@@ -167,7 +122,7 @@ class Player:
         self.item_info = load_json(os.path.join("assets", "settings", "entities_config.json"))
 
         self.load_frames()
-
+    
     def load_frames(self):
         self.frames = {}
         self.flipped_frames = {}

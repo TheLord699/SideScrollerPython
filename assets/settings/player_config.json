@@ -1,0 +1,106 @@
+{
+  "movement": {
+    "speed": 5,
+    "dash_speed": 100,
+    "weight": 1,
+    "jump_strength": 10,
+    "friction": 0,
+    "coyote_time": 8,
+    "max_fall_time": 500
+  },
+
+  "hitbox": {
+    "width_units": 5,
+    "height_units": 15
+  },
+
+  "combat": {
+    "attack_timeout": 30,
+    "max_weapon_inventory_slots": 2
+  },
+
+  "health": {
+    "max_health": 3,
+    "health_per_row": 10,
+    "health_spacing": 35,
+    "invincibility_duration": 900
+  },
+
+  "inventory": {
+    "max_slots": 15,
+    "items_per_row": 5,
+    "item_spacing": 40,
+    "max_tags": 3
+  },
+
+  "map": {
+    "scale_factor": 5
+  },
+
+  "footsteps": {
+    "step_interval": 300
+  },
+
+  "animation": {
+    "sprite_sheet_width": 100,
+    "sprite_sheet_height": 100,
+    "states": {
+      "idle": { "frames": 6, "speed": 0.15 },
+      "walking": { "frames": 8, "speed": 0.20 },
+      "jump": { "frames": 3, "speed": 0.15 },
+      "hurt": { "frames": 4, "speed": 0.10 },
+      "death": { "frames": 4, "speed": 0.15 }
+    }
+  },
+
+  "sounds": {
+    "jump": [
+      { "path": "assets/sounds/player/movement/12_human_jump_2.wav", "volume": 2.0 }
+    ],
+    "attack": [
+      { "path": "assets/sounds/player/attack/swing1.wav", "volume": 2.0 },
+      { "path": "assets/sounds/player/attack/swing2.wav", "volume": 2.0 }
+    ],
+    "land": [
+      { "path": "assets/sounds/player/movement/13_human_jump_land_1.wav", "volume": 2.0 },
+      { "path": "assets/sounds/player/movement/13_human_jump_land_2.wav", "volume": 2.0 }
+    ],
+    "inventory": {
+      "open": { "path": "assets/sounds/player/interact/01_chest_open_1.wav",  "volume": 2.0 },
+      "close": { "path": "assets/sounds/player/interact/02_chest_close_1.wav", "volume": 2.0 }
+    },
+    "pickup": [
+      { "path": "assets/sounds/player/interact/04_sack_open_1.wav", "volume": 2.0 },
+      { "path": "assets/sounds/player/interact/04_sack_open_2.wav", "volume": 2.0 },
+      { "path": "assets/sounds/player/interact/04_sack_open_3.wav", "volume": 2.0 }
+    ],
+    "walking": [
+      { "path": "assets/sounds/player/movement/16_human_walk_stone_1.wav", "volume": 2.0 },
+      { "path": "assets/sounds/player/movement/16_human_walk_stone_2.wav", "volume": 2.0 },
+      { "path": "assets/sounds/player/movement/16_human_walk_stone_3.wav", "volume": 2.0 }
+    ],
+    "talking": [
+      { "path": "assets/sounds/entity/npc/talking_0.wav", "volume": 2.0 },
+      { "path": "assets/sounds/entity/npc/talking_2.wav", "volume": 2.0 },
+      { "path": "assets/sounds/entity/npc/talking_3.wav", "volume": 2.0 }
+    ],
+    "consume": [
+      { "path": "assets/sounds/player/interact/consume.wav", "volume": 2.0 }
+    ],
+    "hit": [
+      { "path": "assets/sounds/entity/21_orc_damage_1.wav", "volume": 2.0 },
+      { "path": "assets/sounds/entity/21_orc_damage_2.wav", "volume": 2.0 },
+      { "path": "assets/sounds/entity/21_orc_damage_3.wav", "volume": 2.0 }
+    ],
+    "dash": [
+      { "path": "assets/sounds/player/movement/15_human_dash_1.wav", "volume": 2.0 },
+      { "path": "assets/sounds/player/movement/15_human_dash_2.wav", "volume": 2.0 }
+    ],
+    "bow_draw": [
+      { "path": "assets/sounds/player/attack/bow_draw.wav", "volume": 2.0 }
+    ],
+    "bow_shoot": [
+      { "path": "assets/sounds/player/attack/bow_shoot.wav", "volume": 2.0 }
+    ]
+  }
+}
