@@ -29,18 +29,9 @@ Do immediately:
 
 
 -----^^^^old^^^^------------------
-
-UI needs a translation func for positions, want to change resolution but dont want to update all UI pos code
-
-mem debugger needs to be able to infer what could be causing leaks
-
-in editor while in player tab only allow place and delete of player, no other actions on any other tiles
-
 need to implement proper player/water interactions
 
 in environment need to load sheets for map/menu instead of hardcoded sheet load
-
-need to seperate camera and player
 
 when you start a level it should store those stats you started with in mem, then when you die and reload, instead of reseting your stats
 it loads the stats you had when you started that level(could expand it to allow for save points mid level) also this would be seperate from the save systyem
@@ -50,13 +41,15 @@ I eventually want some sort of cutscene builder
 
 enemy detection zones need to increase in size when player is initially detected or when theyre hit(for like a second)
 
-i want that when within range first do a raycast, if a tile is in the way dont let enemy see player
+i want that when within range first do a raycast, if a tile is in the way dont let enemy see player(obviously only raycast when within range)
 
 for cutscene builder we will have a dict of cams i think, then we will store lerp values and wait values + move to next cam on a var check and interpolate between the cams
 
 need to polish pickup tag text
 
 need to add air meter when in liquids like water 
+
+we'll store entity rect in the dict instead of recreating for every instance
 
 
 note to self: stop using copywritten music >:(

@@ -32,7 +32,7 @@ class Game:
 
     self.clock = pg.time.Clock()
 
-    self.version = "0.6.5-dev"
+    self.version = "0.6.9-dev"
     icon = pg.image.load("assets/sprites/misc/bug.png")
 
     self.screen_width, self.screen_height = 800, 600 # 1137
