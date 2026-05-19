@@ -977,7 +977,7 @@ def draw_documentation():
         ("Right click", "Remove tile (or delete entity)"),
         ("", ""),
         ("Camera & View", ""),
-        ("W/A/S/D", "Pan camera"),
+        ("W/A/S/D", "Pan camera (hold)"),
         ("Ctrl + Wheel", "Zoom in/out"),
         ("", ""),
         ("Entity Panel", ""),
@@ -1050,6 +1050,11 @@ editing_instance_key = None
 editing_instance_value = ""
 instance_panel_scroll = 0
 
+move_left = False
+move_right = False
+move_up = False
+move_down = False
+
 if mode in ("yes", "y"):
     map_name = select_map()
     
@@ -1092,6 +1097,7 @@ running = True
 resizing_entity_panel = False
 
 while running:
+    dt = clock.tick(60) / 1000.0
     screen.fill((30, 30, 30))
     mx, my = pg.mouse.get_pos()
 
@@ -1551,16 +1557,16 @@ while running:
                         current_layer += 1
                     
                     elif event.key == pg.K_w:
-                        camera_y -= visual_size * 2
+                        move_up = True
                     
                     elif event.key == pg.K_a:
-                        camera_x -= visual_size * 2
+                        move_left = True
                     
                     elif event.key == pg.K_d:
-                        camera_x += visual_size * 2
+                        move_right = True
                     
                     elif event.key == pg.K_s:
-                        camera_y += visual_size * 2
+                        move_down = True
                     
                     elif event.key == pg.K_z:
                         show_layers = not show_layers
@@ -1609,6 +1615,32 @@ while running:
                             
                             except Exception as e:
                                 print(f"Failed to add tilesheet: {e}")
+
+            elif event.type == pg.KEYUP:
+                if event.key == pg.K_w:
+                    move_up = False
+                    
+                elif event.key == pg.K_a:
+                    move_left = False
+                    
+                elif event.key == pg.K_d:
+                    move_right = False
+                    
+                elif event.key == pg.K_s:
+                    move_down = False
+
+        camera_speed = 800 * dt
+        if move_left:
+            camera_x -= camera_speed / max(0.25, zoom_level)
+            
+        if move_right:
+            camera_x += camera_speed / max(0.25, zoom_level)
+            
+        if move_up:
+            camera_y -= camera_speed / max(0.25, zoom_level)
+            
+        if move_down:
+            camera_y += camera_speed / max(0.25, zoom_level)
 
     if not editing_animation:
         if all_tile_surfaces:
@@ -1749,6 +1781,6 @@ while running:
         pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 
     pg.display.flip()
-    clock.tick(60)
+    # clock.tick(60) already called at top of loop
 
 pg.quit()

@@ -49,7 +49,7 @@ need to polish pickup tag text
 
 need to add air meter when in liquids like water 
 
-we'll store entity rect in the dict instead of recreating for every instance
+need to store entity rect in the dict instead of recreating for every instance of a check
 
 
 note to self: stop using copywritten music >:(
