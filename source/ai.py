@@ -290,7 +290,6 @@ class AISystem:
                 
             except Exception as e:
                 print(f"[AI] Error in on_interact for {script_path}: {e}")
-
     def update_ai(self, entity):
         if entity.get("knockback_timer", 0) > 0:
             entity["knockback_timer"] -= 1
@@ -298,9 +297,18 @@ class AISystem:
             
         cam_x = self.game.camera.x
         cam_y = self.game.camera.y
-
-        if not (cam_x <= entity["x"] <= cam_x + self.game.screen_width and cam_y <= entity["y"] <= cam_y + self.game.screen_height):
-            return
+        
+        padding = 300
+        
+        if self.game.game_context.vigorous_optimizations:
+            if not (cam_x <= entity["x"] <= cam_x + self.game.screen_width and 
+                    cam_y <= entity["y"] <= cam_y + self.game.screen_height):
+                return
+            
+        else:
+            if not (cam_x - padding <= entity["x"] <= cam_x + self.game.screen_width + padding and 
+                    cam_y - padding <= entity["y"] <= cam_y + self.game.screen_height + padding):
+                return
 
         script_path = entity.get("script")
         if script_path:
