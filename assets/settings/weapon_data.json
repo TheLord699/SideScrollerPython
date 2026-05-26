@@ -50,5 +50,44 @@
       "rotate_to_velocity": true,
       "rotation_offset": 0
     }
+  },
+  
+  "multi_shot_bow": {
+    "type": "ranged",
+    "damage": 20,
+    "min_damage_mult": 0.3,
+    "speed": 0.4,
+    "frames": [7],
+    "draw_start_frame": 4,
+    "full_draw_frame": 6,
+    "full_draw_ticks": 18,
+    "min_vel_mult": 0.1,
+    "spawn_offset_x": 0,
+    "spawn_offset_y": -1,
+    "image_offset_x": 0,
+    "image_offset_y": 0,
+    "min_spread": 5,
+    "max_spread": 10,
+    "projectile_spreads": true,
+    "projectile_amount": 3,
+    "charge_sound": "bow_draw",
+    "shoot_sound": "bow_shoot",
+    "projectile": {
+      "image": "assets/sprites/projectiles/arrow.png",
+      "width": 6,
+      "height": 6,
+      "vel_x": 30,
+      "vel_y": 0,
+      "lifetime": 150,
+      "push_force": 15,
+      "min_push_force_mult": 0.3,
+      "gravity": 0.2,
+      "piercing": false,
+      "embed_on_wall": true,
+      "fluid_drag": true,
+      "fluid_drag_mult": 0.85,
+      "rotate_to_velocity": true,
+      "rotation_offset": 0
+    }
   }
 }

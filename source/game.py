@@ -41,6 +41,7 @@ class Game:
     self.screen = self.window_manager.screen
 
     # will remove later
+    self.fps_font = pg.font.Font(None, 24)
     self.debugging = False
     self.show_fps = False
 
@@ -65,8 +66,7 @@ class Game:
 
   def render_fps(self): # temp function, will remove later
     fps = self.clock.get_fps()
-    default_font = pg.font.Font(None, 24)
-    fps_text = default_font.render(f"FPS: {round(fps)}", True, (255, 255, 255))
+    fps_text = self.fps_font.render(f"FPS: {round(fps)}", True, (255, 255, 255))
     self.screen.blit(fps_text, (self.screen_width - 120, 10))
 
   def update(self):

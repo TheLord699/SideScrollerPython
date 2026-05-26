@@ -1300,8 +1300,8 @@ class Player:
         facing = 1 if self.direction == "right" else -1
 
         vel_mult = min_vel_mult + (1.0 - min_vel_mult) * charge
-        proj_vel_x = facing * proj_data.get("vel_x", 20) * vel_mult
-        proj_vel_y = proj_data.get("vel_y", 0)
+        base_vel_x = facing * proj_data.get("vel_x", 20) * vel_mult
+        base_vel_y = proj_data.get("vel_y", 0)
         
         base_damage = weapon_data.get("damage", 20)
         min_damage_mult = weapon_data.get("min_damage_mult", 0.3)
@@ -1331,30 +1331,53 @@ class Player:
         if isinstance(img_off_y, list):
             img_off_y = img_off_y[0] if facing == -1 else img_off_y[1]
 
-        self.game.projectiles_system.spawn(
-            x=self.x + facing * off_x,
-            y=self.y + off_y,
-            width=proj_data.get("width", 6),
-            height=proj_data.get("height", 6),
-            vel_x=proj_vel_x,
-            vel_y=proj_vel_y,
-            lifetime=proj_data.get("lifetime", 90),
-            damage=damage,
-            push_force=push_force,
-            gravity=proj_data.get("gravity", 0.2),
-            piercing=proj_data.get("piercing", False),
-            embed_on_wall=proj_data.get("embed_on_wall", False),
-            fluid_drag=proj_data.get("fluid_drag", False),
-            fluid_drag_mult=proj_data.get("fluid_drag_mult", 0.85),
-            image=img,
-            image_offset_x=img_off_x,
-            image_offset_y=img_off_y,
-            owner="player",
-            is_melee=False,
-            knockback_direction_x=facing,
-            rotate_to_velocity=proj_data.get("rotate_to_velocity", False),
-            rotation_offset=proj_data.get("rotation_offset", 0)
-        )
+        projectile_amount = weapon_data.get("projectile_amount", 1)
+        use_spread = weapon_data.get("projectile_spreads", False)
+        
+        min_spread = weapon_data.get("min_spread", 0)
+        max_spread = weapon_data.get("max_spread", 0)
+        
+        for projectile in range(projectile_amount):
+            vel_x = base_vel_x
+            vel_y = base_vel_y
+            
+            if use_spread and projectile_amount > 1:
+                spread_angle = random.uniform(min_spread, max_spread)
+                
+                if projectile_amount > 1: # only spread for multi shot(ignore spread if only 1)
+                    spread_angle *= (projectile / (projectile_amount - 1) - 0.5) * 2
+                
+                if spread_angle != 0:
+                    rad = math.radians(spread_angle)
+                    new_vel_x = vel_x * math.cos(rad) - vel_y * math.sin(rad)
+                    new_vel_y = vel_x * math.sin(rad) + vel_y * math.cos(rad)
+                    vel_x = new_vel_x
+                    vel_y = new_vel_y
+            
+            self.game.projectiles_system.spawn(
+                x=self.x + facing * off_x,
+                y=self.y + off_y,
+                width=proj_data.get("width", 6),
+                height=proj_data.get("height", 6),
+                vel_x=vel_x,
+                vel_y=vel_y,
+                lifetime=proj_data.get("lifetime", 90),
+                damage=damage,
+                push_force=push_force,
+                gravity=proj_data.get("gravity", 0.2),
+                piercing=proj_data.get("piercing", False),
+                embed_on_wall=proj_data.get("embed_on_wall", False),
+                fluid_drag=proj_data.get("fluid_drag", False),
+                fluid_drag_mult=proj_data.get("fluid_drag_mult", 0.85),
+                image=img,
+                image_offset_x=img_off_x,
+                image_offset_y=img_off_y,
+                owner="player",
+                is_melee=False,
+                knockback_direction_x=facing,
+                rotate_to_velocity=proj_data.get("rotate_to_velocity", False),
+                rotation_offset=proj_data.get("rotation_offset", 0)
+            )
 
     def load_projectile_image(self, weapon_name):
         if weapon_name in self.proj_image_cache:

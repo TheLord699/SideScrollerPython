@@ -20,6 +20,16 @@
       "index": [8, 4],
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
+    "Multi shot bow": {
+      "name": "multi_shot_bow",
+      "type": "weapon",
+      "amount": 1,
+      "weight": 1,
+      "width": 30,
+      "height": 30,
+      "index": [8, 4],
+      "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
+    },
     "Potion": {
       "name": "Potion",
       "type": "consumable",
