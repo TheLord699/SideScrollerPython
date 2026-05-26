@@ -1,6 +1,7 @@
+import json
+import os
+
 def load_json(filepath):
-    import json
-    import os
 
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"The file {filepath} does not exist.")

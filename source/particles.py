@@ -54,13 +54,14 @@ class Particles:
             pg.draw.rect(surf, color, surf.get_rect())
             self.surface_cache[cache_key] = surf
         
+        cached = self.surface_cache[cache_key]
+        
         if alpha is not None and alpha < 255:
-            cached = self.surface_cache[cache_key]
             copy = cached.copy()
             copy.set_alpha(alpha)
             return copy
         
-        return self.surface_cache[cache_key]
+        return cached
 
     def get_particle_from_pool(self):
         if self.pool:

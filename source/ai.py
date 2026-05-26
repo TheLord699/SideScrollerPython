@@ -9,7 +9,7 @@ class AISystem:
     def __init__(self, game):
         self.game = game
 
-        self.behaviors = {
+        self.behaviors = { # templates
             "idle": self.ai_idle,
             "wander": self.ai_wander,
             "aggressive": self.ai_aggressive,
