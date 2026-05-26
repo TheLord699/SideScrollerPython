@@ -32,10 +32,10 @@ class Game:
 
     self.clock = pg.time.Clock()
 
-    self.version = "0.6.9-dev"
+    self.version = "0.7.0-dev"
     icon = pg.image.load("assets/sprites/misc/bug.png")
 
-    self.screen_width, self.screen_height = 800, 600 # 1137
+    self.screen_width, self.screen_height = 1137, 600 # 1137
     # optional fullscreen(doesnt change resolution, just stretches it), might remove later
     self.window_manager = WindowManager(self.screen_width, self.screen_height, f"SideScroller {self.version}", icon, use_opengl=False)
     self.screen = self.window_manager.screen

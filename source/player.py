@@ -581,8 +581,8 @@ class Player:
             row = slot // self.items_per_row
             col = slot % self.items_per_row
 
-            x_position = self.game.screen_width * 0.5 - 2 * self.item_spacing + col * self.item_spacing
-            y_position = self.game.screen_height * 0.45 - self.item_spacing + row * self.item_spacing
+            x_position = self.game.screen_width * 0.5 - (2 * self.item_spacing + 1.6) + col * self.item_spacing
+            y_position = self.game.screen_height * 0.45 + (row - 1) * self.item_spacing
 
             slot_element_id = f"slot:{slot}"
 
