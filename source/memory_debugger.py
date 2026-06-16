@@ -1,4 +1,4 @@
-# coded badly in comparison to rest of code base because its just a tool
+# coded lazily in comparison to rest of code base because its just a personal tool
 import pygame as pg
 import traceback
 import psutil
