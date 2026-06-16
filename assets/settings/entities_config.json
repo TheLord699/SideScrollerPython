@@ -34,7 +34,7 @@
       "name": "Potion",
       "type": "consumable",
       "effect": "restore_health",
-      "health": 3,
+      "health": 5,
       "value": 10,
       "amount": 50,
       "weight": 1,
@@ -42,6 +42,32 @@
       "height": 30,
       "index": [11, 2],
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
+    },
+    "Milk": {
+      "name": "Milk",
+      "type": "consumable",
+      "effect": "restore_health",
+      "health": 2.5,
+      "value": 5,
+      "amount": 50,
+      "weight": 1,
+      "width": 30,
+      "height": 30,
+      "index": [8, 0],
+      "tile_sheet": ["assets/sprites/gui/items/Sheet2.png", 16, 16]
+    },
+    "Bread": {
+      "name": "Bread",
+      "type": "consumable",
+      "effect": "restore_health",
+      "health": 3.5,
+      "value": 12,
+      "amount": 50,
+      "weight": 1,
+      "width": 30,
+      "height": 30,
+      "index": [7, 1],
+      "tile_sheet": ["assets/sprites/gui/items/Sheet2.png", 16, 16]
     },
     "Red Gem": {
       "name": "Red Gem",

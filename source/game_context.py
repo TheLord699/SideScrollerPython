@@ -41,6 +41,8 @@ class GameContext:
     
     # will switch to load from json, prob related to the map
     self.game.ui.load_sheet("item_sheet", "assets/sprites/gui/items/Sheet.png")
+    # we need to update the sheets loading method cuz rn its buns, (also player drawn items default to sheet1)
+    #self.game.ui.load_sheet("item_sheet2", "assets/sprites/gui/items/Sheet2.png")
     self.game.ui.load_sheet("hearts", "assets/sprites/gui/health/Hearts.png")
     self.game.ui.load_sheet("ui_sheet", "assets/sprites/gui/ui.png")
     #self.game.ui.load_sheet("fox_npc", "assets/sprites/npc/fox.png")
