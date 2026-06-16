@@ -350,6 +350,8 @@ class Map:
 
     def update(self):
         #if self.game.game_context.menu in {"play", "death", "pause"}:
+        # we do this and the other method in game context, because when changin menus you can still see the level for a split second
+        # (this just makes certain its instantly not visible before actually "destroying")
         if not getattr(self.game.player, "settings_loaded", False) or not self.game.game_context.menu in {"play", "death"}:
             return
             
