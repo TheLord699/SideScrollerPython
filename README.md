@@ -10,6 +10,8 @@ You will notice some questionable architectural choices. I started this project 
 and the effort of rewriting some of it doesn't outweigh the benefits, though I am slowly working through and tweaking some parts to make them cleaner, this is also a hobby
 project and I'm having fun with it, which is what matters to me : )
 
+current nitpick: no dedicated sprite handler atm
+
 you could argue that the code has a few pragmatic decisions + compromises
 due to old code and python restrictions?
 
