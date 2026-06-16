@@ -7,7 +7,7 @@
 ## About
 
 You will notice some questionable architectural choices. I started this project when I was fairly new to coding,
-and the effort of rewriting doesn't outweigh the benefits tbh. It would make the code cleaner, but this is a hobby
+and the effort of rewriting some of it doesn't outweigh the benefits, though I am slowly working through and tweaking some parts to make them cleaner, this is also a hobby
 project and I'm having fun with it, which is what matters to me : )
 
 you could argue that the code has a few pragmatic decisions + compromises
