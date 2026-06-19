@@ -311,9 +311,10 @@ class Entities:
                     for sound_dict in sound_group.values():
                         sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
         
-    def drop_item(self, entity):
-        items = ["Red Gem", "Potion", "Gold"]
-        item = random.choices(items, weights=[0.2, 0.5, 0.3], k=1)[0]
+    def drop_item(self, entity): # temporary, will replace with definitions in the json
+        items = ["Red Gem", "Potion", "Gold", "Bread", "Milk"]
+        weights = [0.2, 0.5, 0.3, 0.25, 0.3]
+        item = random.choices(items, weights=weights, k=1)[0]
         
         self.game.entities.create_entity("item", item, entity["x"], entity["y"])
     

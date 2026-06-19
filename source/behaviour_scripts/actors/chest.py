@@ -16,20 +16,26 @@ def spawn_loot(entity, game):
     loot_table = entity.get("loot", [
         {"name": "Gold", "min": 1, "max": 3, "chance": 0.8},
         {"name": "Potion", "min": 0, "max": 1, "chance": 0.4},
-        {"name": "Red Gem", "min": 0, "max": 1, "chance": 0.2}
+        {"name": "Red Gem", "min": 0, "max": 1, "chance": 0.2},
+        {"name": "Milk", "min": 0, "max": 2, "chance": 0.3},
+        {"name": "Bread", "min": 0, "max": 2, "chance": 0.35}
     ])
 
     items_to_spawn = []
     for loot_item in loot_table:
         if random.random() < loot_item["chance"]:
             quantity = random.randint(loot_item["min"], loot_item["max"])
-            for loot in range(quantity):
+            for _ in range(quantity):
                 items_to_spawn.append(loot_item["name"])
 
     if not items_to_spawn:
         items_to_spawn.append("Gold")
     
     for item_name in items_to_spawn:
+        if item_name not in game.player.item_info.get("items", {}):
+            print(f"Warning: Item '{item_name}' not found in entities_config.json")
+            continue
+            
         angle = random.uniform(0, 2 * 3.14159)
         radius = random.uniform(10, 25)
         
