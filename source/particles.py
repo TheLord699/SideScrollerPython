@@ -11,12 +11,13 @@ class Particle:
     def __init__(self):
         self.pos = pg.Vector2(0, 0)
         self.vel = pg.Vector2(0, 0)
+        
         self.color = (255, 255, 255)
-        self.radius = 5
-        self.lifespan = 30
+        self.radius = 0
+        self.lifespan = 0
         self.age = 0
         self.image = None
-        self.rect = None
+        self.rect = pg.Rect(0, 0, 0, 0)
         self.fade = False
         self.gravity = 0.0
         self.friction = None
@@ -290,7 +291,7 @@ class Particles:
         
         self.update_physics_batch()
         
-        for particle in range(len(self.particles)):
+        for _ in range(len(self.particles)):
             particle = self.particles.popleft()
             if particle.is_alive():
                 self.render_particle(self.game.screen, particle)

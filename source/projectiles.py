@@ -16,25 +16,29 @@ class Projectile:
     )
 
     def __init__(self):
-        self.x = self.y = 0
-        self.width = self.height = 10
-        self.vel_x = self.vel_y = 0
-
-        self.lifetime = 30
+        self.x = 0
+        self.y = 0
+        self.vel_x = 0
+        self.vel_y = 0
+        self.alive = False
+        self.owner = None
+        self.image = None
+        
+        self.width = 0
+        self.height = 0
+        self.lifetime = 0
         self.damage = 0
         self.push_force = 0
         self.gravity = 0
-
-        self.image = None
-        self.image_offset_x = self.image_offset_y = 0
+        self.image_offset_x = 0
+        self.image_offset_y = 0
         self.scale = 1.0
-
+        
         self.piercing = False
-        self.owner = "player"
         self.follow = None
         self.embed_on_wall = False
         self.fluid_drag = False
-        self.fluid_drag_mult = 0.85
+        self.fluid_drag_mult = 0.0
         self.rotate_to_velocity = False
         self.rotation_offset = 0
         self.rotation = 0
@@ -42,14 +46,13 @@ class Projectile:
         self.flipped = False
         self.embedded = False
         self.hit_ids = set()
-
-        self.alive = False
+        
         self.is_melee = False
         self.melee_direction = None
         self.knockback_direction_x = None
         self.get_facing_direction = None
         self.cached_image = None
-        self.cached_rotation = -999
+        self.cached_rotation = 0
         self.cached_flip = False
 
         self.rect = pg.Rect(0, 0, 0, 0)
@@ -86,6 +89,10 @@ class ProjectileSystem:
         self.scaled_cache_keys = []
         self.scaled_cache_max = 128
 
+        self.flipped_cache = {}
+        self.flipped_cache_keys = []
+        self.flipped_cache_max = 128
+
         self.swimmable_tile_ids = {
             tile_id for tile_id, attrs in self.game.map.tile_attributes.items()
             if attrs.get("swimmable", False)
@@ -110,6 +117,28 @@ class ProjectileSystem:
 
         self.scaled_cache[key] = image
         self.scaled_cache_keys.append(key)
+
+    def cache_flipped_image(self, key, image):
+        if len(self.flipped_cache) >= self.flipped_cache_max:
+            oldest_key = self.flipped_cache_keys.pop(0)
+            self.flipped_cache.pop(oldest_key, None)
+
+        self.flipped_cache[key] = image
+        self.flipped_cache_keys.append(key)
+
+    def get_flipped_image(self, image, should_flip):
+        if not should_flip:
+            return image
+        
+        flip_key = (id(image), True, False)
+        
+        if flip_key in self.flipped_cache:
+            return self.flipped_cache[flip_key]
+        
+        flipped = pg.transform.flip(image, True, False)
+        self.cache_flipped_image(flip_key, flipped)
+        
+        return flipped
 
     def spawn(self, **kwargs):
         projectile = self.pool.pop() if self.pool else Projectile()
@@ -432,6 +461,7 @@ class ProjectileSystem:
         camera_x = game.camera.x
         camera_y = game.camera.y
         scaled_cache = self.scaled_cache
+        flipped_cache = self.flipped_cache  # NEW
 
         half_w = game.screen_width // 2
         half_h = game.screen_height // 2
@@ -492,7 +522,14 @@ class ProjectileSystem:
                         
                     else:
                         if should_flip:
-                            image = pg.transform.rotate(pg.transform.flip(image, True, False), -rotation)
+                            flip_key = (id(image), True, False)
+                            if flip_key in flipped_cache:
+                                flipped = flipped_cache[flip_key]
+                                
+                            else:
+                                flipped = pg.transform.flip(image, True, False)
+                                self.cache_flipped_image(flip_key, flipped)
+                            image = pg.transform.rotate(flipped, -rotation)
                             
                         else:
                             image = pg.transform.rotate(image, -rotation)
@@ -519,11 +556,23 @@ class ProjectileSystem:
 
                 else:
                     if should_flip:
-                        image = pg.transform.flip(image, True, False)
+                        flip_key = (id(image), True, False)
+                        if flip_key in flipped_cache:
+                            image = flipped_cache[flip_key]
+                            
+                        else:
+                            image = pg.transform.flip(image, True, False)
+                            self.cache_flipped_image(flip_key, image)
                         
             else:
                 if should_flip:
-                    image = pg.transform.flip(image, True, False)
+                    flip_key = (id(image), True, False)
+                    if flip_key in flipped_cache:
+                        image = flipped_cache[flip_key]
+                        
+                    else:
+                        image = pg.transform.flip(image, True, False)
+                        self.cache_flipped_image(flip_key, image)
 
             hitbox_cx = rect.centerx - camera_x
             hitbox_cy = rect.centery - camera_y

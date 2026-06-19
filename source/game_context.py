@@ -271,7 +271,7 @@ class GameContext:
     self.game.projectiles_system.projectiles.clear()
     self.game.particles.particles.clear()
 
-    if hasattr(self.game, "memory_debugger"):
+    if hasattr(self.game, "memory_debugger"): # will remove eventually
       self.game.memory_debugger.clear_caches()
     
     self.current_map = None
