@@ -433,16 +433,16 @@ class Entities:
 
     def update_collision(self, entity):
         hitbox_width = entity.get("hitbox_width", entity["width"])
-        hitbox_heigth = entity.get("hitbox_height", entity["height"])
+        hitbox_height = entity.get("hitbox_height", entity["height"])
         
         offset_x = entity.get("hitbox_offset_x", 0)
         offset_y = entity.get("hitbox_offset_y", 0)
 
         entity_hitbox = pg.Rect(
             entity["x"] - hitbox_width / 2 + offset_x,
-            entity["y"] - hitbox_heigth / 2 + offset_y,
+            entity["y"] - hitbox_height / 2 + offset_y,
             hitbox_width,
-            hitbox_heigth
+            hitbox_height
         )
 
         ground_check = pg.Rect(
@@ -477,19 +477,19 @@ class Entities:
 
                 if overlap_y < overlap_x:
                     if entity_hitbox.centery < tile_hitbox.centery:
-                        entity["y"] = tile_hitbox.top - hitbox_heigth / 2 - offset_y
+                        entity["y"] = tile_hitbox.top - hitbox_height / 2 - offset_y
                         entity["vel_y"] = 0
                         entity["on_ground"] = True
                         
                     else:
-                        entity["y"] = tile_hitbox.bottom + hitbox_heigth / 2 - offset_y
+                        entity["y"] = tile_hitbox.bottom + hitbox_height / 2 - offset_y
                         entity["vel_y"] = 0
 
                     entity_hitbox = pg.Rect(
                         entity["x"] - hitbox_width / 2 + offset_x,
-                        entity["y"] - hitbox_heigth / 2 + offset_y,
+                        entity["y"] - hitbox_height / 2 + offset_y,
                         hitbox_width,
-                        hitbox_heigth
+                        hitbox_height
                     )
 
                 else:
@@ -510,9 +510,9 @@ class Entities:
 
                     entity_hitbox = pg.Rect(
                         entity["x"] - hitbox_width / 2 + offset_x,
-                        entity["y"] - hitbox_heigth / 2 + offset_y,
+                        entity["y"] - hitbox_height / 2 + offset_y,
                         hitbox_width,
-                        hitbox_heigth
+                        hitbox_height
                     )
         
     def apply_gravity(self, entity):
