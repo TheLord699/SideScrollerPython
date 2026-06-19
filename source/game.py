@@ -1,5 +1,6 @@
 import pygame as pg
 import psutil
+import sys
 import os
 
 from background import Background 
@@ -22,8 +23,13 @@ class Game:
   def __init__(self):
     pg.init()
     
-    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # proj root
-    
+    # proj root
+    if getattr(sys, "frozen", False):
+      self.base_path = sys._MEIPASS
+      
+    else:
+      self.base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
     try:
       psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS) # windows only (probably gonna remove all together for final build... Gulp)
       
@@ -32,7 +38,7 @@ class Game:
 
     self.clock = pg.time.Clock()
 
-    self.version = "0.7.0-dev"
+    self.version = "0.7.1-dev"
     icon = pg.image.load("assets/sprites/misc/bug.png")
 
     self.screen_width, self.screen_height = 1137, 600 # 1137
