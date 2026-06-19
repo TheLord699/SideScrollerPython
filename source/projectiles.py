@@ -303,7 +303,6 @@ class ProjectileSystem:
                 rect = self.get_rect(projectile)
     
             elif projectile.embedded:
-                projectile.lifetime -= 1
                 if projectile.lifetime <= 0:
                     self.release(projectile, projectile_index)
                     continue
