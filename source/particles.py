@@ -1,6 +1,53 @@
 import pygame as pg
-
 from collections import deque
+
+class Particle:
+    __slots__ = (
+        "pos", "vel", "color", "radius", "lifespan", "age", 
+        "image", "rect", "fade", "gravity", "friction", 
+        "floor_behavior", "on_ground"
+    )
+    
+    def __init__(self):
+        self.pos = pg.Vector2(0, 0)
+        self.vel = pg.Vector2(0, 0)
+        self.color = (255, 255, 255)
+        self.radius = 5
+        self.lifespan = 30
+        self.age = 0
+        self.image = None
+        self.rect = None
+        self.fade = False
+        self.gravity = 0.0
+        self.friction = None
+        self.floor_behavior = None
+        self.on_ground = False
+    
+    def reset(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30,
+              image=None, fade=False, gravity=0.0, floor_behavior=None, friction=None):
+        self.pos = pg.Vector2(pos)
+        self.vel = pg.Vector2(velocity)
+        self.color = color
+        self.radius = radius
+        self.lifespan = lifespan
+        self.age = 0
+        self.image = image
+        self.fade = fade
+        self.gravity = gravity
+        self.friction = friction
+        self.floor_behavior = floor_behavior
+        self.on_ground = False
+        
+        if image:
+            self.rect = image.get_rect(center=pos)
+            
+        else:
+            self.rect = pg.Rect(pos[0] - radius, pos[1] - radius, radius * 2, radius * 2)
+        
+        return self
+    
+    def is_alive(self):
+        return self.age < self.lifespan
 
 class Particles:
     def __init__(self, game):
@@ -65,11 +112,8 @@ class Particles:
 
     def get_particle_from_pool(self):
         if self.pool:
-            particle = self.pool.pop()
-            particle.clear()
-            return particle
-        
-        return {}
+            return self.pool.pop()
+        return Particle()
 
     def recycle_particle(self, particle):
         if len(self.pool) < self.max_particles * 2:
@@ -91,9 +135,10 @@ class Particles:
                 for offset in range(1, max_search):
                     new_y = y - offset
                     test_rect = pg.Rect(x - radius, new_y - radius, radius * 2, radius * 2)
+                    test_nearby = self.game.map.get_nearby_tiles(test_rect)
                     
                     valid = True
-                    for test_hitbox, _ in nearby_tiles:
+                    for test_hitbox, _ in test_nearby:
                         if test_rect.colliderect(test_hitbox):
                             valid = False
                             break
@@ -106,9 +151,9 @@ class Particles:
         return pos
 
     def handle_tile_collisions(self, particle):
-        radius = particle["radius"]
-        pos = particle["pos"]
-        vel = particle["vel"]
+        radius = particle.radius
+        pos = particle.pos
+        vel = particle.vel
 
         rect = pg.Rect(
             pos.x - radius,
@@ -121,13 +166,11 @@ class Particles:
             pos += vel
             return
             
-        nearby_tiles = self.game.map.get_nearby_tiles(rect)
-        
-        particle["on_ground"] = False
+        particle.on_ground = False
 
-        # horizontal movement
         pos.x += vel.x
         rect.x = pos.x - radius
+        nearby_tiles = self.game.map.get_nearby_tiles(rect)
 
         for tile_hitbox, _ in nearby_tiles:
             if rect.colliderect(tile_hitbox):
@@ -140,21 +183,21 @@ class Particles:
                 vel.x = 0
                 rect.x = pos.x - radius
 
-        # vertical movement
         pos.y += vel.y
         rect.y = pos.y - radius
+        nearby_tiles = self.game.map.get_nearby_tiles(rect)
 
         for tile_hitbox, _ in nearby_tiles:
             if rect.colliderect(tile_hitbox):
                 if vel.y > 0:
                     pos.y = tile_hitbox.top - radius
-                    particle["on_ground"] = True
+                    particle.on_ground = True
                     
-                    if particle["floor_behavior"] == "bounce":
+                    if particle.floor_behavior == "bounce":
                         vel.y *= -0.6
                         if abs(vel.y) < 0.5:
                             vel.y = 0
-                        
+                            
                     else:
                         vel.y = 0
                         
@@ -168,9 +211,9 @@ class Particles:
         screen_width, screen_height = self.game.screen_width, self.game.screen_height
         cam_x, cam_y = self.game.camera.x, self.game.camera.y
 
-        screen_x = particle["rect"].x - cam_x
-        screen_y = particle["rect"].y - cam_y
-        w, h = particle["rect"].width, particle["rect"].height
+        screen_x = particle.rect.x - cam_x
+        screen_y = particle.rect.y - cam_y
+        w, h = particle.rect.width, particle.rect.height
 
         if screen_x + w < 0 or screen_x > screen_width or screen_y + h < 0 or screen_y > screen_height:
             return
@@ -180,23 +223,22 @@ class Particles:
 
         screen_pos = (screen_x, screen_y)
 
-        if particle["image"]:
-            img = particle["image"]
-            if particle["fade"]:
-                alpha = max(0, 255 * (1 - particle["age"] / particle["lifespan"]))
+        if particle.image:
+            img = particle.image
+            if particle.fade:
+                alpha = max(0, 255 * (1 - particle.age / particle.lifespan))
                 img = img.copy()
                 img.set_alpha(alpha)
             surface.blit(img, screen_pos)
-            
             return
         
-        if particle["fade"]:
-            alpha = max(0, 255 * (1 - particle["age"] / particle["lifespan"]))
-            cached = self.get_cached_surface(particle["radius"], particle["color"], alpha)
+        if particle.fade:
+            alpha = max(0, 255 * (1 - particle.age / particle.lifespan))
+            cached = self.get_cached_surface(particle.radius, particle.color, alpha)
             surface.blit(cached, screen_pos)
             
         else:
-            cached = self.get_cached_surface(particle["radius"], particle["color"], None)
+            cached = self.get_cached_surface(particle.radius, particle.color, None)
             surface.blit(cached, screen_pos)
 
     def generate(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30,
@@ -210,58 +252,37 @@ class Particles:
 
         particle = self.get_particle_from_pool()
         
-        particle["pos"] = pg.Vector2(pos)
-        particle["vel"] = pg.Vector2(velocity)
-        particle["color"] = color
-        particle["radius"] = radius
-        particle["lifespan"] = lifespan
-        particle["age"] = 0
-        particle["image"] = None
-        particle["rect"] = None
-        particle["fade"] = fade
-        particle["gravity"] = gravity
-        particle["friction"] = friction
-        particle["floor_behavior"] = floor_behavior
-        particle["on_ground"] = False
-
-        if image:
-            if image_size:
-                image = pg.transform.scale(image, image_size)
-                
-            particle["image"] = image
-            particle["rect"] = image.get_rect(center=pos)
-            
-        else:
-            particle["rect"] = pg.Rect(pos[0] - radius, pos[1] - radius, radius * 2, radius * 2)
-
+        if image and image_size:
+            image = pg.transform.scale(image, image_size)
+        
+        particle.reset(pos, velocity, color, radius, lifespan, image, fade, gravity, floor_behavior, friction)
         self.particles.append(particle)
 
     def update_physics_batch(self):
         if not self.particles:
             return
         
-        for particle in list(self.particles):
-            particle["vel"].y += particle["gravity"]
+        for particle in self.particles:
+            particle.vel.y += particle.gravity
             
-            if particle.get("on_ground", False) and particle.get("friction"):
-                particle["vel"].x *= (1 - particle["friction"])
-                
-                if abs(particle["vel"].x) < 0.1:
-                    particle["vel"].x = 0
+            if particle.on_ground and particle.friction:
+                particle.vel.x *= (1 - particle.friction)
+                if abs(particle.vel.x) < 0.1:
+                    particle.vel.x = 0
             
-            if particle["floor_behavior"]:
+            if particle.floor_behavior:
                 self.handle_tile_collisions(particle)
                 
             else:
-                particle["pos"] += particle["vel"]
+                particle.pos += particle.vel
             
-            particle["age"] += 1
+            particle.age += 1
             
-            if particle["image"]:
-                particle["rect"].center = particle["pos"]
+            if particle.image:
+                particle.rect.center = particle.pos
                 
             else:
-                particle["rect"].topleft = (particle["pos"].x - particle["radius"], particle["pos"].y - particle["radius"])
+                particle.rect.topleft = (particle.pos.x - particle.radius, particle.pos.y - particle.radius)
 
     def update(self):
         if not self.particles:
@@ -269,20 +290,20 @@ class Particles:
         
         self.update_physics_batch()
         
-        for particle in list(self.particles):
-            if particle["age"] >= particle["lifespan"]:
-                self.recycle_particle(particle)
+        for particle in range(len(self.particles)):
+            particle = self.particles.popleft()
+            if particle.is_alive():
+                self.render_particle(self.game.screen, particle)
+                self.particles.append(particle)
                 
             else:
-                self.render_particle(self.game.screen, particle)
-        
-        self.particles = deque([p for p in self.particles if p["age"] < p["lifespan"]], maxlen=self.max_particles)
+                self.recycle_particle(particle)
 
     def clear(self):     
         for particle in self.particles:
             self.recycle_particle(particle)
-                
-        del self.surface_cache
+        
+        self.surface_cache.clear()
         self.particles.clear()
     
     def set_max_particles(self, max_particles):

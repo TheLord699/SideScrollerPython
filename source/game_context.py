@@ -268,10 +268,10 @@ class GameContext:
 
     self.game.entities.reset()
     self.game.lighting.clear_all_lights()
-    self.game.projectiles_system.projectiles = []
-    self.game.particles.particles = []
+    self.game.projectiles_system.projectiles.clear()
+    self.game.particles.particles.clear()
 
-    if hasattr(self.game, "memory_debugger"): # will remove eventually
+    if hasattr(self.game, "memory_debugger"):
       self.game.memory_debugger.clear_caches()
     
     self.current_map = None
