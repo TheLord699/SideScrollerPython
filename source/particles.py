@@ -184,15 +184,16 @@ class Particles:
             img = particle.image
             if particle.fade:
                 alpha = max(0, 255 * (1 - particle.age / particle.lifespan))
-                img = img.copy()
                 img.set_alpha(alpha)
             surface.blit(img, (screen_x, screen_y))
             return
         
         if particle.fade:
             alpha = max(0, 255 * (1 - particle.age / particle.lifespan))
-            color = (*particle.color, int(alpha))
-            pg.draw.rect(surface, color, (screen_x, screen_y, particle.rect.width, particle.rect.height))
+            temp_surf = pg.Surface((particle.rect.width, particle.rect.height), pg.SRCALPHA)
+            temp_surf.fill(particle.color)
+            temp_surf.set_alpha(alpha)
+            surface.blit(temp_surf, (screen_x, screen_y))
             
         else:
             pg.draw.rect(surface, particle.color, (screen_x, screen_y, particle.rect.width, particle.rect.height))
