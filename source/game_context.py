@@ -39,14 +39,16 @@ class GameContext:
     self.music_channel = pg.mixer.Channel(1)
     self.missing_texture = pg.image.load("assets/sprites/missing_texture.png").convert_alpha()
     
-    # will switch to load from json, prob related to the map
+    # will switch to load from json, prob related to the map(old preloads I was doing for ui and items, now I dirty load)
+    """""
     self.game.ui.load_sheet("item_sheet", "assets/sprites/gui/items/Sheet.png")
-    # we need to update the sheets loading method cuz rn its buns, (also player drawn items default to sheet1)
-    #self.game.ui.load_sheet("item_sheet2", "assets/sprites/gui/items/Sheet2.png")
+    we need to update the sheets loading method cuz rn its buns, (also player drawn items default to sheet1)
+    self.game.ui.load_sheet("item_sheet2", "assets/sprites/gui/items/Sheet2.png")
     self.game.ui.load_sheet("hearts", "assets/sprites/gui/health/Hearts.png")
     self.game.ui.load_sheet("ui_sheet", "assets/sprites/gui/ui.png")
-    #self.game.ui.load_sheet("fox_npc", "assets/sprites/npc/fox.png")
-    #self.game.ui.load_sheet("guy_npc", "assets/sprites/npc/pack2/guy.png")
+    self.game.ui.load_sheet("fox_npc", "assets/sprites/npc/fox.png")
+    self.game.ui.load_sheet("guy_npc", "assets/sprites/npc/pack2/guy.png")
+    """
     
     self.fonts = {
       "pixel": "assets/sprites/gui/fonts/pixel.ttf",

@@ -36,7 +36,16 @@ class UI:
         )
 
         sprite_kwargs = {}
-        if cfg.get("sprite_sheet"):
+        if cfg.get("tile_sheet"): # can dirty load or preload sheets
+            tile_sheet_data = cfg["tile_sheet"]
+            if isinstance(tile_sheet_data, list) and len(tile_sheet_data) >= 3:
+                sprite_kwargs = dict(
+                    sprite_sheet_path=tile_sheet_data[0],
+                    image_id=cfg.get("index", [0, 0]),
+                    sprite_width=tile_sheet_data[1],
+                    sprite_height=tile_sheet_data[2],
+                )
+        elif cfg.get("sprite_sheet"):
             sprite_kwargs = dict(
                 sprite_sheet_path=cfg["sprite_sheet"],
                 image_id=cfg.get("sprite_id"),
@@ -329,7 +338,18 @@ class UI:
                 original_image = pg.transform.scale(original_image, (width, height))
 
             elif sprite_sheet_path:
-                sheet = self.loaded_sheets.get(sprite_sheet_path)
+                if sprite_sheet_path not in self.loaded_sheets:
+                    try:
+                        sheet = pg.image.load(sprite_sheet_path).convert_alpha()
+                        self.loaded_sheets[sprite_sheet_path] = sheet
+                        
+                    except Exception as e:
+                        print(f"Error loading sprite sheet {sprite_sheet_path}: {e}")
+                        missing_texture = True
+                        sheet = None
+                        
+                else:
+                    sheet = self.loaded_sheets[sprite_sheet_path]
 
                 if sheet:
                     try:

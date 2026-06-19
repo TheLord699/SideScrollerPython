@@ -373,8 +373,6 @@ class Player:
 
         if previous_health != self.current_health:
             for health in range(self.max_health):
-                row = health // self.health_per_row
-                col = health % self.health_per_row
                 self.game.ui.remove_ui_element(health)
 
         for heart in range(self.max_health):
@@ -394,7 +392,8 @@ class Player:
                 image_path = [0, 2]
 
             self.game.ui.create_ui(
-                sprite_sheet_path="hearts", image_id=image_path,
+                sprite_sheet_path="assets/sprites/gui/health/Hearts.png",
+                image_id=image_path,
                 sprite_width=32, sprite_height=32,
                 x=x_position, y=y_position,
                 centered=True, width=60, height=60,
@@ -430,7 +429,9 @@ class Player:
 
         item = self.inventory[self.selected_slot]
         item_name = item["name"]
-        item_index = self.item_info["items"][item_name]["index"]
+        item_data = self.item_info["items"][item_name]
+        item_index = item_data["index"]
+        tile_sheet = item_data.get("tile_sheet", ["assets/sprites/gui/items/Sheet.png", 16, 16])
 
         item_element_id = f"item:{item_name}"
         if item_element_id in self.rendered_inventory_ui_elements:
@@ -444,9 +445,9 @@ class Player:
         self.mouse_item = f"mouse_{item_name}"
 
         self.game.ui.create_ui(
-            sprite_sheet_path="item_sheet", image_id=item_index,
+            sprite_sheet_path=tile_sheet[0], image_id=item_index,
+            sprite_width=tile_sheet[1], sprite_height=tile_sheet[2],
             x=mouse_x, y=mouse_y,
-            sprite_width=16, sprite_height=16,
             centered=True, width=30, height=30,
             alpha=True,
             element_id=self.mouse_item,
@@ -467,11 +468,14 @@ class Player:
         element_id = f"pickup_tag_{creation_time}_{index}"
         text_id = f"pickup_text_{creation_time}_{index}"
 
+        item_data = self.item_info["items"][item_name]
+        tile_sheet = item_data.get("tile_sheet", ["assets/sprites/gui/items/Sheet.png", 16, 16])
+
         self.game.ui.create_ui(
-            sprite_sheet_path="item_sheet",
-            image_id=self.item_info["items"][item_name]["index"],
+            sprite_sheet_path=tile_sheet[0],
+            image_id=item_data["index"],
+            sprite_width=tile_sheet[1], sprite_height=tile_sheet[2],
             x=x_pos, y=self.game.screen_height * 0.033 + index * 35,
-            sprite_width=16, sprite_height=16,
             width=30, height=30,
             element_id=element_id,
             render_order=2
@@ -504,11 +508,14 @@ class Player:
             tag["element_id"] = f"pickup_tag_{tag['creation_time']}_{slot}"
             tag["text_id"] = f"pickup_text_{tag['creation_time']}_{slot}"
 
+            item_data = self.item_info["items"][tag["name"]]
+            tile_sheet = item_data.get("tile_sheet", ["assets/sprites/gui/items/Sheet.png", 16, 16])
+
             self.game.ui.create_ui(
-                sprite_sheet_path="item_sheet",
-                image_id=self.item_info["items"][tag["name"]]["index"],
+                sprite_sheet_path=tile_sheet[0],
+                image_id=item_data["index"],
+                sprite_width=tile_sheet[1], sprite_height=tile_sheet[2],
                 x=x_pos, y=self.game.screen_height * 0.033 + slot * 35,
-                sprite_width=16, sprite_height=16,
                 width=30, height=30,
                 element_id=tag["element_id"],
                 render_order=2
@@ -548,9 +555,13 @@ class Player:
             self.game.ui.remove_ui_element("item_info")
 
         if self.selected_slot is not None:
+            item_data = self.item_info["items"][self.inventory[id]["name"]]
+            tile_sheet = item_data.get("tile_sheet", ["assets/sprites/gui/items/Sheet.png", 16, 16])
+
             self.game.ui.create_ui(
-                sprite_sheet_path="item_sheet", image_id=self.item_info["items"][self.inventory[id]["name"]]["index"],
-                x=self.game.screen_width * 0.2, y=self.game.screen_height * 0.5, sprite_width=16, sprite_height=16,
+                sprite_sheet_path=tile_sheet[0], image_id=item_data["index"],
+                sprite_width=tile_sheet[1], sprite_height=tile_sheet[2],
+                x=self.game.screen_width * 0.2, y=self.game.screen_height * 0.5,
                 centered=True, width=60, height=60,
                 alpha=True,
                 element_id=self.inventory[id]["name"],
@@ -568,6 +579,7 @@ class Player:
             self.rendered_inventory_ui_elements.append("item_info")
 
             self.last_rendered_item = self.inventory[id]["name"]
+
 
     def refresh_inventory(self):
         if self.inventory_changed:
@@ -611,10 +623,13 @@ class Player:
                 y_position = self.game.screen_height * 0.45 + (row - 1) * self.item_spacing
 
                 item_element_id = f"item:{item["name"]}"
+                item_data = self.item_info["items"][item["name"]]
+                tile_sheet = item_data.get("tile_sheet", ["assets/sprites/gui/items/Sheet.png", 16, 16])
+
                 self.game.ui.create_ui(
-                    image_id=self.item_info["items"][item["name"]]["index"],
-                    sprite_sheet_path="item_sheet",
-                    sprite_width=16, sprite_height=16,
+                    image_id=item_data["index"],
+                    sprite_sheet_path=tile_sheet[0],
+                    sprite_width=tile_sheet[1], sprite_height=tile_sheet[2],
                     x=x_position, y=y_position,
                     centered=True, width=20, height=20,
                     alpha=True, is_button=True,
