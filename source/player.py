@@ -599,7 +599,7 @@ class Player:
             slot_element_id = f"slot:{slot}"
 
             self.game.ui.create_ui(
-                sprite_sheet_path="ui_sheet", image_id=[34, 3],
+                sprite_sheet_path="assets/sprites/gui/ui.png", image_id=[34, 3],
                 x=x_position, y=y_position, sprite_width=32, sprite_height=32,
                 centered=True, width=35, height=35,
                 alpha=True, is_button=True,
@@ -714,7 +714,7 @@ class Player:
                 message_text = messages[self.dialogue_index]
 
                 self.game.ui.create_ui(
-                    sprite_sheet_path="ui_sheet",
+                    sprite_sheet_path="assets/sprites/gui/ui.png",
                     image_id=[33, 0],
                     x=self.game.screen_width * 0.5,
                     y=self.game.screen_height * 0.87,
