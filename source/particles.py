@@ -60,9 +60,6 @@ class Particles:
         self.enable_particles = True
         self.max_particles = game.game_context.max_particles
         
-        self.surface_cache = {}
-        
-        self.precreate_common_surfaces()
         self.update_tile_hitboxes()
 
     def update_tile_hitboxes(self):
@@ -71,45 +68,6 @@ class Particles:
             
         else:
             self.tile_hitboxes = []
-
-    def precreate_common_surfaces(self):
-        common_radii = [2, 3, 4, 5, 6, 7, 8, 10, 12, 15]
-        
-        common_colors = [
-            (255, 50, 50),
-            (255, 0, 0),
-            (100, 100, 100),
-            (150, 150, 150),
-            (255, 215, 0),
-            (255, 255, 255),
-            (0, 255, 0),
-            (0, 100, 255),
-        ]
-        
-        for radius in common_radii:
-            for color in common_colors:
-                cache_key = (radius, color[0], color[1], color[2])
-                if cache_key not in self.surface_cache:
-                    surf = pg.Surface((radius * 2, radius * 2), pg.SRCALPHA)
-                    pg.draw.rect(surf, color, surf.get_rect())
-                    self.surface_cache[cache_key] = surf
-
-    def get_cached_surface(self, radius, color, alpha=None):
-        cache_key = (radius, color[0], color[1], color[2])
-        
-        if cache_key not in self.surface_cache:
-            surf = pg.Surface((radius * 2, radius * 2), pg.SRCALPHA)
-            pg.draw.rect(surf, color, surf.get_rect())
-            self.surface_cache[cache_key] = surf
-        
-        cached = self.surface_cache[cache_key]
-        
-        if alpha is not None and alpha < 255:
-            copy = cached.copy()
-            copy.set_alpha(alpha)
-            return copy
-        
-        return cached
 
     def get_particle_from_pool(self):
         if self.pool:
@@ -222,25 +180,22 @@ class Particles:
         if self.game.game_context.menu not in {"play", "death", "pause"}:
             return
 
-        screen_pos = (screen_x, screen_y)
-
         if particle.image:
             img = particle.image
             if particle.fade:
                 alpha = max(0, 255 * (1 - particle.age / particle.lifespan))
                 img = img.copy()
                 img.set_alpha(alpha)
-            surface.blit(img, screen_pos)
+            surface.blit(img, (screen_x, screen_y))
             return
         
         if particle.fade:
             alpha = max(0, 255 * (1 - particle.age / particle.lifespan))
-            cached = self.get_cached_surface(particle.radius, particle.color, alpha)
-            surface.blit(cached, screen_pos)
+            color = (*particle.color, int(alpha))
+            pg.draw.rect(surface, color, (screen_x, screen_y, particle.rect.width, particle.rect.height))
             
         else:
-            cached = self.get_cached_surface(particle.radius, particle.color, None)
-            surface.blit(cached, screen_pos)
+            pg.draw.rect(surface, particle.color, (screen_x, screen_y, particle.rect.width, particle.rect.height))
 
     def generate(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30,
                  image=None, image_size=None, fade=False, gravity=0.0,
@@ -304,7 +259,6 @@ class Particles:
         for particle in self.particles:
             self.recycle_particle(particle)
         
-        self.surface_cache.clear()
         self.particles.clear()
     
     def set_max_particles(self, max_particles):
