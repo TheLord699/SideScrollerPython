@@ -290,78 +290,78 @@ class ProjectileSystem:
         projectile_index = 0
         while projectile_index < len(self.projectiles):
             projectile = self.projectiles[projectile_index]
-
+    
             if not projectile.alive:
                 self.release(projectile, projectile_index)
                 continue
-
+    
             rect = self.get_rect(projectile)
-
+    
             if projectile.follow is not None:
                 new_position = projectile.follow()
                 projectile.x, projectile.y = new_position
                 rect = self.get_rect(projectile)
-
+    
             elif projectile.embedded:
                 projectile.lifetime -= 1
                 if projectile.lifetime <= 0:
                     self.release(projectile, projectile_index)
                     continue
-
+    
             else:
                 if self.in_fluid(projectile, rect):
                     drag_multiplier = projectile.fluid_drag_mult
                     projectile.vel_x *= drag_multiplier
                     projectile.vel_y *= drag_multiplier
-
+    
                 projectile.vel_y += projectile.gravity
                 projectile.x += projectile.vel_x
                 projectile.y += projectile.vel_y
-
+    
                 self.update_rotation(projectile)
                 rect = self.get_rect(projectile)
-
+    
             projectile.lifetime -= 1
             if projectile.lifetime <= 0:
                 self.release(projectile, projectile_index)
                 continue
-
+    
             if projectile.follow is None and not projectile.embedded:
                 if self.game.game_context.vigorous_optimizations:
                     if self.is_offscreen(projectile):
                         if self.should_update(projectile):
                             self.release(projectile, projectile_index)
                             continue
-                    
+    
                 else:
                     if not self.should_update(projectile):
                         self.release(projectile, projectile_index)
                         continue
-
+    
                 if self.hits_wall(rect):
                     if projectile.embed_on_wall:
                         step_x = projectile.vel_x * 0.25
                         step_y = projectile.vel_y * 0.25
-                        
+    
                         for backup_step in range(4):
                             projectile.x -= step_x
                             projectile.y -= step_y
                             rect = self.get_rect(projectile)
                             if not self.hits_wall(rect):
                                 break
-
+    
                         projectile.flipped = projectile.vel_x < 0
                         projectile.embedded = True
                         projectile.vel_x = 0
                         projectile.vel_y = 0
-
+    
                     else:
                         self.release(projectile, projectile_index)
                         continue
-
+    
             self.check_entity_hits(projectile, rect)
             projectile_index += 1
-
+    
         self.render()
 
     def render(self):
