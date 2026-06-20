@@ -219,7 +219,7 @@ class ProjectileSystem:
             
         return False
 
-    def _make_update_bounds(self, camera_x, camera_y, screen_width, screen_height):
+    def make_update_bounds(self, camera_x, camera_y, screen_width, screen_height):
         half_w = screen_width // 2
         half_h = screen_height // 2
         
@@ -369,7 +369,7 @@ class ProjectileSystem:
         screen_height = game.screen_height
         vigorous = game.game_context.vigorous_optimizations
 
-        update_bounds = self._make_update_bounds(camera_x, camera_y, screen_width, screen_height)
+        update_bounds = self.make_update_bounds(camera_x, camera_y, screen_width, screen_height)
         screen_rect = pg.Rect(camera_x, camera_y, screen_width, screen_height)
 
         projectiles = self.projectiles
