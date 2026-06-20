@@ -749,6 +749,12 @@ class Entities:
             text_surface.set_alpha(int(opacity))
             self.game.screen.blit(text_surface, text_rect)
 
+    def apply_damage_effect(self, entity):
+        if entity.get("damage_effect", 0) > 0:
+            entity["damage_effect"] -= 0.05
+            if entity["damage_effect"] < 0:
+                entity["damage_effect"] = 0
+
     def render(self, entity):
         if not entity["image"]:
             return
@@ -802,11 +808,7 @@ class Entities:
                 current_image = entity["damage_image"]
                 if flip_image:
                     current_image = pg.transform.flip(current_image, True, False)
-            
-            entity["damage_effect"] -= 0.05
-            if entity["damage_effect"] < 0:
-                entity["damage_effect"] = 0
-        
+                    
         self.game.screen.blit(current_image, (sprite_x, sprite_y))
 
     def mouse_interact(self, entity):
@@ -952,6 +954,8 @@ class Entities:
         render_padding = 100
 
         for entity in self.entities:
+            self.apply_damage_effect(entity)
+             
             entity_x = entity["x"]
             entity_y = entity["y"]
             
