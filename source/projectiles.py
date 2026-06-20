@@ -93,20 +93,17 @@ class ProjectileSystem:
         self.flipped_cache_keys = []
         self.flipped_cache_max = 128
 
-        self.swimmable_tile_ids = {
-            tile_id for tile_id, attrs in self.game.map.tile_attributes.items()
-            if attrs.get("swimmable", False)
-        }
-        self.swimmable_dirty = False
+        self.swimmable_tile_ids = set()
+        self.swimmable_dirty = True
 
     def invalidate_swimmable_cache(self):
         self.swimmable_dirty = True
 
     def refresh_swimmable_cache(self):
-        self.swimmable_tile_ids = {
-            tile_id for tile_id, attrs in self.game.map.tile_attributes.items()
-            if attrs.get("swimmable", False)
-        }
+        self.swimmable_tile_ids = set()
+        for tile_id, attrs in self.game.map.tile_attributes.items():
+            if attrs.get("swimmable", False):
+                self.swimmable_tile_ids.add(tile_id)
 
         self.swimmable_dirty = False
 
@@ -208,9 +205,16 @@ class ProjectileSystem:
         if not projectile.fluid_drag:
             return False
         
-        swimmable = self.swimmable_tile_ids
+        if self.swimmable_dirty:
+            self.refresh_swimmable_cache()
+        
         for tile_hitbox, tile_id in self.game.map.get_nearby_tiles(rect, padding=2):
-            if tile_id in swimmable and rect.colliderect(tile_hitbox):
+            if tile_id in self.swimmable_tile_ids and rect.colliderect(tile_hitbox):
+                return True
+            
+            attributes = self.game.map.tile_attributes.get(tile_id, {})
+            if attributes.get("swimmable", False) and rect.colliderect(tile_hitbox):
+                self.swimmable_tile_ids.add(tile_id)
                 return True
             
         return False
@@ -269,7 +273,7 @@ class ProjectileSystem:
 
             for entity in entities.entities[:]: 
                 etype = entity.get("entity_type")
-                if etype not in ("enemy", "npc", "actor") or not entity.get("projectile_target", False):
+                if etype not in {"enemy", "npc", "actor"} or not entity.get("projectile_target", False):
                     continue
 
                 entity_id = id(entity)
@@ -355,9 +359,6 @@ class ProjectileSystem:
                     projectile.alive = False
 
     def update(self):
-        if self.swimmable_dirty:
-            self.refresh_swimmable_cache()
-
         game = self.game
         
         camera = game.camera
@@ -461,7 +462,7 @@ class ProjectileSystem:
         camera_x = game.camera.x
         camera_y = game.camera.y
         scaled_cache = self.scaled_cache
-        flipped_cache = self.flipped_cache  # NEW
+        flipped_cache = self.flipped_cache
 
         half_w = game.screen_width // 2
         half_h = game.screen_height // 2
