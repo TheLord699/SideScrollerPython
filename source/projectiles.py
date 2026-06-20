@@ -273,7 +273,7 @@ class ProjectileSystem:
 
             for entity in entities.entities[:]: 
                 etype = entity.get("entity_type")
-                if etype not in {"enemy", "npc", "actor"} or not entity.get("projectile_target", False):
+                if etype not in {"enemy", "actor"} or not entity.get("projectile_target", False):
                     continue
 
                 entity_id = id(entity)
