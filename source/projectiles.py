@@ -88,6 +88,8 @@ class ProjectileSystem:
         self.scaled_cache = {}
         self.scaled_cache_keys = []
         self.scaled_cache_max = 128
+        
+        self.hit_targets = {"actor", "enemy"}
 
         self.flipped_cache = {}
         self.flipped_cache_keys = []
@@ -273,7 +275,7 @@ class ProjectileSystem:
 
             for entity in entities.entities[:]: 
                 etype = entity.get("entity_type")
-                if etype not in {"enemy", "actor"} or not entity.get("projectile_target", False):
+                if etype not in self.hit_targets or not entity.get("projectile_target", False):
                     continue
 
                 entity_id = id(entity)
@@ -295,7 +297,7 @@ class ProjectileSystem:
                 if not rect.colliderect(entity_rect):
                     continue
 
-                if etype in ("enemy", "npc") and entity.get("health", 0) > 0:
+                if etype in {"enemy", "npc"} and entity.get("health", 0) > 0:
                     entity["health"] -= projectile.damage
                     entity["damage_effect"] = 1
                     
