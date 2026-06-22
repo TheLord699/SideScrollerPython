@@ -23,12 +23,12 @@ class Game:
   def __init__(self):
     pg.init()
     
-    # proj root
+    # proj root 
     if getattr(sys, "frozen", False):
       self.base_path = sys._MEIPASS
       
     else:
-      self.base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+       os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
     try:
       psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS) # windows only (probably gonna remove all together for final build... Gulp)
