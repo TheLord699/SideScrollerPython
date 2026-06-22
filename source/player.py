@@ -788,6 +788,7 @@ class Player:
                     if self.just_closed_dialogue:
                         return
 
+                    self.attacking = False
                     self.dialogue_with = entity
                     self.dialogue_index = 0
                     self.dialogue_just_opened = True
