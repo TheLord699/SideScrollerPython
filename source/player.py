@@ -789,6 +789,7 @@ class Player:
                         return
 
                     self.attacking = False
+                    self.charging = False
                     self.dialogue_with = entity
                     self.dialogue_index = 0
                     self.dialogue_just_opened = True
@@ -1253,6 +1254,9 @@ class Player:
             self.handle_melee_input(weapon_data)
 
     def handle_ranged_input(self, attack_held, weapon_data):
+        if self.in_dialogue:
+            return
+        
         is_instant = weapon_data.get("type") == "instant_ranged"
         draw_start = weapon_data.get("draw_start_frame", 0 if is_instant else 4)
         
