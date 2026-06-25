@@ -13,7 +13,7 @@ project and I'm having fun with it, which is what matters to me : )
 I do understand that there is a "right" way to structure some of these systems, proper decoupling, dependency injection, event buses, the whole works. But for a solo indie project, I've found that the pragmatic approach of having a central game object that everything can access saves me an enormous amount of boilerplate and lets me iterate faster
 and although it is less then ideal, there is some method to the madness, over simply just making everything global, dependencies are namespaced under Game
 
-current nitpick: no dedicated sprite handler atm
+current nitpick: no dedicated sprite handler or audio handler atm
 
 you could argue that the code has a few pragmatic decisions + compromises
 due to old code and python restrictions?
