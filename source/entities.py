@@ -350,7 +350,6 @@ class Entities:
                         if self.sound_refcount[file_path] <= 0:
                             del self.sound_refcount[file_path]
                             if file_path in self.sound_cache:
-                                self.sound_cache[file_path].stop()
                                 del self.sound_cache[file_path]
         
         entity.pop("loaded_sounds", None)
@@ -361,6 +360,8 @@ class Entities:
         
         if not sound_group:
             return None
+        
+        self.update_sounds(entity)
         
         sound_data = random.choice(sound_group)
         if sound_data and "sound" in sound_data:
