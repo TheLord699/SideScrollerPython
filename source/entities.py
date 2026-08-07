@@ -10,17 +10,9 @@ class Entities:
         
         self.tilesheet_cache = {} 
         self.render_priority = {"actor": 0, "npc": 1, "enemy": 2, "item": 3}
-                
-        self.sounds = { # will grab sounds from the entities.json soon instead of hardcoding paths(will also allow me to have specific sounds for entities)
-            "hit": [
-                {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_1.wav"), "volume": 2},
-                {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_2.wav"), "volume": 2},
-                {"sound": pg.mixer.Sound("assets/sounds/entity/21_orc_damage_3.wav"), "volume": 2}
-            ],
-            "open": [
-                {"sound": pg.mixer.Sound("assets/sounds/player/interact/01_chest_open_1.wav"), "volume": 2.0}
-            ]
-        }
+        
+        self.sound_cache = {}
+        self.sound_refcount = {}
         
         self.smoke_images = { # Ik this is super specific but i dont want to write a particle manager
             1: pg.image.load("assets/sprites/particles/smoke1.png").convert_alpha(),
@@ -88,6 +80,9 @@ class Entities:
         
         self.tilesheet_cache.clear()
         self.item_sprites.clear()
+        
+        self.sound_cache.clear()
+        self.sound_refcount.clear()
         
         if hasattr(self, "item_text_cache"):
             self.item_text_cache.clear()
@@ -187,6 +182,7 @@ class Entities:
             "health": template.get("health", 100 if entity_type in ("npc", "enemy", "actor") else 0),
             "max_health": template.get("health", 100 if entity_type in ("npc", "enemy", "actor") else 0),
             "states": template.get("states", {}),
+            "sounds": template.get("sounds", {}),
             "current_state": "idle",
             "animation_frame": 0,
             "animation_timer": 0,
@@ -197,6 +193,9 @@ class Entities:
             "script": template.get("script"),
             "facing_direction": 1,
         }
+        
+        if entity["sounds"]:
+            self.load_sounds(entity)
 
         if entity_type == "item" and template.get("damageable", False):
             entity["damage_image"] = image.copy()
@@ -293,25 +292,106 @@ class Entities:
     def update_entity(self, entity):
         if entity["entity_type"] in {"npc", "enemy"}:
             if entity["health"] < 1: # < 1 instead of <= 0 because players will see health as 0 when smaller than 1 due to truncating in the health bar
+                self.unload_sounds(entity)
                 self.drop_item(entity)
                 self.death_particles(entity)
                 return True
             
         return False
                 
-    def update_sounds(self):
-        if self.last_volume != self.game.game_context.volume:
-            self.last_volume = self.game.game_context.volume
-            for sound_group in self.sounds.values():
-                if isinstance(sound_group, list):
-                    for sound_dict in sound_group:
-                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
-                        
-                elif isinstance(sound_group, dict):
-                    for sound_dict in sound_group.values():
-                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
+    def load_sounds(self, entity):
+        sounds = entity.get("sounds", {})
+        if not sounds:
+            return
         
-    def drop_item(self, entity): # temporary, will replace with definitions in the json
+        loaded_sounds = {}
+        
+        for sound_name, sound_data in sounds.items():
+            if isinstance(sound_data, list):
+                sound_objects = []
+                for i in range(0, len(sound_data), 2):
+                    if i + 1 < len(sound_data):
+                        file_path = sound_data[i]
+                        volume = sound_data[i + 1]
+                        
+                        if file_path in self.sound_cache:
+                            sound_obj = self.sound_cache[file_path]
+                            self.sound_refcount[file_path] += 1
+                        else:
+                            try:
+                                sound_obj = pg.mixer.Sound(file_path)
+                                self.sound_cache[file_path] = sound_obj
+                                self.sound_refcount[file_path] = 1
+                            except Exception as e:
+                                print(f"Failed to load sound {file_path}: {e}")
+                                continue
+                        
+                        sound_objects.append({
+                            "sound": sound_obj,
+                            "volume": volume,
+                            "path": file_path
+                        })
+                loaded_sounds[sound_name] = sound_objects
+        
+        entity["loaded_sounds"] = loaded_sounds
+        return loaded_sounds
+
+    def unload_sounds(self, entity):
+        loaded_sounds = entity.get("loaded_sounds", {})
+        if not loaded_sounds:
+            return
+        
+        for sound_group in loaded_sounds.values():
+            if isinstance(sound_group, list):
+                for sound_dict in sound_group:
+                    file_path = sound_dict.get("path")
+                    if file_path and file_path in self.sound_refcount:
+                        self.sound_refcount[file_path] -= 1
+                        if self.sound_refcount[file_path] <= 0:
+                            del self.sound_refcount[file_path]
+                            if file_path in self.sound_cache:
+                                self.sound_cache[file_path].stop()
+                                del self.sound_cache[file_path]
+        
+        entity.pop("loaded_sounds", None)
+
+    def play_sound(self, entity, sound_name):
+        loaded_sounds = entity.get("loaded_sounds", {})
+        sound_group = loaded_sounds.get(sound_name)
+        
+        if not sound_group:
+            return None
+        
+        sound_data = random.choice(sound_group)
+        if sound_data and "sound" in sound_data:
+            sound_data["sound"].play()
+            return sound_data["sound"]
+        
+        return None
+
+    def update_sounds(self, entity):
+        loaded_sounds = entity.get("loaded_sounds", {})
+        if not loaded_sounds:
+            return
+        
+        current_volume = self.game.game_context.volume
+        entity_last_volume = entity.get("_last_volume", None)
+        
+        if entity_last_volume == current_volume:
+            return
+        
+        entity["_last_volume"] = current_volume
+        base_volume = current_volume / 10
+        
+        for sound_group in loaded_sounds.values():
+            if isinstance(sound_group, list):
+                for sound_dict in sound_group:
+                    if "sound" in sound_dict and hasattr(sound_dict["sound"], "set_volume"):
+                        final_volume = base_volume * sound_dict.get("volume", 1.0)
+                        final_volume = max(0.0, min(1.0, final_volume))  # Clamp
+                        sound_dict["sound"].set_volume(final_volume)
+                            
+    def drop_item(self, entity):
         items = ["Red Gem", "Potion", "Gold", "Bread", "Milk"]
         weights = [0.2, 0.5, 0.3, 0.25, 0.3]
         item = random.choices(items, weights=weights, k=1)[0]
@@ -396,9 +476,6 @@ class Entities:
             vel_x = random.uniform(-1.5, 1.5)  
             vel_y = random.uniform(-6.0, -6.5) 
             radius = random.randint(2, 4)
-
-            #image_path = "assets/sprites/particles/blood.png"
-            #particle_img = pg.image.load(image_path).convert_alpha()
 
             self.game.particles.generate(
                 pos=(entity["x"], entity["y"]),
@@ -936,14 +1013,18 @@ class Entities:
     def update(self):
         if not getattr(self.game.player, "settings_loaded", False):
             return
+    
+        current_volume = self.game.game_context.volume
+        if self.last_volume != current_volume:
+            self.last_volume = current_volume
+            for entity in self.entities:
+                self.update_sounds(entity)
         
         cam_x, cam_y = self.game.camera.x, self.game.camera.y
         screen_w, screen_h = self.game.screen_width, self.game.screen_height
         
         half_w = screen_w // 2
         half_h = screen_h // 2
-        
-        self.update_sounds()
 
         self.game.ai.separation_candidates = [
             entity for entity in self.entities
@@ -997,6 +1078,7 @@ class Entities:
                 continue
 
         for entity in to_remove:
+            self.unload_sounds(entity)
             self.entities.remove(entity)
         
         on_screen_entities = []

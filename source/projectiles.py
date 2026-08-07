@@ -271,7 +271,6 @@ class ProjectileSystem:
         if projectile.owner == "player":
             entities = self.game.entities
             player = self.game.player
-            hit_sounds = entities.sounds.get("hit", [])
 
             for entity in entities.entities[:]: 
                 etype = entity.get("entity_type")
@@ -303,12 +302,7 @@ class ProjectileSystem:
                     
                     self.game.camera.shake(intensity=4.4, duration=25)
                     entities.spawn_hit_particles(entity)
-                    
-                    for sound_data in hit_sounds:
-                        sound_data["sound"].stop()
-                        
-                    if hit_sounds:
-                        random.choice(hit_sounds)["sound"].play()
+                    entities.play_sound(entity, "hit")
 
                 if entity.get("abilities") and "pushable" in entity["abilities"]:
                     if projectile.is_melee:

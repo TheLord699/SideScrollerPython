@@ -55,11 +55,7 @@ def on_interact(entity, game):
     entity["interactable"] = False
     set_state(entity, STATE_OPEN)
     
-    sound_entry = game.entities.sounds.get("open", [None])[0]
-    if sound_entry:
-        vol = game.game_context.volume / 10 * sound_entry["volume"]
-        sound_entry["sound"].set_volume(vol)
-        sound_entry["sound"].play()
+    game.entities.play_sound(entity, "open")
 
 def update(entity, ai_system):
     init_state(entity)

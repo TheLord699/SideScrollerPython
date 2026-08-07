@@ -179,6 +179,13 @@
       "attack_damage": 0.6,
       "attack_knockback": 4,
       "attack_cooldown_max": 8,
+      "sounds":{
+        "hit": [
+          "assets/sounds/entity/21_orc_damage_1.wav", 2,
+          "assets/sounds/entity/21_orc_damage_2.wav", 2,
+          "assets/sounds/entity/21_orc_damage_3.wav", 2
+        ]
+      },
       "states": {
         "idle": {
           "start_row": 0,
@@ -225,6 +232,13 @@
       "attack_damage": 0.05,
       "attack_knockback": 2,
       "attack_cooldown_max": 12,
+      "sounds":{
+        "hit": [
+          "assets/sounds/entity/21_orc_damage_1.wav", 2,
+          "assets/sounds/entity/21_orc_damage_2.wav", 2,
+          "assets/sounds/entity/21_orc_damage_3.wav", 2
+        ]
+      },
       "states": {
         "idle": {
           "start_row": 0,
@@ -264,6 +278,13 @@
       "attack_damage": 1.5,
       "attack_knockback": 1,
       "attack_cooldown_max": 18,
+      "sounds":{
+        "hit": [
+          "assets/sounds/entity/21_orc_damage_1.wav", 2,
+          "assets/sounds/entity/21_orc_damage_2.wav", 2,
+          "assets/sounds/entity/21_orc_damage_3.wav", 2
+        ]
+      },
       "states": {
         "idle": {
           "start_row": 0,
@@ -350,6 +371,11 @@
       "index": [0, 0],
       "entity_abilities": [],
       "script": "source/behaviour_scripts/actors/chest.py",
+      "sounds":{
+        "open": [
+          "assets/sounds/player/interact/01_chest_open_1.wav", 2
+        ]
+      },
       "states": {
         "idle": {
           "start_row": 0,
