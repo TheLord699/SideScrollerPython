@@ -24,8 +24,7 @@ class Particle:
         self.floor_behavior = None
         self.on_ground = False
     
-    def reset(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30,
-              image=None, fade=False, gravity=0.0, floor_behavior=None, friction=None):
+    def reset(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30, image=None, fade=False, gravity=0.0, floor_behavior=None, friction=None):
         self.pos = pg.Vector2(pos)
         self.vel = pg.Vector2(velocity)
         self.color = color
