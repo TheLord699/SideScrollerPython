@@ -365,6 +365,9 @@ class Entities:
         
         sound_data = random.choice(sound_group)
         if sound_data and "sound" in sound_data:
+            if sound_data["sound"].get_num_channels() > 0:
+                sound_data["sound"].stop()
+
             sound_data["sound"].play()
             return sound_data["sound"]
         
