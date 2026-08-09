@@ -11,6 +11,7 @@ from entities import Entities
 from map import Map
 from ui import UI 
 from data_manager import DataManager
+from quest_manager import QuestManager
 from particles import Particles
 from memory_debugger import MemoryDebugger
 from light_source import LightSource
@@ -58,6 +59,7 @@ class Game:
     self.data_manager = DataManager()
     self.ui = UI(self)
     self.game_context = GameContext(self)
+    self.quest_manager = QuestManager(self)
     self.ai = AISystem(self)
     self.map = Map(self)
     self.projectiles_system = ProjectileSystem(self)
