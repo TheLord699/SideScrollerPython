@@ -171,6 +171,8 @@ class Player:
 
         for weapon in weapons_to_load:
             weapon_data = self.weapon_info[weapon]
+            template = weapon_data.get("template", weapon)
+            
             first_sequence_state = f"attacking{weapon}1"
 
             if first_sequence_state in self.frames and self.frames[first_sequence_state]:
@@ -185,9 +187,9 @@ class Player:
                 self.flipped_frames[state_name] = []
 
                 sheet_paths = [
-                    f"assets/sprites/player/weapons/attacking_{weapon}{sequence}.png",
-                    f"assets/sprites/player/weapons/{weapon}_attack{sequence}.png",
-                    f"assets/sprites/player/weapons/{weapon}{sequence}.png"
+                    f"assets/sprites/player/weapons/attacking_{template}{sequence}.png",
+                    f"assets/sprites/player/weapons/{template}_attack{sequence}.png",
+                    f"assets/sprites/player/weapons/{template}{sequence}.png"
                 ]
 
                 sheet = None
@@ -195,7 +197,7 @@ class Player:
                     try:
                         sheet = pg.image.load(sheet_path).convert_alpha()
                         break
-
+                    
                     except:
                         continue
 
@@ -210,7 +212,7 @@ class Player:
                             sheet = pg.image.load(fallback_path).convert_alpha()
                             print(f"Using fallback animation: {fallback_path}")
                             break
-
+                        
                         except:
                             continue
 
@@ -241,7 +243,10 @@ class Player:
             self.loaded_weapons.add(weapon)
 
         for weapon in unloaded:
-            for sequence in range(1, self.weapon_info.get(weapon, {}).get("sequence", 1) + 1):
+            weapon_data = self.weapon_info.get(weapon, {})
+            template = weapon_data.get("template", weapon)
+            
+            for sequence in range(1, weapon_data.get("sequence", 1) + 1):
                 state_name = f"attacking{weapon}{sequence}"
                 if state_name in self.frames:
                     del self.frames[state_name]

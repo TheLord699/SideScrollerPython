@@ -8315,6 +8315,15 @@
       "entity_name": "Chest",
       "layer": 0,
       "overrides": {}
+    },
+    {
+      "x": 3.0,
+      "y": 18.0,
+      "type": "entity",
+      "entity_type": "item",
+      "entity_name": "Multi shot bow",
+      "layer": 0,
+      "overrides": {}
     }
   ],
   "player_spawn": {

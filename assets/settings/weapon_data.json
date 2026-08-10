@@ -1,6 +1,7 @@
 {
   "basic_sword": {
     "type": "melee",
+    "template": "basic_sword",
     "damage": 10,
     "speed": 0.2,
     "sequence": 2,
@@ -19,6 +20,7 @@
 
 "basic_bow": {
     "type": "ranged",
+    "template": "basic_bow",
     "damage": 20,
     "min_damage_mult": 0.3,
     "speed": 0.4,
@@ -54,6 +56,7 @@
   
   "multi_shot_bow": {
     "type": "ranged",
+    "template": "basic_bow",
     "damage": 20,
     "min_damage_mult": 0.3,
     "speed": 0.4,
