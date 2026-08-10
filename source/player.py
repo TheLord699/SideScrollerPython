@@ -1264,15 +1264,11 @@ class Player:
         
         is_instant = weapon_data.get("type") == "instant_ranged"
         draw_start = weapon_data.get("draw_start_frame", 0 if is_instant else 4)
+        
         full_frame = weapon_data.get("full_draw_frame", 2 if is_instant else 6)
+        full_ticks = weapon_data.get("full_draw_ticks", 1 if is_instant else 18)
         
-        base_full_ticks = weapon_data.get("full_draw_ticks", 18)
-
-        speed = weapon_data.get("speed", 0.2)
-        speed_multiplier = speed / 0.2
-        actual_full_ticks = max(1, int(base_full_ticks / speed_multiplier))
-        
-        min_vel_mult = weapon_data.get("min_vel_mult", 0.4)
+        min_vel_mult = weapon_data.get("min_vel_mult", 1.0 if is_instant else 0.4)
         
         charge_key = weapon_data.get("charge_sound", "bow_draw")
         shoot_key = weapon_data.get("shoot_sound", "bow_shoot")
@@ -1287,9 +1283,8 @@ class Player:
                 self.charge_sound_played = False
 
             if self.current_frame >= draw_start:
-                self.charge_timer = min(self.charge_timer + 1, actual_full_ticks)
-                
-                charge_progress = self.charge_timer / max(actual_full_ticks, 1)
+                self.charge_timer = min(self.charge_timer + 1, full_ticks)
+                charge_progress = self.charge_timer / full_ticks
                 self.current_frame = min(draw_start + int(charge_progress * (full_frame - draw_start)), full_frame)
                 self.charging = True
 
@@ -1306,8 +1301,8 @@ class Player:
 
         else:
             if self.attacking and self.charging:
-                charge_amount = min(1.0, self.charge_timer / max(actual_full_ticks, 1))
-                self.fire_projectile(weapon_data, charge=charge_amount, min_vel_mult=min_vel_mult)
+                charge_amount  = min(1.0, self.charge_timer / max(full_ticks, 1))
+                self.fire_projectile(weapon_data, charge=charge_amount , min_vel_mult=min_vel_mult)
                 for s in self.sounds.get(shoot_key, []):
                     s["sound"].play()
 
@@ -1697,12 +1692,8 @@ class Player:
         if weapon_data.get("type") not in ("ranged", "instant_ranged"):
             return
         
-        base_full_ticks = weapon_data.get("full_draw_ticks", 18)
-        speed = weapon_data.get("speed", 0.2)
-        speed_multiplier = speed / 0.2
-        actual_full_ticks = max(1, int(base_full_ticks / speed_multiplier))
-        
-        charge_percent = min(1.0, self.charge_timer / max(actual_full_ticks, 1))
+        full_ticks = weapon_data.get("full_draw_ticks", 18)
+        charge_percent = min(1.0, self.charge_timer / max(full_ticks, 1))
         
         bar_width = 30
         bar_height = 4
