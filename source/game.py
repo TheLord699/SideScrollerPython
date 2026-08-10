@@ -26,13 +26,14 @@ class Game:
     
     # proj root 
     if getattr(sys, "frozen", False):
-      self.base_path = sys._MEIPASS
+      base_path = sys._MEIPASS
       
     else:
-       os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        
+      base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # windows only (probably gonna remove all together for final build... Gulp)
+    os.chdir(base_path)
+  
     try:
-      psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS) # windows only (probably gonna remove all together for final build... Gulp)
+      psutil.Process(os.getpid()).nice(psutil.HIGH_PRIORITY_CLASS)
       
     except:
       print("CPU prioritization not enabled (incompatible device)") # temp for now
