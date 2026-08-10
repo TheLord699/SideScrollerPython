@@ -16,7 +16,7 @@
 
   "combat": {
     "attack_timeout": 30,
-    "max_weapon_inventory_slots": 2
+    "max_weapon_inventory_slots": 3
   },
 
   "health": {
