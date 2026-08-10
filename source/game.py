@@ -29,7 +29,7 @@ class Game:
       base_path = sys._MEIPASS
       
     else:
-      base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # windows only (probably gonna remove all together for final build... Gulp)
+      base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # windows only (probably gonna remove all together for final build... Gulp)
     os.chdir(base_path)
   
     try:
@@ -37,7 +37,7 @@ class Game:
       
     except:
       print("CPU prioritization not enabled (incompatible device)") # temp for now
-
+      
     self.clock = pg.time.Clock()
 
     self.version = "0.7.1-dev"
