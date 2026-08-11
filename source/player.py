@@ -1470,6 +1470,9 @@ class Player:
     def equip_weapon(self, weapon_name):
         self.cancel_charge()
         
+        for sound_dict in self.sounds.get("attack", []):
+            sound_dict["sound"].stop()
+        
         if hasattr(self, "current_attack_projectile") and self.current_attack_projectile:
             if self.current_attack_projectile in self.game.projectiles_system.projectiles:
                 self.current_attack_projectile.lifetime = 0
