@@ -793,8 +793,8 @@ class Player:
                     if self.just_closed_dialogue:
                         return
 
+                    self.cancel_charge()
                     self.attacking = False
-                    self.charging = False
                     self.dialogue_with = entity
                     self.dialogue_index = 0
                     self.dialogue_just_opened = True
@@ -1476,7 +1476,7 @@ class Player:
         
         self.equipped_weapon = weapon_name
         self.attacking = False
-        self.current_frame = 0
+        #self.current_frame = 0
         self.attack_timer = 0
         self.attack_sequence = 1
         self.current_attack_projectile = None
