@@ -15,9 +15,6 @@ and although it is less then ideal, there is some method to the madness, over si
 
 current nitpick: no dedicated sprite handler or audio handler atm
 
-you could argue that the code has a few pragmatic decisions + compromises
-due to old code and python restrictions?
-
 I went heavy on composition (inheritance is yucky), and while I did some testing
 with rendering in ModernGL, I decided to stick with Pygame for now since rewriting
 everything would be painful.
