@@ -89,7 +89,7 @@ This project is more of a showcase of different systems:
 
 | Thing | How |
 |---|---|
-| Toggle lighting | Open terminal → `environment.lighting = True`, then press `N` |
+| Toggle lighting | Open terminal → `game_context.lighting = True`, then press `N` |
 | Show hitboxes | Open terminal → `debugging = True` |
 | Drag entities | Click + drag with mouse |
 
