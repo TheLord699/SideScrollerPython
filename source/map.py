@@ -35,6 +35,10 @@ class Map:
         self.tile_attributes = {}
         self.non_empty_cells = set()
 
+        self.rotated_tile_cache = {}
+        self.static_render_batches = []
+        self.animated_render_batches = []
+
     def load(self, map_path):
         map_info_file = os.path.join(map_path, "map_info.json")
         attributes_file = os.path.join(map_path, "attributes.json")
@@ -76,6 +80,7 @@ class Map:
 
             self.generate_tile_hitboxes()
             self.init_spatial_grid()
+            self.build_render_batches()
 
             print(f"Map loaded successfully from: {map_path}")
             return True
@@ -213,63 +218,107 @@ class Map:
 
         return nearby_tiles
 
-    def render(self):
-        current_time = time.time()
-        screen_width, screen_height = self.game.screen_width, self.game.screen_height
-        
-        min_x = self.cam_x
-        min_y = self.cam_y
-        max_x = min_x + screen_width
-        max_y = min_y + screen_height
-        
-        render_batches = {}
-        
+    def build_render_batches(self):
+        self.rotated_tile_cache.clear()
+
+        static_by_key = {}
+        animated_by_key = {}
+
         for tile in self.tiles:
             tilesheet_idx = tile.get("tilesheet", 0)
             if tilesheet_idx >= len(self.all_tile_surfaces):
                 continue
-                
+
             visual_size = self.all_tile_surfaces[tilesheet_idx]["visual_size"]
             tx = tile["x"] * visual_size
             ty = tile["y"] * visual_size
-            
-            if (tx + visual_size < min_x or tx > max_x or 
-                ty + visual_size < min_y or ty > max_y):
-                continue
-                
+            direction = tile.get("direction", 0)
+            batch_key = (tile["layer"], tilesheet_idx)
+
             if "animation" in tile:
-                anim = tile["animation"]
-                frames = anim["frames"]
-                speed = anim.get("speed", 0.1)
-                frame_idx = int((current_time % (len(frames) * speed)) / speed)
-                tile_id = frames[frame_idx]
-                
+                animated_by_key.setdefault(batch_key, []).append({
+                    "tilesheet_idx": tilesheet_idx,
+                    "tx": tx,
+                    "ty": ty,
+                    "visual_size": visual_size,
+                    "direction": direction,
+                    "frames": tile["animation"]["frames"],
+                    "speed": tile["animation"].get("speed", 0.1),
+                })
+
             else:
                 tile_id = tile["id"]
-                
-            tile_surfaces = self.all_tile_surfaces[tilesheet_idx]["surfaces"]
-            if tile_id >= len(tile_surfaces):
-                continue
-                
-            batch_key = (tile["layer"], tilesheet_idx)
-            
-            if batch_key not in render_batches:
-                render_batches[batch_key] = []
-                
-            render_batches[batch_key].append((
-                tile_surfaces[tile_id],
-                (tx - self.cam_x, ty - self.cam_y),
-                tile.get("direction", 0)
-            ))
+                tile_surfaces = self.all_tile_surfaces[tilesheet_idx]["surfaces"]
+                if tile_id >= len(tile_surfaces):
+                    continue
+
+                surface = self.get_rotated_tile(tilesheet_idx, tile_id, direction)
+                static_by_key.setdefault(batch_key, []).append((surface, tx, ty, visual_size))
+
+        all_keys = sorted(set(static_by_key) | set(animated_by_key))
+        self.static_render_batches = [
+            (key, static_by_key.get(key, [])) for key in all_keys
+        ]
         
-        for (layer, tilesheet_idx), batch in sorted(render_batches.items()):
-            for surface, pos, direction in batch:
-                if direction != 0:
-                    img = pg.transform.rotate(surface, direction)
-                    self.game.screen.blit(img, pos)
-                    
-                else:
-                    self.game.screen.blit(surface, pos)
+        self.animated_render_batches = [
+            (key, animated_by_key.get(key, [])) for key in all_keys
+        ]
+
+    def get_rotated_tile(self, tilesheet_idx, tile_id, direction):
+        tile_surfaces = self.all_tile_surfaces[tilesheet_idx]["surfaces"]
+        surface = tile_surfaces[tile_id]
+
+        if direction == 0:
+            return surface
+
+        cache_key = (tilesheet_idx, tile_id, direction)
+        cached = self.rotated_tile_cache.get(cache_key)
+        if cached is None:
+            cached = pg.transform.rotate(surface, direction)
+            self.rotated_tile_cache[cache_key] = cached
+
+        return cached
+
+    def render(self):
+        current_time = time.time()
+        screen_width, screen_height = self.game.screen_width, self.game.screen_height
+
+        min_x = self.cam_x
+        min_y = self.cam_y
+        max_x = min_x + screen_width
+        max_y = min_y + screen_height
+
+        screen = self.game.screen
+        cam_x, cam_y = self.cam_x, self.cam_y
+
+        for (_layer, _tilesheet_idx), batch in self.static_render_batches:
+            for surface, tx, ty, visual_size in batch:
+                if (tx + visual_size < min_x or tx > max_x or
+                    ty + visual_size < min_y or ty > max_y):
+                    continue
+
+                screen.blit(surface, (tx - cam_x, ty - cam_y))
+
+        for (_layer, _tilesheet_idx), batch in self.animated_render_batches:
+            for anim_tile in batch:
+                tx, ty, visual_size = anim_tile["tx"], anim_tile["ty"], anim_tile["visual_size"]
+
+                if (tx + visual_size < min_x or tx > max_x or
+                    ty + visual_size < min_y or ty > max_y):
+                    continue
+
+                frames = anim_tile["frames"]
+                speed = anim_tile["speed"]
+                frame_idx = int((current_time % (len(frames) * speed)) / speed)
+                tile_id = frames[frame_idx]
+
+                tilesheet_idx = anim_tile["tilesheet_idx"]
+                tile_surfaces = self.all_tile_surfaces[tilesheet_idx]["surfaces"]
+                if tile_id >= len(tile_surfaces):
+                    continue
+
+                surface = self.get_rotated_tile(tilesheet_idx, tile_id, anim_tile["direction"])
+                screen.blit(surface, (tx - cam_x, ty - cam_y))
 
     def render_debug(self, hitbox=None, padding=15):
         if not self.game.debugging:
