@@ -931,7 +931,39 @@ class Entities:
                 
             else:
                 del self.dragged_entity 
-    
+                
+    def show_ledge_check(self, entity):
+        if not self.game.debugging:
+            return
+        
+        if entity.get("ai_direction", 0) == 0:
+            return
+        
+        cam_x, cam_y = self.game.camera.x, self.game.camera.y
+        hitbox_w = entity.get("hitbox_width", entity["width"])
+        direction = entity.get("ai_direction", 0)
+        
+        check_x = entity["x"] + (hitbox_w / 2 + 16) * direction
+        check_y = entity["y"] + entity["height"] // 2 + 16
+        
+        has_floor = self.game.ai.check_floor_ahead(entity)
+        
+        color = (0, 255, 0) if has_floor else (255, 0, 0)
+        
+        entity_center_x = entity["x"] - cam_x
+        entity_center_y = entity["y"] - cam_y
+        
+        pg.draw.line(
+            self.game.screen,
+            color,
+            (entity_center_x, entity_center_y),
+            (check_x - cam_x, check_y - cam_y),
+            2
+        )
+        
+        pg.draw.circle(self.game.screen, color, (int(check_x - cam_x), int(check_y - cam_y)), 5)
+        pg.draw.circle(self.game.screen, (255, 255, 255), (int(check_x - cam_x), int(check_y - cam_y)), 2)
+
     def show_hitboxes(self, entity):
         if not self.game.debugging:
             return
@@ -979,6 +1011,9 @@ class Entities:
             original_center = (entity["x"] - cam_x, entity["y"] - cam_y)
             offset_center = (center_x, center_y)
             pg.draw.line(self.game.screen, (255, 255, 0), original_center, offset_center, 2)
+        
+        if entity["entity_type"] in {"enemy", "npc"}:
+            self.show_ledge_check(entity)
         
         if entity["entity_type"] in {"enemy"}:
             aggro_range = entity.get("aggro_range", 0)

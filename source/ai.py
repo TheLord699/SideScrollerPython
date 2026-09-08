@@ -290,6 +290,7 @@ class AISystem:
                 
             except Exception as e:
                 print(f"[AI] Error in on_interact for {script_path}: {e}")
+                
     def update_ai(self, entity):
         if entity.get("knockback_timer", 0) > 0:
             entity["knockback_timer"] -= 1

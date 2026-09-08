@@ -239,7 +239,7 @@ def update(entity, ai_system):
                 for amount in range(random.randint(1, 2)):
                     vel_x = random.uniform(-0.5, 0.5)
                     vel_y = random.uniform(-0.5, -0.1)
-                    radius = random.randint(2, 4)
+                    radius = random.randint(3, 4)
                     particles.generate(
                         pos=(entity["x"] + random.uniform(-10, 10), entity["y"] + random.uniform(0, 5)),
                         velocity=(vel_x, vel_y),
