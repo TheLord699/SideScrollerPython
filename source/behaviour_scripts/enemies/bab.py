@@ -25,6 +25,7 @@ def init_state(entity):
     entity.setdefault("bab_alert_timer", 0)
     entity.setdefault("bab_idle_timer", random.randint(30, 90))
     entity.setdefault("chase_initialized", False)
+    entity.setdefault("retreat_particle_timer", 0)
     entity.setdefault("facing", 1)
     entity.setdefault("facing_direction", 1)
 
@@ -119,7 +120,7 @@ def do_chase(entity, ai_system, distance, delta_x, delta_y):
             acceleration = entity.get("acceleration", 0.5)
             if abs(entity["vel_x"] - target_vel_x) > acceleration:
                 entity["vel_x"] += (1 if target_vel_x > entity["vel_x"] else -1) * acceleration
-                
+
             else:
                 entity["vel_x"] = target_vel_x
 
@@ -161,37 +162,37 @@ def do_retreat(entity, ai_system, distance, delta_x):
     if not ai_system.check_floor_ahead(entity):
         if distance < entity.get("aggro_range", 300):
             set_state(entity, STATE_CHASE)
-            
+
         else:
             set_state(entity, STATE_WANDER)
-            
+
         return
 
     if ai_system.check_wall_collision(entity):
         if distance < entity.get("aggro_range", 300):
             set_state(entity, STATE_CHASE)
-            
+
         else:
-            set_state(entity, STATE_WANDER)
-            
+            set_state(entity, STATE_WANDER)       
         return
 
     target_vel_x = flee_direction * entity.get("move_speed", 1) * 1.2
-    
+
+   
     acceleration = entity.get("acceleration", 0.5)
     if abs(entity["vel_x"] - target_vel_x) > acceleration:
         entity["vel_x"] += (1 if target_vel_x > entity["vel_x"] else -1) * acceleration
-        
+       
     else:
         entity["vel_x"] = target_vel_x
 
     health_ratio = entity["health"] / max(entity.get("max_health", entity["health"]), 1)
     retreat_threshold = entity.get("retreat_hp_ratio", 0.25)
-    
+   
     if health_ratio > retreat_threshold + 0.1:
         if distance < entity.get("aggro_range", 300):
             set_state(entity, STATE_CHASE)
-            
+         
         else:
             set_state(entity, STATE_WANDER)
 
@@ -229,6 +230,26 @@ def update(entity, ai_system):
         del entity["fleeing"]
 
     if state == STATE_RETREAT:
+        if abs(entity["vel_x"]) > 0:
+            particles = ai_system.game.particles
+            entity["retreat_particle_timer"] -= 1
+           
+            if entity["retreat_particle_timer"] <= 0:
+                entity["retreat_particle_timer"] = 16
+                for amount in range(random.randint(1, 2)):
+                    vel_x = random.uniform(-0.5, 0.5)
+                    vel_y = random.uniform(-0.5, -0.1)
+                    radius = random.randint(2, 4)
+                    particles.generate(
+                        pos=(entity["x"] + random.uniform(-10, 10), entity["y"] + random.uniform(0, 5)),
+                        velocity=(vel_x, vel_y),
+                        color=(173, 216, 230),
+                        radius=radius,
+                        lifespan=30,
+                        fade=True,
+                        image_size=(radius*2, radius*2)
+                    )
+                   
         do_retreat(entity, ai_system, distance, delta_x)
         return
 
