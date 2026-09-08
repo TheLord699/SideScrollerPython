@@ -941,22 +941,25 @@ class Entities:
         
         cam_x, cam_y = self.game.camera.x, self.game.camera.y
         hitbox_w = entity.get("hitbox_width", entity["width"])
+        hitbox_h = entity.get("hitbox_height", entity["height"])
+        offset_x = entity.get("hitbox_offset_x", 0)
+        offset_y = entity.get("hitbox_offset_y", 0)
         direction = entity.get("ai_direction", 0)
         
-        check_x = entity["x"] + (hitbox_w / 2 + 16) * direction
-        check_y = entity["y"] + entity["height"] // 2 + 16
+        center_x = entity["x"] + offset_x
+        center_y = entity["y"] + offset_y
+        
+        check_x = center_x + (hitbox_w / 2 + 16) * direction
+        check_y = center_y + hitbox_h // 2 + 16
         
         has_floor = self.game.ai.check_floor_ahead(entity)
         
         color = (0, 255, 0) if has_floor else (255, 0, 0)
         
-        entity_center_x = entity["x"] - cam_x
-        entity_center_y = entity["y"] - cam_y
-        
         pg.draw.line(
             self.game.screen,
             color,
-            (entity_center_x, entity_center_y),
+            (center_x - cam_x, center_y - cam_y),
             (check_x - cam_x, check_y - cam_y),
             2
         )
@@ -1008,9 +1011,9 @@ class Entities:
         pg.draw.circle(self.game.screen, color, (int(center_x), int(center_y)), 3)
         
         if offset_x != 0 or offset_y != 0:
-            original_center = (entity["x"] - cam_x, entity["y"] - cam_y)
-            offset_center = (center_x, center_y)
-            pg.draw.line(self.game.screen, (255, 255, 0), original_center, offset_center, 2)
+            sprite_center = (entity["x"] - cam_x, entity["y"] - cam_y)
+            hitbox_center = (center_x, center_y)
+            pg.draw.line(self.game.screen, (255, 255, 0), sprite_center, hitbox_center, 2)
         
         if entity["entity_type"] in {"enemy", "npc"}:
             self.show_ledge_check(entity)
@@ -1037,7 +1040,7 @@ class Entities:
             )
             
             player_center = (self.game.player.x - cam_x, self.game.player.y - cam_y)
-            entity_center = (entity["x"] - cam_x, entity["y"] - cam_y)
+            entity_center = (entity["x"] + offset_x - cam_x, entity["y"] + offset_y - cam_y)
             distance = math.sqrt((player_center[0]-entity_center[0])**2 + (player_center[1]-entity_center[1])**2)
             
             if distance <= aggro_range:
