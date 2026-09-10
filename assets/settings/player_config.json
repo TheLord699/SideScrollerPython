@@ -66,11 +66,11 @@
       { "path": "assets/sounds/player/attack/swing2.wav", "volume": 2.0 }
     ],
     "water_splash": [
-    { "path": "assets/sounds/player/movement/water_splash.wav", "volume": 2.0 }
+    { "path": "assets/sounds/player/movement/water_splash.wav", "volume": 1.0 }
     ],
     "swim": [
-        { "path": "assets/sounds/player/movement/water_swim_1.wav", "volume": 2.0 },
-        { "path": "assets/sounds/player/movement/water_swim_2.wav", "volume": 2.0 }
+        { "path": "assets/sounds/player/movement/water_swim_1.wav", "volume": 0.5 },
+        { "path": "assets/sounds/player/movement/water_swim_2.wav", "volume": 0.5 }
     ],
     "land": [
       { "path": "assets/sounds/player/movement/13_human_jump_land_1.wav", "volume": 2.0 },
