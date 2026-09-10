@@ -227,7 +227,7 @@ class AISystem:
             ):
                 return (ent["x"] + off_x, ent["y"] + off_y)
 
-            self.game.projectiles_system.spawn(
+            self.game.projectile_system.spawn(
                 x=entity["x"] + attack_offset_x,
                 y=entity["y"] + attack_offset_y,
                 width=30,

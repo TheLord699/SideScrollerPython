@@ -22,11 +22,44 @@ class Entities:
         random.seed(self.game.game_context.seed)
         
         self.load_entity_info()
+        self.load_default_sounds()
         self.load_settings()
 
     def load_entity_info(self):
         with open("assets/settings/entities_config.json", "r") as f:
             self.entity_info = json.load(f)
+
+    def load_default_sounds(self):
+        self.default_sounds = {}
+        raw = self.entity_info.get("default sounds", {})
+
+        for sound_name, sound_data in raw.items():
+            if not isinstance(sound_data, list):
+                continue
+
+            sound_objects = []
+            for entry in sound_data:
+                if not isinstance(entry, dict) or "path" not in entry:
+                    continue
+
+                file_path = entry["path"]
+                volume = entry.get("volume", 1.0)
+
+                try:
+                    sound_obj = pg.mixer.Sound(file_path)
+                    
+                except Exception as e:
+                    print(f"Failed to load default sound {file_path}: {e}")
+                    continue
+
+                sound_objects.append({
+                    "sound": sound_obj,
+                    "volume": volume,
+                    "path": file_path
+                })
+
+            if sound_objects:
+                self.default_sounds[sound_name] = sound_objects
 
     def load_tilesheet(self, path, tile_width, tile_height):
         cache_key = (path, tile_width, tile_height)
@@ -114,6 +147,9 @@ class Entities:
         if hasattr(self, "dragged_entity"):
             del self.dragged_entity
 
+        if hasattr(self, "default_last_volume"):
+            del self.default_last_volume
+
     def item(self, item_name):
         if item_name in self.entity_info["items"]:
             return self.entity_info["items"][item_name]
@@ -193,6 +229,7 @@ class Entities:
             "knockback_timer": 0,
             "script": template.get("script"),
             "facing_direction": 1,
+            "in_water": False,
         }
         
         if entity["sounds"]:
@@ -383,12 +420,12 @@ class Entities:
             return
         
         current_volume = self.game.game_context.volume
-        entity_last_volume = entity.get("_last_volume", None)
+        entity_last_volume = entity.get("entity_last_volume", None)
         
         if entity_last_volume == current_volume:
             return
         
-        entity["_last_volume"] = current_volume
+        entity["entity_last_volume"] = current_volume
         base_volume = current_volume / 10
         
         for sound_group in loaded_sounds.values():
@@ -398,6 +435,37 @@ class Entities:
                         final_volume = base_volume * sound_dict.get("volume", 1.0)
                         final_volume = max(0.0, min(1.0, final_volume))  # Clamp
                         sound_dict["sound"].set_volume(final_volume)
+
+    def update_default_sounds_volume(self):
+        current_volume = self.game.game_context.volume
+        if getattr(self, "default_last_volume", None) == current_volume:
+            return
+
+        self.default_last_volume = current_volume
+        base_volume = current_volume / 10
+
+        for sound_group in getattr(self, "default_sounds", {}).values():
+            for sound_dict in sound_group:
+                if "sound" in sound_dict and hasattr(sound_dict["sound"], "set_volume"):
+                    final_volume = base_volume * sound_dict.get("volume", 1.0)
+                    final_volume = max(0.0, min(1.0, final_volume))
+                    sound_dict["sound"].set_volume(final_volume)
+
+    def play_default_sound(self, sound_name):
+        sound_group = getattr(self, "default_sounds", {}).get(sound_name)
+        if not sound_group:
+            return None
+
+        self.update_default_sounds_volume()
+
+        sound_data = random.choice(sound_group)
+        if sound_data and "sound" in sound_data:
+            if sound_data["sound"].get_num_channels() > 0:
+                sound_data["sound"].stop()
+            sound_data["sound"].play()
+            return sound_data["sound"]
+
+        return None
                             
     def drop_item(self, entity):
         loot_config = entity.get("loot_table", {})
@@ -519,6 +587,7 @@ class Entities:
                 lifespan=100,
                 fade=True,
                 image_size=(radius * 3, radius * 3),
+                float_in_water=True,
             )
             
     def death_particles(self, entity, amount=13):
@@ -539,6 +608,23 @@ class Entities:
                 image=smoke_img,
                 image_size=(radius * 4, radius * 4),
             )
+
+    def water_splash_particles(self, entity, amount=12):
+        hitbox_w = entity.get("hitbox_width", entity["width"])
+        hitbox_h = entity.get("hitbox_height", entity["height"])
+
+        for _ in range(amount):
+            self.game.particles.generate(
+                pos=(entity["x"] + random.uniform(-hitbox_w / 2, hitbox_w / 2),
+                     entity["y"] + random.uniform(-hitbox_h / 2, hitbox_h / 2)),
+                velocity=(random.uniform(-1.5, 1.5), random.uniform(-2, 0.5)),
+                color=(100, 200, 255),
+                radius=random.randint(2, 5),
+                lifespan=30,
+                fade=True
+            )
+
+        self.play_default_sound("water_splash")
 
     def update_collision(self, entity):
         hitbox_width = entity.get("hitbox_width", entity["width"])
@@ -680,7 +766,11 @@ class Entities:
         )
         
         nearby_tiles = self.game.map.get_nearby_tiles(ground_check, padding=5)
-        
+
+        was_in_water = entity.get("in_water", False)
+        entry_vel_y = entity.get("vel_y", 0)
+        entity["in_water"] = False
+
         for tile_hitbox, tile_id in nearby_tiles:
             if ground_check.colliderect(tile_hitbox):
                 tile_attrs = self.game.map.tile_attributes.get(tile_id, {})
@@ -693,6 +783,10 @@ class Entities:
                 else:
                     entity["vel_y"] *= 0.8
                     entity["on_ground"] = True
+                    entity["in_water"] = True
+
+                    if not was_in_water and entry_vel_y > 3:
+                        self.water_splash_particles(entity)
         
         entity["on_ground"] = False
         return False
@@ -792,8 +886,8 @@ class Entities:
 
         if entity["entity_type"] == "item":
             screen_y = entity["y"] - cam_y - entity_height // 2 - 10
-            text_y_offset = -8
-
+            text_y_offset = -8       
+             
         elif entity["entity_type"] == "npc":
             screen_y = entity["y"] - cam_y - entity_height // 2 - (35 if health_bar_shown else 10)
             text_y_offset = -6
@@ -1088,6 +1182,7 @@ class Entities:
             self.last_volume = current_volume
             for entity in self.entities:
                 self.update_sounds(entity)
+            self.update_default_sounds_volume()
         
         cam_x, cam_y = self.game.camera.x, self.game.camera.y
         screen_w, screen_h = self.game.screen_width, self.game.screen_height

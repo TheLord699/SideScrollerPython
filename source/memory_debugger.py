@@ -588,7 +588,7 @@ class MemoryDebugger:
             ("Background", weakref.ref(self.game.background)),
             ("Particles", weakref.ref(self.game.particles)),
             ("Foreground", weakref.ref(self.game.foreground)),
-            ("ProjectilesSystem", weakref.ref(self.game.projectiles_system)),
+            ("ProjectilesSystem", weakref.ref(self.game.projectile_system)),
             ("AISystem", weakref.ref(self.game.ai)),
         ]
 

@@ -259,7 +259,7 @@ class GameContext:
 
     self.game.entities.reset()
     self.game.lighting.clear_all_lights()
-    self.game.projectiles_system.projectiles.clear()
+    self.game.projectile_system.projectiles.clear()
     self.game.particles.particles.clear()
 
     if hasattr(self.game, "memory_debugger"): # will remove eventually

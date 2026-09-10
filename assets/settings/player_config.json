@@ -6,7 +6,11 @@
     "jump_strength": 10,
     "friction": 0,
     "coyote_time": 8,
-    "max_fall_time": 500
+    "max_fall_time": 500,
+    "swim_strength": 4,
+    "water_drag": 0.95,
+    "water_gravity_mult": 0.3,
+    "water_max_speed": 3
   },
 
   "hitbox": {
@@ -60,6 +64,13 @@
     "attack": [
       { "path": "assets/sounds/player/attack/swing1.wav", "volume": 2.0 },
       { "path": "assets/sounds/player/attack/swing2.wav", "volume": 2.0 }
+    ],
+    "water_splash": [
+    { "path": "assets/sounds/player/movement/water_splash.wav", "volume": 2.0 }
+    ],
+    "swim": [
+        { "path": "assets/sounds/player/movement/water_swim_1.wav", "volume": 2.0 },
+        { "path": "assets/sounds/player/movement/water_swim_2.wav", "volume": 2.0 }
     ],
     "land": [
       { "path": "assets/sounds/player/movement/13_human_jump_land_1.wav", "volume": 2.0 },

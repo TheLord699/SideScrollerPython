@@ -5,7 +5,7 @@ class Particle:
     __slots__ = (
         "pos", "vel", "color", "radius", "lifespan", "age", 
         "image", "rect", "fade", "gravity", "friction", 
-        "floor_behavior", "on_ground"
+        "floor_behavior", "on_ground", "float_in_water", "in_water"
     )
     
     def __init__(self):
@@ -23,8 +23,12 @@ class Particle:
         self.friction = None
         self.floor_behavior = None
         self.on_ground = False
+        self.float_in_water = False
+        self.in_water = False
     
-    def reset(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30, image=None, fade=False, gravity=0.0, floor_behavior=None, friction=None):
+    def reset(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30,
+              image=None, fade=False, gravity=0.0, floor_behavior=None,
+              friction=None, float_in_water=False):
         self.pos = pg.Vector2(pos)
         self.vel = pg.Vector2(velocity)
         self.color = color
@@ -37,6 +41,8 @@ class Particle:
         self.friction = friction
         self.floor_behavior = floor_behavior
         self.on_ground = False
+        self.float_in_water = float_in_water
+        self.in_water = False
         
         if image:
             self.rect = image.get_rect(center=pos)
@@ -88,6 +94,10 @@ class Particles:
         
         for tile_hitbox, tile_id in nearby_tiles:
             if particle_rect.colliderect(tile_hitbox):
+                tile_attrs = self.game.map.tile_attributes.get(tile_id, {})
+                if tile_attrs.get("swimmable", False):
+                    continue
+
                 max_search = 100
                 
                 for offset in range(1, max_search):
@@ -96,8 +106,12 @@ class Particles:
                     test_nearby = self.game.map.get_nearby_tiles(test_rect)
                     
                     valid = True
-                    for test_hitbox, _ in test_nearby:
+                    for test_hitbox, test_id in test_nearby:
                         if test_rect.colliderect(test_hitbox):
+                            test_attrs = self.game.map.tile_attributes.get(test_id, {})
+                            if test_attrs.get("swimmable", False):
+                                continue
+                            
                             valid = False
                             break
                     
@@ -107,6 +121,28 @@ class Particles:
                 return pos
             
         return pos
+
+    def particle_in_water(self, particle):
+        if not hasattr(self.game.map, "get_nearby_tiles"):
+            return False
+
+        radius = particle.radius
+        rect = pg.Rect(
+            particle.pos.x - radius,
+            particle.pos.y - radius,
+            radius * 2,
+            radius * 2
+        )
+
+        nearby_tiles = self.game.map.get_nearby_tiles(rect)
+
+        for tile_hitbox, tile_id in nearby_tiles:
+            if rect.colliderect(tile_hitbox):
+                tile_attrs = self.game.map.tile_attributes.get(tile_id, {})
+                if tile_attrs.get("swimmable", False):
+                    return True
+
+        return False
 
     def handle_tile_collisions(self, particle):
         radius = particle.radius
@@ -130,8 +166,12 @@ class Particles:
         rect.x = pos.x - radius
         nearby_tiles = self.game.map.get_nearby_tiles(rect)
 
-        for tile_hitbox, _ in nearby_tiles:
+        for tile_hitbox, tile_id in nearby_tiles:
             if rect.colliderect(tile_hitbox):
+                tile_attrs = self.game.map.tile_attributes.get(tile_id, {})
+                if tile_attrs.get("swimmable", False):
+                    continue
+
                 if vel.x > 0:
                     pos.x = tile_hitbox.left - radius
                     
@@ -145,8 +185,12 @@ class Particles:
         rect.y = pos.y - radius
         nearby_tiles = self.game.map.get_nearby_tiles(rect)
 
-        for tile_hitbox, _ in nearby_tiles:
+        for tile_hitbox, tile_id in nearby_tiles:
             if rect.colliderect(tile_hitbox):
+                tile_attrs = self.game.map.tile_attributes.get(tile_id, {})
+                if tile_attrs.get("swimmable", False):
+                    continue
+
                 if vel.y > 0:
                     pos.y = tile_hitbox.top - radius
                     particle.on_ground = True
@@ -199,7 +243,7 @@ class Particles:
 
     def generate(self, pos, velocity, color=(255, 255, 255), radius=5, lifespan=30,
                  image=None, image_size=None, fade=False, gravity=0.0,
-                 floor_behavior=None, friction=None):
+                 floor_behavior=None, friction=None, float_in_water=False):
         if not self.enable_particles:
             return
         
@@ -211,7 +255,8 @@ class Particles:
         if image and image_size:
             image = pg.transform.scale(image, image_size)
         
-        particle.reset(pos, velocity, color, radius, lifespan, image, fade, gravity, floor_behavior, friction)
+        particle.reset(pos, velocity, color, radius, lifespan, image, fade, gravity,
+                       floor_behavior, friction, float_in_water)
         self.particles.append(particle)
 
     def update_physics_batch(self):
@@ -219,7 +264,21 @@ class Particles:
             return
         
         for particle in self.particles:
-            particle.vel.y += particle.gravity
+            if particle.float_in_water:
+                particle.in_water = self.particle_in_water(particle)
+
+                if particle.in_water:
+                    particle.vel.y -= particle.gravity * 0.5
+                    particle.vel.y *= 0.92
+                    particle.vel.x *= 0.92
+                    if particle.vel.y < -1.5:
+                        particle.vel.y = -1.5
+                        
+                else:
+                    particle.vel.y += particle.gravity
+                    
+            else:
+                particle.vel.y += particle.gravity
             
             if particle.on_ground and particle.friction:
                 particle.vel.x *= (1 - particle.friction)

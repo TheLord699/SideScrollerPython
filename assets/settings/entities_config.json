@@ -1,4 +1,14 @@
 {
+  "default sounds":{
+    "water_splash": [
+    { "path": "assets/sounds/player/movement/water_splash.wav", "volume": 2.0 }
+    ],
+    "swim": [
+        { "path": "assets/sounds/player/movement/water_swim_1.wav", "volume": 2.0 },
+        { "path": "assets/sounds/player/movement/water_swim_2.wav", "volume": 2.0 }
+    ]
+  },
+
   "items": {
     "Basic sword": {
       "name": "basic_sword",
