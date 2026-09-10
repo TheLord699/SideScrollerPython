@@ -8231,7 +8231,7 @@
       "y": 12.0,
       "type": "entity",
       "entity_type": "actor",
-      "entity_name": "Chest",
+      "entity_name": "Basic Chest",
       "layer": 0,
       "overrides": {}
     },
@@ -8240,7 +8240,7 @@
       "y": 37.0,
       "type": "entity",
       "entity_type": "actor",
-      "entity_name": "Chest",
+      "entity_name": "Basic Chest",
       "layer": 0,
       "overrides": {}
     },
@@ -8249,7 +8249,7 @@
       "y": 33.0,
       "type": "entity",
       "entity_type": "actor",
-      "entity_name": "Chest",
+      "entity_name": "Basic Chest",
       "layer": 0,
       "overrides": {}
     },
@@ -8294,7 +8294,7 @@
       "y": 18.0,
       "type": "entity",
       "entity_type": "actor",
-      "entity_name": "Chest",
+      "entity_name": "Basic Chest",
       "layer": 0,
       "overrides": {}
     },
@@ -8303,7 +8303,7 @@
       "y": 16.0,
       "type": "entity",
       "entity_type": "actor",
-      "entity_name": "Chest",
+      "entity_name": "Basic Chest",
       "layer": 0,
       "overrides": {}
     },
@@ -8312,7 +8312,7 @@
       "y": 12.0,
       "type": "entity",
       "entity_type": "actor",
-      "entity_name": "Chest",
+      "entity_name": "Basic Chest",
       "layer": 0,
       "overrides": {}
     },

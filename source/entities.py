@@ -318,11 +318,13 @@ class Entities:
                         if file_path in self.sound_cache:
                             sound_obj = self.sound_cache[file_path]
                             self.sound_refcount[file_path] += 1
+                            
                         else:
                             try:
                                 sound_obj = pg.mixer.Sound(file_path)
                                 self.sound_cache[file_path] = sound_obj
                                 self.sound_refcount[file_path] = 1
+                                
                             except Exception as e:
                                 print(f"Failed to load sound {file_path}: {e}")
                                 continue
@@ -332,6 +334,7 @@ class Entities:
                             "volume": volume,
                             "path": file_path
                         })
+                        
                 loaded_sounds[sound_name] = sound_objects
         
         entity["loaded_sounds"] = loaded_sounds

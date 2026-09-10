@@ -405,7 +405,7 @@
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
 
-    "Chest": {
+    "Basic Chest": {
       "name": "Chest",
       "type": "interactive",
       "interaction": "scripted",
