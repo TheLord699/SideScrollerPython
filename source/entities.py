@@ -177,6 +177,7 @@ class Entities:
             "vel_y": 0,
             "on_ground": False,
             "push_force": template.get("push_force", 20),
+            "loot_table": template.get("loot_table", {}),
             "projectile_target": template.get("projectile_target", True),
             "value": template.get("value", 0),
             "health": template.get("health", 100 if entity_type in ("npc", "enemy", "actor") else 0),
@@ -396,12 +397,35 @@ class Entities:
                         sound_dict["sound"].set_volume(final_volume)
                             
     def drop_item(self, entity):
-        items = ["Red Gem", "Potion", "Gold", "Bread", "Milk"]
-        weights = [0.2, 0.5, 0.3, 0.25, 0.3]
-        item = random.choices(items, weights=weights, k=1)[0]
+        loot_config = entity.get("loot_table", {})
+        loot_table = loot_config.get("items", [])
+        default_loot = loot_config.get("default")
+
+        amount_config = loot_config.get("amount", {"min": 1, "max": 1})
+        amount = random.randint(amount_config["min"], amount_config["max"])
+
+        items_to_drop = []
+
+        for _ in range(amount):
+            available_items = [
+                item for item in loot_table
+                if random.random() < item["chance"]
+            ]
+
+            if available_items:
+                loot_item = random.choice(available_items)
+                items_to_drop.append(loot_item["name"])
+                
+            elif default_loot:
+                items_to_drop.append(default_loot)
+
+        for item in items_to_drop:
+            if item not in self.game.player.item_info.get("items", {}):
+                print(f"Warning: Item '{item}' not found in entities_config.json")
+                continue
+
+            self.game.entities.create_entity("item", item, entity["x"], entity["y"])
         
-        self.game.entities.create_entity("item", item, entity["x"], entity["y"])
-    
     def update_animation(self, entity):
         cam_x, cam_y = self.game.camera.x, self.game.camera.y
         screen_width, screen_height = self.game.screen_width, self.game.screen_height

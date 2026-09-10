@@ -91,6 +91,7 @@
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     }
   },
+
   "npcs": {
     "Bob": {
       "name": "Bob",
@@ -112,7 +113,11 @@
           "speed": 0.15
         }
       },
-      "message": ["look who it is", "you've managed to \nmake it to the end?", "dev note: this level \nis short and smelly"]
+      "message": [
+        "look who it is",
+        "you've managed to \nmake it to the end?",
+        "dev note: this level \nis short and smelly"
+      ]
     },
     "Bab": {
       "name": "Bab",
@@ -134,7 +139,12 @@
         }
       },
       "index": [0, 0],
-      "message": ["please stay away from me", "you smell...", "bad...", "like really bad..."]
+      "message": [
+        "please stay away from me",
+        "you smell...",
+        "bad...",
+        "like really bad..."
+      ]
     },
     "Jimmy": {
       "name": "Jimmy",
@@ -156,9 +166,13 @@
         }
       },
       "index": [0, 9],
-      "message": ["you've taken so long \nto update this game!", "how can someone \nbe so lazy?"]
+      "message": [
+        "you've taken so long \nto update this game!",
+        "how can someone \nbe so lazy?"
+      ]
     }
   },
+
   "enemies": {
     "Bab": {
       "name": "Bab",
@@ -179,7 +193,16 @@
       "attack_damage": 0.6,
       "attack_knockback": 4,
       "attack_cooldown_max": 8,
-      "sounds":{
+      "loot_table": {
+        "default": "Gold",
+        "amount": {"min": 1, "max": 1},
+        "items": [
+          {"name": "Gold", "min": 1, "max": 3, "chance": 0.8},
+          {"name": "Bread", "min": 1, "max": 1, "chance": 0.25},
+          {"name": "Milk", "min": 1, "max": 1, "chance": 0.15}
+        ]
+      },
+      "sounds": {
         "hit": [
           "assets/sounds/entity/21_orc_damage_1.wav", 2,
           "assets/sounds/entity/21_orc_damage_2.wav", 2,
@@ -213,6 +236,7 @@
       "push_force": 70,
       "script": "source/behaviour_scripts/enemies/bab.py"
     },
+
     "Jelly": {
       "name": "Jelly",
       "health": 30,
@@ -232,7 +256,16 @@
       "attack_damage": 0.05,
       "attack_knockback": 2,
       "attack_cooldown_max": 12,
-      "sounds":{
+      "loot_table": {
+        "default": "Gold",
+        "amount": {"min": 1, "max": 1},
+        "items": [
+          {"name": "Gold", "min": 1, "max": 2, "chance": 0.65},
+          {"name": "Milk", "min": 1, "max": 1, "chance": 0.3},
+          {"name": "Potion", "min": 1, "max": 1, "chance": 0.1}
+        ]
+      },
+      "sounds": {
         "hit": [
           "assets/sounds/entity/21_orc_damage_1.wav", 2,
           "assets/sounds/entity/21_orc_damage_2.wav", 2,
@@ -259,6 +292,7 @@
       "push_force": 20,
       "script": "source/behaviour_scripts/enemies/jelly.py"
     },
+
     "Slime": {
       "name": "Slime",
       "health": 80,
@@ -278,7 +312,18 @@
       "attack_damage": 1.5,
       "attack_knockback": 1,
       "attack_cooldown_max": 18,
-      "sounds":{
+      "loot_table": {
+        "default": "Gold",
+        "amount": {"min": 1, "max": 1},
+        "items": [
+          {"name": "Gold", "min": 2, "max": 5, "chance": 0.85},
+          {"name": "Potion", "min": 1, "max": 1, "chance": 0.3},
+          {"name": "Bread", "min": 1, "max": 2, "chance": 0.25},
+          {"name": "Milk", "min": 1, "max": 2, "chance": 0.2},
+          {"name": "Red Gem", "min": 1, "max": 1, "chance": 0.05}
+        ]
+      },
+      "sounds": {
         "hit": [
           "assets/sounds/entity/21_orc_damage_1.wav", 2,
           "assets/sounds/entity/21_orc_damage_2.wav", 2,
@@ -306,6 +351,7 @@
       "script": "source/behaviour_scripts/enemies/slime.py"
     }
   },
+
   "actors": {
     "Rock": {
       "name": "Rock",
@@ -318,6 +364,7 @@
       "index": [5, 5],
       "entity_abilities": ["pushable"]
     },
+
     "Potion": {
       "name": "Potion",
       "type": "consumable",
@@ -332,6 +379,7 @@
       "entity_abilities": ["pushable"],
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
+
     "Red Gem": {
       "name": "Red Gem",
       "type": "valuable",
@@ -343,6 +391,7 @@
       "entity_abilities": ["pushable"],
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
+
     "Gold": {
       "name": "Gold",
       "type": "valuable",
@@ -355,6 +404,7 @@
       "entity_abilities": ["pushable"],
       "tile_sheet": ["assets/sprites/gui/items/Sheet.png", 16, 16]
     },
+
     "Chest": {
       "name": "Chest",
       "type": "interactive",
@@ -367,11 +417,22 @@
       "hitbox_width": 60,
       "hitbox_height": 32,
       "height": 70,
+      "loot_table": {
+        "default": "Gold",
+        "amount": {"min": 2, "max": 4},
+        "items": [
+          {"name": "Gold", "min": 1, "max": 3, "chance": 0.8},
+          {"name": "Potion", "min": 0, "max": 1, "chance": 0.4},
+          {"name": "Red Gem", "min": 0, "max": 1, "chance": 0.2},
+          {"name": "Milk", "min": 0, "max": 2, "chance": 0.3},
+          {"name": "Bread", "min": 0, "max": 2, "chance": 0.35}
+        ]
+      },
       "tile_sheet": ["assets/sprites/props/Chests.png", 48, 32],
       "index": [0, 0],
       "entity_abilities": [],
       "script": "source/behaviour_scripts/actors/chest.py",
-      "sounds":{
+      "sounds": {
         "open": [
           "assets/sounds/player/interact/01_chest_open_1.wav", 2
         ]

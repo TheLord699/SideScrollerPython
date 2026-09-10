@@ -13,30 +13,34 @@ def set_state(entity, new_state):
     entity["animation_timer"] = 0
 
 def spawn_loot(entity, game):
-    loot_table = entity.get("loot", [
-        {"name": "Gold", "min": 1, "max": 3, "chance": 0.8},
-        {"name": "Potion", "min": 0, "max": 1, "chance": 0.4},
-        {"name": "Red Gem", "min": 0, "max": 1, "chance": 0.2},
-        {"name": "Milk", "min": 0, "max": 2, "chance": 0.3},
-        {"name": "Bread", "min": 0, "max": 2, "chance": 0.35}
-    ])
-
-    items_to_spawn = []
-    for loot_item in loot_table:
-        if random.random() < loot_item["chance"]:
-            quantity = random.randint(loot_item["min"], loot_item["max"])
-            for _ in range(quantity):
-                items_to_spawn.append(loot_item["name"])
-
-    if not items_to_spawn:
-        items_to_spawn.append("Gold")
+    loot_config = entity.get("loot_table", {})
+    loot_table = loot_config.get("items", [])
+    default_loot = loot_config.get("default")
     
+    amount_config = loot_config.get("amount", {"min": 1, "max": 1})
+    amount = random.randint(amount_config["min"], amount_config["max"])
+    
+    items_to_spawn = []
+
+    for _ in range(amount):
+        available_loot = [
+            loot_item
+            for loot_item in loot_table
+            if random.random() < loot_item["chance"]
+        ]
+
+        if available_loot:
+            loot_item = random.choice(available_loot)
+            items_to_spawn.append(loot_item["name"])
+            
+        elif default_loot:
+            items_to_spawn.append(default_loot)
+
     for item_name in items_to_spawn:
         if item_name not in game.player.item_info.get("items", {}):
             print(f"Warning: Item '{item_name}' not found in entities_config.json")
             continue
-            
-        angle = random.uniform(0, 2 * 3.14159)
+
         radius = random.uniform(10, 25)
         
         offset_x = radius * random.choice([-1, 1])
