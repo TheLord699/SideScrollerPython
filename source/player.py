@@ -134,7 +134,7 @@ class Player:
             self.frames[state] = []
             self.flipped_frames[state] = []
 
-            sheet_path = f"assets/sprites/player/{state}_animation.png"
+            sheet_path = f"assets/sprites/characters/player/{state}_animation.png"
             try:
                 sheet = pg.image.load(sheet_path).convert_alpha()
 
@@ -187,9 +187,9 @@ class Player:
                 self.flipped_frames[state_name] = []
 
                 sheet_paths = [
-                    f"assets/sprites/player/weapons/attacking_{template}{sequence}.png",
-                    f"assets/sprites/player/weapons/{template}_attack{sequence}.png",
-                    f"assets/sprites/player/weapons/{template}{sequence}.png"
+                    f"assets/sprites/characters/player/weapons/attacking_{template}{sequence}.png",
+                    f"assets/sprites/characters/player/weapons/{template}_attack{sequence}.png",
+                    f"assets/sprites/characters/player/weapons/{template}{sequence}.png"
                 ]
 
                 sheet = None

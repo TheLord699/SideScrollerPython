@@ -102,7 +102,7 @@
       "width": 90,
       "height": 90,
       "index": [0, 0],
-      "tile_sheet": ["assets/sprites/npc/fox.png", 32, 32],
+      "tile_sheet": ["assets/sprites/characters/npc/fox.png", 32, 32],
       "states": {
         "idle": {
           "start_row": 0,
@@ -123,7 +123,7 @@
       "weight": 2,
       "width": 90,
       "height": 90,
-      "tile_sheet": ["assets/sprites/npc/fox.png", 32, 32],
+      "tile_sheet": ["assets/sprites/characters/npc/fox.png", 32, 32],
       "states": {
         "idle": {
           "start_row": 0,
@@ -145,7 +145,7 @@
       "weight": 2,
       "width": 90,
       "height": 90,
-      "tile_sheet": ["assets/sprites/npc/pack2/guy.png", 29, 27],
+      "tile_sheet": ["assets/sprites/characters/npc/pack2/guy.png", 29, 27],
       "states": {
         "idle": {
           "start_row": 0,
@@ -170,7 +170,7 @@
       "weight": 2,
       "width": 90,
       "height": 90,
-      "tile_sheet": ["assets/sprites/npc/fox.png", 32, 32],
+      "tile_sheet": ["assets/sprites/characters/npc/fox.png", 32, 32],
       "index": [0, 0],
       "move_speed": 1.2,
       "jump_force": 8,
@@ -223,7 +223,7 @@
       "weight": 0.9,
       "width": 60,
       "height": 60,
-      "tile_sheet": ["assets/sprites/npc/Basic Asset Pack/Basic Monster Animations/Ochre Jelly/OchreJelly.png", 16, 16],
+      "tile_sheet": ["assets/sprites/characters/enemies/Ochre Jelly/OchreJelly.png", 16, 16],
       "index": [0, 0],
       "move_speed": 0.7,
       "jump_force": 10,
@@ -269,7 +269,7 @@
       "weight": 1.4,
       "width": 60,
       "height": 60,
-      "tile_sheet": ["assets/sprites/npc/Basic Asset Pack/Basic Monster Animations/Death Slime/DeathSlime.png", 16, 16],
+      "tile_sheet": ["assets/sprites/characters/enemies/Death Slime/DeathSlime.png", 16, 16],
       "index": [0, 0],
       "move_speed": 0.9,
       "jump_force": 9,
