@@ -6,8 +6,442 @@ import os
 
 from helper_methods import load_json
 
+class Player:
+    def __init__(self, game):
+        self.game = game
+        
+        self.enable_cam_mouse = False
+        
+        self.smoke_images = { # Ik this is super specific but i dont want to write an image manager
+            1: pg.image.load("assets/sprites/particles/smoke1.png").convert_alpha(),
+            2: pg.image.load("assets/sprites/particles/smoke2.png").convert_alpha(),
+        }
+                   
+    def load_settings(self):
+        cfg = load_json(os.path.join("assets", "settings", "player_config.json"))
 
-class Inventory:
+        self.x = self.game.game_context.player_spawn_x
+        self.y = self.game.game_context.player_spawn_y
+        self.vel_x = 0
+        self.vel_y = 0
+        self.speed = cfg["movement"]["speed"] # 5
+        self.dash_speed = cfg["movement"]["dash_speed"] # 100
+        self.weight = cfg["movement"]["weight"] # 1
+        self.jump_strength = cfg["movement"]["jump_strength"] # 10
+        self.friction = cfg["movement"]["friction"]
+
+        self.game.camera.load_settings(self.x, self.y)
+
+        self.scale_factor = self.game.game_context.scale
+        self.hitbox_width = cfg["hitbox"]["width_units"] * self.scale_factor
+        self.hitbox_height = cfg["hitbox"]["height_units"] * self.scale_factor
+        self.hitbox = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
+        self.interact_radius = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
+        self.blocked_horizontally = False
+
+        self.attack_timeout = cfg["combat"]["attack_timeout"]
+        self.attack_sequence = 1
+        self.attack_timer = 0
+        self.current_attack_projectile = None
+
+        self.max_inventory_slots = cfg["inventory"]["max_slots"]
+        self.rendered_inventory_ui_elements = []
+        self.items_per_row = cfg["inventory"]["items_per_row"]
+        self.item_spacing = cfg["inventory"]["item_spacing"]
+        self.selected_slot = None
+        self.inventory_changed = False
+        self.inventory_cooldown = 0
+        self.inventory = {}
+
+        self.max_health = cfg["health"]["max_health"]
+        self.current_health = self.max_health
+        self.health_per_row = cfg["health"]["health_per_row"]
+        self.health_spacing = cfg["health"]["health_spacing"]
+        self.invincibility_duration = cfg["health"]["invincibility_duration"]
+        self.last_damage_time = -self.invincibility_duration * 2
+
+        self.pickup_tags = []
+        self.max_tags = cfg["inventory"]["max_tags"]
+
+        self.last_step_time = 0
+        self.step_interval = cfg["footsteps"]["step_interval"]
+        self.actual_horizontal_movement = False
+
+        self.in_dialogue = False
+        self.dialogue_index = 0
+        self.dialogue_with = None
+
+        self.in_map = False
+        self.map_scale_factor = cfg["map"]["scale_factor"]
+        self.map_offset_x = 0
+        self.map_offset_y = 0
+        self.map_dragging = False
+
+        self.fall_time = 0
+        self.max_fall_time = cfg["movement"]["max_fall_time"]
+
+        self.coyote_time = cfg["movement"]["coyote_time"]
+        self.coyote_timer = 0
+
+        self.in_water = False
+        self.last_in_water = False
+        self.swim_strength = cfg["movement"].get("swim_strength", 4)
+        self.water_drag = cfg["movement"].get("water_drag", 0.95)
+        self.water_gravity_mult = cfg["movement"].get("water_gravity_mult", 0.3)
+        self.water_max_speed = cfg["movement"].get("water_max_speed", 3)
+
+        self.last_volume = None
+
+        self.current_state = "idle"
+        self.direction = "right"
+        self.current_frame = 0
+        self.animation_timer = 0
+        self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
+        self.weapon_inventory = [] # temporary, will be replaced with actual inventory system
+        self.max_weapon_inventory_slots = cfg["combat"]["max_weapon_inventory_slots"]
+        self.equipped_weapon = ""
+        self.loaded_weapons = set()
+        self.state_frames = cfg["animation"]["states"]
+        self.frames = {state: [] for state in self.state_frames}
+
+        raw_sounds = cfg["sounds"]
+        self.sounds = {}
+
+        for key, entries in raw_sounds.items():
+            if isinstance(entries, list):
+                self.sounds[key] = [{"sound": pg.mixer.Sound(e["path"]), "volume": e["volume"]} for e in entries]
+                
+            else:
+                self.sounds[key] = {k: {"sound": pg.mixer.Sound(e["path"]), "volume": e["volume"]} for k, e in entries.items()}
+
+        self.charging = False
+        self.charge_timer = 0
+        self.charge_sound_played = False
+        self.proj_image_cache = {}
+
+        self.attacking = False
+        self.on_ground = False
+        self.in_inventory = False
+        self.just_closed_dialogue = False
+
+        random.seed(self.game.game_context.seed)
+
+        self.item_info = load_json(os.path.join("assets", "settings", "entities_config.json"))
+
+        self.load_frames()
+    
+    def load_frames(self):
+        self.frames = {}
+        self.flipped_frames = {}
+
+        self.sheet_width = 100
+        self.sheet_height = 100
+
+        for state, settings in self.state_frames.items():
+            self.frames[state] = []
+            self.flipped_frames[state] = []
+
+            sheet_path = f"assets/sprites/characters/player/{state}_animation.png"
+            try:
+                sheet = pg.image.load(sheet_path).convert_alpha()
+
+            except:
+                print(f"Failed to load sprite sheet: {sheet_path}")
+                continue
+
+            scaled_width = self.sheet_width * self.scale_factor
+            scaled_height = self.sheet_height * self.scale_factor
+
+            for frame_index in range(settings["frames"]):
+                frame_rect = pg.Rect(
+                    frame_index * self.sheet_width,
+                    0,
+                    self.sheet_width,
+                    self.sheet_height
+                )
+
+                frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
+                frame_image.blit(sheet, (0, 0), frame_rect)
+                frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
+
+                flipped_image = pg.transform.flip(frame_image, True, False)
+
+                self.frames[state].append(frame_image)
+                self.flipped_frames[state].append(flipped_image)
+
+    def load_weapon_animations(self):
+        weapons_to_load = [w for w in self.weapon_inventory if w in self.weapon_info and w not in self.loaded_weapons]
+        unloaded = self.loaded_weapons - set(self.weapon_inventory)
+                
+        if not weapons_to_load and not unloaded:
+            return
+
+        for weapon in weapons_to_load:
+            weapon_data = self.weapon_info[weapon]
+            template = weapon_data.get("template", weapon)
+            
+            first_sequence_state = f"attacking{weapon}1"
+
+            if first_sequence_state in self.frames and self.frames[first_sequence_state]:
+                self.loaded_weapons.add(weapon)
+                continue
+
+            for sequence in range(1, weapon_data.get("sequence", 1) + 1):
+                state_name = f"attacking{weapon}{sequence}"
+                frames_count = weapon_data["frames"][sequence - 1]
+
+                self.frames[state_name] = []
+                self.flipped_frames[state_name] = []
+
+                sheet_paths = [
+                    f"assets/sprites/characters/player/weapons/attacking_{template}{sequence}.png",
+                    f"assets/sprites/characters/player/weapons/{template}_attack{sequence}.png",
+                    f"assets/sprites/characters/player/weapons/{template}{sequence}.png"
+                ]
+
+                sheet = None
+                for sheet_path in sheet_paths:
+                    try:
+                        sheet = pg.image.load(sheet_path).convert_alpha()
+                        break
+                    
+                    except:
+                        continue
+
+                if sheet is None:
+                    fallback_paths = [
+                        f"assets/sprites/player/attacking_animation.png",
+                        f"assets/sprites/player/attacking{sequence}_animation.png"
+                    ]
+
+                    for fallback_path in fallback_paths:
+                        try:
+                            sheet = pg.image.load(fallback_path).convert_alpha()
+                            print(f"Using fallback animation: {fallback_path}")
+                            break
+                        
+                        except:
+                            continue
+
+                if sheet is None:
+                    print(f"Failed to load any animation for {state_name}")
+                    continue
+
+                scaled_width = self.sheet_width * self.scale_factor
+                scaled_height = self.sheet_height * self.scale_factor
+
+                for frame_index in range(frames_count):
+                    frame_rect = pg.Rect(
+                        frame_index * self.sheet_width,
+                        0,
+                        self.sheet_width,
+                        self.sheet_height
+                    )
+
+                    frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
+                    frame_image.blit(sheet, (0, 0), frame_rect)
+                    frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
+
+                    flipped_image = pg.transform.flip(frame_image, True, False)
+
+                    self.frames[state_name].append(frame_image)
+                    self.flipped_frames[state_name].append(flipped_image)
+
+            self.loaded_weapons.add(weapon)
+
+        for weapon in unloaded:
+            weapon_data = self.weapon_info.get(weapon, {})
+            template = weapon_data.get("template", weapon)
+            
+            for sequence in range(1, weapon_data.get("sequence", 1) + 1):
+                state_name = f"attacking{weapon}{sequence}"
+                if state_name in self.frames:
+                    del self.frames[state_name]
+                    
+                if state_name in self.flipped_frames:
+                    del self.flipped_frames[state_name]
+                    
+            self.loaded_weapons.remove(weapon)
+
+    def update_state(self):
+        if self.last_volume != self.game.game_context.volume:
+            self.last_volume = self.game.game_context.volume
+            for sound_group in self.sounds.values():
+                if isinstance(sound_group, list):
+                    for sound_dict in sound_group:
+                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
+                        
+                elif isinstance(sound_group, dict):
+                    for sound_dict in sound_group.values():
+                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
+
+        self.current_health = math.floor(self.current_health * 2) / 2
+        self.current_health = min(self.current_health, self.max_health)
+
+        self.x += self.vel_x
+        self.y += self.vel_y
+
+        self.attack_timer += 1
+
+        if self.current_health < 0:
+            self.current_health = 0
+                
+        if not self.equipped_weapon in self.weapon_inventory:
+            self.equipped_weapon = ""
+
+        if self.vel_y >= self.game.game_context.max_fall_speed:
+            self.vel_y = self.game.game_context.max_fall_speed
+
+        if self.attack_timer > self.attack_timeout:
+            self.attack_sequence = 1
+
+        if self.current_state in {"death"} or getattr(self, "sliding", False):
+            if self.friction <= 0 and self.on_ground:
+                self.friction = 0.3
+
+            self.vel_x -= self.friction * (1 if self.vel_x > 0 else -1 if self.vel_x < 0 else 0)
+
+            if abs(self.vel_x) < 0.5:
+                self.vel_x = 0
+
+        if self.actual_horizontal_movement and not self.current_state in {"death"}:
+            if self.on_ground and not self.in_water:
+                if self.game.game_context.current_time - self.last_step_time > self.step_interval:
+                    walking_sound = random.choice(self.sounds["walking"])
+                    walking_sound["sound"].play()
+                    self.last_step_time = self.game.game_context.current_time
+
+                    flip_offset = 14 if self.direction == "right" else 0
+
+                    for amount in range(5):
+                        base_vel_x = random.uniform(0, 0.5)
+                        if self.direction == "right":
+                            vel_x = -base_vel_x
+
+                        elif self.direction == "left":
+                            vel_x = base_vel_x
+
+                        else:
+                            vel_x = random.uniform(-0.5, 0.5)
+
+                        vel_y = random.uniform(-0.5, -0.1)
+                        radius = random.randint(2, 4)
+
+                        smoke_img = self.smoke_images[random.choice([1, 2])]
+
+                        self.game.particles.generate(
+                            pos=(self.x + self.hitbox_width / 2 - flip_offset + random.uniform(-10, 10), self.y + self.hitbox_height / 2 + random.uniform(0, 5)),
+                            velocity=(vel_x, vel_y),
+                            color=(255, 255, 255),
+                            radius=radius,
+                            lifespan=30,
+                            fade=True,
+                            image=smoke_img,
+                            image_size=(radius*2, radius*2)
+                        )
+
+            if self.in_water and self.actual_horizontal_movement:
+                swim_interval = self.step_interval * 1.5
+                if self.game.game_context.current_time - self.last_step_time > swim_interval:
+                    swim_sounds = self.sounds.get("swimming", self.sounds.get("swim", []))
+                    if swim_sounds:
+                        random.choice(swim_sounds)["sound"].play()
+                        
+                    self.last_step_time = self.game.game_context.current_time
+
+                    for amount in range(4):
+                        offset_x = random.uniform(-self.hitbox_width/2, self.hitbox_width/2)
+                        offset_y = random.uniform(-self.hitbox_height/2, self.hitbox_height/2)
+                        vel_x = random.uniform(-0.8, 0.8)
+                        vel_y = random.uniform(-1.0, -0.1)
+                        self.game.particles.generate(
+                            pos=(self.x + offset_x, self.y + offset_y),
+                            velocity=(vel_x, vel_y),
+                            color=(100, 180, 255),
+                            radius=random.randint(2, 3),
+                            lifespan=15,
+                            fade=True
+                        )
+
+    def take_damage(self, damage):
+        if self.current_state == "death":
+            return
+
+        if self.game.game_context.current_time - self.last_damage_time >= self.invincibility_duration:
+            self.current_health -= damage
+            self.last_damage_time = self.game.game_context.current_time
+            self.knockback_timer = 12 
+
+            self.game.foreground.add_screen_effect("hurt", intensity=0.7, duration=20)
+
+            self.shake_camera(intensity=8, duration=25)
+            self.cancel_charge()
+
+            if self.current_health < 0.5:
+                self.death()
+                hurt_sound = random.choice(self.sounds["hit"])
+                hurt_sound["sound"].play()
+
+            else:
+                self.current_state = "hurt"
+                self.current_frame = 0
+                self.animation_timer = 0
+                self.attacking = False
+                self.attack_sequence = (self.attack_sequence % 2) + 1
+                self.current_attack_projectile = None
+                hurt_sound = random.choice(self.sounds["hit"])
+                hurt_sound["sound"].play()
+
+    def death(self):
+        self.current_state = "death"
+        self.current_frame = 0
+        self.attacking = False
+        self.in_inventory = False
+        self.in_dialogue = False
+        self.in_map = False
+        self.dialogue_with = None
+        self.game.ui.remove_ui_element("dialogue_border")
+        self.game.ui.remove_ui_element("dialogue_name")
+        self.game.game_context.menu = "death"
+
+    def render_health(self):
+        previous_health = getattr(self, "previous_health", self.current_health)
+
+        if previous_health != self.current_health:
+            for health in range(self.max_health):
+                row = health // self.health_per_row
+                col = health % self.health_per_row
+                self.game.ui.remove_ui_element(health)
+
+        for heart in range(self.max_health):
+            row = heart // self.health_per_row
+            col = heart % self.health_per_row
+
+            x_position = self.game.screen_width * 0.025 + col * self.health_spacing
+            y_position = self.game.screen_height * 0.033 + row * self.health_spacing
+
+            if heart + 1 <= self.current_health:
+                image_path = [0, 0]
+
+            elif heart + 1 - self.current_health == 0.5:
+                image_path = [0, 1]
+
+            else:
+                image_path = [0, 2]
+
+            self.game.ui.create_ui(
+                sprite_sheet_path="assets/sprites/gui/health/Hearts.png",
+                image_id=image_path,
+                sprite_width=32, sprite_height=32,
+                x=x_position, y=y_position,
+                centered=True, width=60, height=60,
+                alpha=True,
+                element_id=heart,
+                render_order=-15
+            )
+
+        self.previous_health = self.current_health
+
     def add_item_to_inventory(self, item):
         item_name = item["name"]
         item_type = item["type"]
@@ -57,6 +491,101 @@ class Inventory:
             element_id=self.mouse_item,
             render_order=1
         )
+
+    def add_pickup_tag(self, item_name):
+        x_pos = self.game.screen_width - 100
+
+        if len(self.pickup_tags) >= self.max_tags:
+            oldest = self.pickup_tags.pop(0)
+            self.game.ui.remove_ui_element(oldest["element_id"])
+            self.game.ui.remove_ui_element(oldest["text_id"])
+            self.reposition_tags(x_pos)
+
+        index = len(self.pickup_tags)
+        creation_time = self.game.game_context.current_time
+        element_id = f"pickup_tag_{creation_time}_{index}"
+        text_id = f"pickup_text_{creation_time}_{index}"
+
+        item_data = self.item_info["items"][item_name]
+        tile_sheet = item_data.get("tile_sheet", ["assets/sprites/gui/items/Sheet.png", 16, 16])
+
+        self.game.ui.create_ui(
+            sprite_sheet_path=tile_sheet[0],
+            image_id=item_data["index"],
+            sprite_width=tile_sheet[1], sprite_height=tile_sheet[2],
+            x=x_pos, y=self.game.screen_height * 0.033 + index * 35,
+            width=30, height=30,
+            element_id=element_id,
+            render_order=2
+        )
+
+        self.game.ui.create_ui(
+            x=x_pos + 50, y=self.game.screen_height * 0.033 + index * 35 + 15,
+            font_size=10,
+            font=self.game.game_context.fonts["fantasy"],
+            element_id=text_id,
+            render_order=2,
+            label=item_name
+        )
+
+        self.pickup_tags.append({
+            "name": item_name,
+            "element_id": element_id,
+            "text_id": text_id,
+            "creation_time": creation_time
+        })
+
+    def reposition_tags(self, x_pos=None):
+        if x_pos is None:
+            x_pos = self.game.screen_width - 100
+
+        for slot, tag in enumerate(self.pickup_tags):
+            self.game.ui.remove_ui_element(tag["element_id"])
+            self.game.ui.remove_ui_element(tag["text_id"])
+
+            tag["element_id"] = f"pickup_tag_{tag['creation_time']}_{slot}"
+            tag["text_id"] = f"pickup_text_{tag['creation_time']}_{slot}"
+
+            item_data = self.item_info["items"][tag["name"]]
+            tile_sheet = item_data.get("tile_sheet", ["assets/sprites/gui/items/Sheet.png", 16, 16])
+
+            self.game.ui.create_ui(
+                sprite_sheet_path=tile_sheet[0],
+                image_id=item_data["index"],
+                sprite_width=tile_sheet[1], sprite_height=tile_sheet[2],
+                x=x_pos, y=self.game.screen_height * 0.033 + slot * 35,
+                width=30, height=30,
+                element_id=tag["element_id"],
+                render_order=2
+            )
+
+            self.game.ui.create_ui(
+                x=x_pos + 50, y=self.game.screen_height * 0.033 + slot * 35 + 15,
+                font_size=10,
+                font=self.game.game_context.fonts["fantasy"],
+                element_id=tag["text_id"],
+                render_order=2,
+                label=tag["name"]
+            )
+
+    def update_pickup_tags(self):
+        if not self.pickup_tags:
+            return
+
+        current_time = self.game.game_context.current_time
+        expired = [tag for tag in self.pickup_tags if current_time - tag["creation_time"] >= 3000]
+
+        if not expired:
+            return
+
+        for tag in expired:
+            self.game.ui.remove_ui_element(tag["element_id"])
+            self.game.ui.remove_ui_element(tag["text_id"])
+
+        expired_ids = {id(tag) for tag in expired}
+        self.pickup_tags = [tag for tag in self.pickup_tags if id(tag) not in expired_ids]
+
+        self.reposition_tags()
 
     def render_item_info(self, id):
         if hasattr(self, "last_rendered_item") and self.last_rendered_item:
@@ -188,227 +717,22 @@ class Inventory:
             self.inventory_changed = True
             self.inventory_cooldown = self.game.game_context.current_time
 
-    def drop_item(self):
-        if self.selected_slot is None or self.selected_slot not in self.inventory:
-            return
-
-        item_to_drop = self.inventory[self.selected_slot]
-
-        if item_to_drop["quantity"] > 1:
-            item_to_drop["quantity"] -= 1
-
-        else:
-            del self.inventory[self.selected_slot]
-
-        self.game.entities.create_entity("item", item_to_drop["name"], self.x, self.y)
-
-        self.refresh_inventory()
-        self.selected_slot = None
-        self.inventory_changed = True
-
-        drop_sound = random.choice(self.sounds["pickup"])
-        drop_sound["sound"].play()
-
-    def consume_item(self):
-        if self.selected_slot is None or self.selected_slot not in self.inventory or self.inventory[self.selected_slot]["type"] != "consumable":
-            return
-
-        item_to_consume = self.inventory[self.selected_slot]
-        self.current_health += item_to_consume["health"]
-
-        if item_to_consume["quantity"] > 1:
-            item_to_consume["quantity"] -= 1
-
-        else:
-            del self.inventory[self.selected_slot]
-
-        self.refresh_inventory()
-        self.selected_slot = None
-        self.inventory_changed = True
-
-        consume_sound = random.choice(self.sounds["consume"])
-        consume_sound["sound"].play()
-
-
-class PickupTags:
-    def add_pickup_tag(self, item_name):
-        x_pos = self.game.screen_width - 100
-
-        if len(self.pickup_tags) >= self.max_tags:
-            oldest = self.pickup_tags.pop(0)
-            self.game.ui.remove_ui_element(oldest["element_id"])
-            self.game.ui.remove_ui_element(oldest["text_id"])
-            self.reposition_tags(x_pos)
-
-        index = len(self.pickup_tags)
-        creation_time = self.game.game_context.current_time
-        element_id = f"pickup_tag_{creation_time}_{index}"
-        text_id = f"pickup_text_{creation_time}_{index}"
-
-        item_data = self.item_info["items"][item_name]
-        tile_sheet = item_data.get("tile_sheet", ["assets/sprites/gui/items/Sheet.png", 16, 16])
-
-        self.game.ui.create_ui(
-            sprite_sheet_path=tile_sheet[0],
-            image_id=item_data["index"],
-            sprite_width=tile_sheet[1], sprite_height=tile_sheet[2],
-            x=x_pos, y=self.game.screen_height * 0.033 + index * 35,
-            width=30, height=30,
-            element_id=element_id,
-            render_order=2
+    def hitbox_set(self):
+        self.hitbox = pg.Rect(
+            self.x - self.hitbox_width / 2,
+            self.y - self.hitbox_height / 2,
+            self.hitbox_width,
+            self.hitbox_height
         )
 
-        self.game.ui.create_ui(
-            x=x_pos + 50, y=self.game.screen_height * 0.033 + index * 35 + 15,
-            font_size=10,
-            font=self.game.game_context.fonts["fantasy"],
-            element_id=text_id,
-            render_order=2,
-            label=item_name
+    def interact_hitbox(self):
+        self.interact_radius = pg.Rect(
+            self.x - self.hitbox_width / 2 - 50,
+            self.y - self.hitbox_height / 2 - 50,
+            self.hitbox_width + 100,
+            self.hitbox_height + 100
         )
 
-        self.pickup_tags.append({
-            "name": item_name,
-            "element_id": element_id,
-            "text_id": text_id,
-            "creation_time": creation_time
-        })
-
-    def reposition_tags(self, x_pos=None):
-        if x_pos is None:
-            x_pos = self.game.screen_width - 100
-
-        for slot, tag in enumerate(self.pickup_tags):
-            self.game.ui.remove_ui_element(tag["element_id"])
-            self.game.ui.remove_ui_element(tag["text_id"])
-
-            tag["element_id"] = f"pickup_tag_{tag['creation_time']}_{slot}"
-            tag["text_id"] = f"pickup_text_{tag['creation_time']}_{slot}"
-
-            item_data = self.item_info["items"][tag["name"]]
-            tile_sheet = item_data.get("tile_sheet", ["assets/sprites/gui/items/Sheet.png", 16, 16])
-
-            self.game.ui.create_ui(
-                sprite_sheet_path=tile_sheet[0],
-                image_id=item_data["index"],
-                sprite_width=tile_sheet[1], sprite_height=tile_sheet[2],
-                x=x_pos, y=self.game.screen_height * 0.033 + slot * 35,
-                width=30, height=30,
-                element_id=tag["element_id"],
-                render_order=2
-            )
-
-            self.game.ui.create_ui(
-                x=x_pos + 50, y=self.game.screen_height * 0.033 + slot * 35 + 15,
-                font_size=10,
-                font=self.game.game_context.fonts["fantasy"],
-                element_id=tag["text_id"],
-                render_order=2,
-                label=tag["name"]
-            )
-
-    def update_pickup_tags(self):
-        if not self.pickup_tags:
-            return
-
-        current_time = self.game.game_context.current_time
-        expired = [tag for tag in self.pickup_tags if current_time - tag["creation_time"] >= 3000]
-
-        if not expired:
-            return
-
-        for tag in expired:
-            self.game.ui.remove_ui_element(tag["element_id"])
-            self.game.ui.remove_ui_element(tag["text_id"])
-
-        expired_ids = {id(tag) for tag in expired}
-        self.pickup_tags = [tag for tag in self.pickup_tags if id(tag) not in expired_ids]
-
-        self.reposition_tags()
-
-
-class Health:
-    def take_damage(self, damage):
-        if self.current_state == "death":
-            return
-
-        if self.game.game_context.current_time - self.last_damage_time >= self.invincibility_duration:
-            self.current_health -= damage
-            self.last_damage_time = self.game.game_context.current_time
-            self.knockback_timer = 12 
-
-            self.game.foreground.add_screen_effect("hurt", intensity=0.7, duration=20)
-
-            self.shake_camera(intensity=8, duration=25)
-            self.cancel_charge()
-
-            if self.current_health < 0.5:
-                self.death()
-                hurt_sound = random.choice(self.sounds["hit"])
-                hurt_sound["sound"].play()
-
-            else:
-                self.current_state = "hurt"
-                self.current_frame = 0
-                self.animation_timer = 0
-                self.attacking = False
-                self.attack_sequence = (self.attack_sequence % 2) + 1
-                self.current_attack_projectile = None
-                hurt_sound = random.choice(self.sounds["hit"])
-                hurt_sound["sound"].play()
-
-    def death(self):
-        self.current_state = "death"
-        self.current_frame = 0
-        self.attacking = False
-        self.in_inventory = False
-        self.in_dialogue = False
-        self.in_map = False
-        self.dialogue_with = None
-        self.game.ui.remove_ui_element("dialogue_border")
-        self.game.ui.remove_ui_element("dialogue_name")
-        self.game.game_context.menu = "death"
-
-    def render_health(self):
-        previous_health = getattr(self, "previous_health", self.current_health)
-
-        if previous_health != self.current_health:
-            for health in range(self.max_health):
-                row = health // self.health_per_row
-                col = health % self.health_per_row
-                self.game.ui.remove_ui_element(health)
-
-        for heart in range(self.max_health):
-            row = heart // self.health_per_row
-            col = heart % self.health_per_row
-
-            x_position = self.game.screen_width * 0.025 + col * self.health_spacing
-            y_position = self.game.screen_height * 0.033 + row * self.health_spacing
-
-            if heart + 1 <= self.current_health:
-                image_path = [0, 0]
-
-            elif heart + 1 - self.current_health == 0.5:
-                image_path = [0, 1]
-
-            else:
-                image_path = [0, 2]
-
-            self.game.ui.create_ui(
-                sprite_sheet_path="assets/sprites/gui/health/Hearts.png",
-                image_id=image_path,
-                sprite_width=32, sprite_height=32,
-                x=x_position, y=y_position,
-                centered=True, width=60, height=60,
-                alpha=True,
-                element_id=heart,
-                render_order=-15
-            )
-
-        self.previous_health = self.current_health
-
-
-class Dialogue:
     def render_dialogue(self):
         if self.in_dialogue and self.dialogue_with:
             messages = self.dialogue_with.get("message", [])
@@ -524,8 +848,47 @@ class Dialogue:
                         self.game.ai.interact_with_actor(entity)
                         break
 
+    def drop_item(self):
+        if self.selected_slot is None or self.selected_slot not in self.inventory:
+            return
 
-class Physics:
+        item_to_drop = self.inventory[self.selected_slot]
+
+        if item_to_drop["quantity"] > 1:
+            item_to_drop["quantity"] -= 1
+
+        else:
+            del self.inventory[self.selected_slot]
+
+        self.game.entities.create_entity("item", item_to_drop["name"], self.x, self.y)
+
+        self.refresh_inventory()
+        self.selected_slot = None
+        self.inventory_changed = True
+
+        drop_sound = random.choice(self.sounds["pickup"])
+        drop_sound["sound"].play()
+
+    def consume_item(self):
+        if self.selected_slot is None or self.selected_slot not in self.inventory or self.inventory[self.selected_slot]["type"] != "consumable":
+            return
+
+        item_to_consume = self.inventory[self.selected_slot]
+        self.current_health += item_to_consume["health"]
+
+        if item_to_consume["quantity"] > 1:
+            item_to_consume["quantity"] -= 1
+
+        else:
+            del self.inventory[self.selected_slot]
+
+        self.refresh_inventory()
+        self.selected_slot = None
+        self.inventory_changed = True
+
+        consume_sound = random.choice(self.sounds["consume"])
+        consume_sound["sound"].play()
+
     def jump(self):
         self.coyote_timer = 0
         self.vel_y = -self.jump_strength
@@ -554,22 +917,6 @@ class Physics:
                 image=smoke_img,
                 image_size=(radius * 2, radius * 2)
             )
-
-    def hitbox_set(self):
-        self.hitbox = pg.Rect(
-            self.x - self.hitbox_width / 2,
-            self.y - self.hitbox_height / 2,
-            self.hitbox_width,
-            self.hitbox_height
-        )
-
-    def interact_hitbox(self):
-        self.interact_radius = pg.Rect(
-            self.x - self.hitbox_width / 2 - 50,
-            self.y - self.hitbox_height / 2 - 50,
-            self.hitbox_width + 100,
-            self.hitbox_height + 100
-        )
 
     def update_collision(self):
         self.hitbox_set()
@@ -707,6 +1054,7 @@ class Physics:
                 drag = self.water_drag + (1.0 - self.water_drag) * submerge
                 self.vel_x *= drag
                 self.vel_y *= drag
+                
             else:
                 self.vel_y += self.game.game_context.gravity * self.weight * self.water_gravity_mult
                 self.vel_x *= self.water_drag
@@ -748,142 +1096,7 @@ class Physics:
             
             if self.vel_y > 3:
                 self.shake_camera(intensity=shake_intensity, duration=2)
-
-
-class Animation:
-    def load_frames(self):
-        self.frames = {}
-        self.flipped_frames = {}
-
-        self.sheet_width = 100
-        self.sheet_height = 100
-
-        for state, settings in self.state_frames.items():
-            self.frames[state] = []
-            self.flipped_frames[state] = []
-
-            sheet_path = f"assets/sprites/characters/player/{state}_animation.png"
-            try:
-                sheet = pg.image.load(sheet_path).convert_alpha()
-
-            except:
-                print(f"Failed to load sprite sheet: {sheet_path}")
-                continue
-
-            scaled_width = self.sheet_width * self.scale_factor
-            scaled_height = self.sheet_height * self.scale_factor
-
-            for frame_index in range(settings["frames"]):
-                frame_rect = pg.Rect(
-                    frame_index * self.sheet_width,
-                    0,
-                    self.sheet_width,
-                    self.sheet_height
-                )
-
-                frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
-                frame_image.blit(sheet, (0, 0), frame_rect)
-                frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
-
-                flipped_image = pg.transform.flip(frame_image, True, False)
-
-                self.frames[state].append(frame_image)
-                self.flipped_frames[state].append(flipped_image)
-
-    def load_weapon_animations(self):
-        weapons_to_load = [w for w in self.weapon_inventory if w in self.weapon_info and w not in self.loaded_weapons]
-        unloaded = self.loaded_weapons - set(self.weapon_inventory)
-                
-        if not weapons_to_load and not unloaded:
-            return
-
-        for weapon in weapons_to_load:
-            weapon_data = self.weapon_info[weapon]
-            template = weapon_data.get("template", weapon)
             
-            first_sequence_state = f"attacking{weapon}1"
-
-            if first_sequence_state in self.frames and self.frames[first_sequence_state]:
-                self.loaded_weapons.add(weapon)
-                continue
-
-            for sequence in range(1, weapon_data.get("sequence", 1) + 1):
-                state_name = f"attacking{weapon}{sequence}"
-                frames_count = weapon_data["frames"][sequence - 1]
-
-                self.frames[state_name] = []
-                self.flipped_frames[state_name] = []
-
-                sheet_paths = [
-                    f"assets/sprites/characters/player/weapons/attacking_{template}{sequence}.png",
-                    f"assets/sprites/characters/player/weapons/{template}_attack{sequence}.png",
-                    f"assets/sprites/characters/player/weapons/{template}{sequence}.png"
-                ]
-
-                sheet = None
-                for sheet_path in sheet_paths:
-                    try:
-                        sheet = pg.image.load(sheet_path).convert_alpha()
-                        break
-                    
-                    except:
-                        continue
-
-                if sheet is None:
-                    fallback_paths = [
-                        f"assets/sprites/player/attacking_animation.png",
-                        f"assets/sprites/player/attacking{sequence}_animation.png"
-                    ]
-
-                    for fallback_path in fallback_paths:
-                        try:
-                            sheet = pg.image.load(fallback_path).convert_alpha()
-                            print(f"Using fallback animation: {fallback_path}")
-                            break
-                        
-                        except:
-                            continue
-
-                if sheet is None:
-                    print(f"Failed to load any animation for {state_name}")
-                    continue
-
-                scaled_width = self.sheet_width * self.scale_factor
-                scaled_height = self.sheet_height * self.scale_factor
-
-                for frame_index in range(frames_count):
-                    frame_rect = pg.Rect(
-                        frame_index * self.sheet_width,
-                        0,
-                        self.sheet_width,
-                        self.sheet_height
-                    )
-
-                    frame_image = pg.Surface(frame_rect.size, pg.SRCALPHA).convert_alpha()
-                    frame_image.blit(sheet, (0, 0), frame_rect)
-                    frame_image = pg.transform.scale(frame_image, (scaled_width, scaled_height))
-
-                    flipped_image = pg.transform.flip(frame_image, True, False)
-
-                    self.frames[state_name].append(frame_image)
-                    self.flipped_frames[state_name].append(flipped_image)
-
-            self.loaded_weapons.add(weapon)
-
-        for weapon in unloaded:
-            weapon_data = self.weapon_info.get(weapon, {})
-            template = weapon_data.get("template", weapon)
-            
-            for sequence in range(1, weapon_data.get("sequence", 1) + 1):
-                state_name = f"attacking{weapon}{sequence}"
-                if state_name in self.frames:
-                    del self.frames[state_name]
-                    
-                if state_name in self.flipped_frames:
-                    del self.flipped_frames[state_name]
-                    
-            self.loaded_weapons.remove(weapon)
-
     def animate(self):
         previous_state = self.current_state
         
@@ -958,8 +1171,154 @@ class Animation:
                 self.attack_sequence = (self.attack_sequence % max_sequence) + 1
                 self.current_attack_projectile = None
 
+    def handle_controls(self):
+        keys = pg.key.get_pressed()
+        mouse_buttons = pg.mouse.get_pressed()
+        self.joystick = self.game.game_context.joystick
 
-class Combat:
+        controller = {}
+        if self.joystick:
+            controller = {
+                "left_x": self.joystick.get_axis(0) if abs(self.joystick.get_axis(0)) > 0.1 else 0,
+                "left_y": self.joystick.get_axis(1) if abs(self.joystick.get_axis(1)) > 0.1 else 0,
+                "A": self.joystick.get_button(0),
+                "B": self.joystick.get_button(1),
+                "X": self.joystick.get_button(2),
+                "Y": self.joystick.get_button(3),
+                "LB": self.joystick.get_button(4),
+                "RB": self.joystick.get_button(5),
+                "back": self.joystick.get_button(6),
+                "start": self.joystick.get_button(7)
+            }
+
+            if self.joystick.get_numhats() > 0:
+                controller["dpad"] = self.joystick.get_hat(0)
+                
+            else:
+                controller["dpad"] = (0, 0)
+
+        if self.current_state == "death":
+            return
+
+        if hasattr(self, "knockback_timer") and self.knockback_timer > 0:
+            self.knockback_timer -= 1
+            
+            if self.in_inventory:
+                self.handle_inventory_controls(keys, controller, in_knockback=True)
+                
+            else:
+                self.handle_normal_controls(keys, mouse_buttons, controller, in_knockback=True)
+                
+        else:
+            if self.in_inventory:
+                self.handle_inventory_controls(keys, controller, in_knockback=False)
+                
+            else:
+                self.handle_normal_controls(keys, mouse_buttons, controller, in_knockback=False)
+
+        if self.in_map:
+            self.handle_map_controls(mouse_buttons)
+
+        self.handle_events(controller)
+
+    def handle_inventory_controls(self, keys, controller, in_knockback=False):
+        if not in_knockback:
+            if not getattr(self, "sliding", False):
+                self.vel_x = 0
+                #self.vel_y = 0
+
+        if keys[pg.K_q] or (self.joystick and controller.get("X")):
+            self.drop_item()
+
+        if keys[pg.K_e] or (self.joystick and controller.get("A")):
+            self.consume_item()
+        
+    def handle_normal_controls(self, keys, mouse_buttons, controller, in_knockback=False):
+        if self.in_dialogue:
+            self.vel_x = 0
+            return
+
+        if in_knockback:
+            jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
+            if jump_input and self.coyote_timer > 0:
+                self.jump()
+            
+            interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
+            if interact_input and not self.in_map:
+                self.interact_with_entity()
+            
+            attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
+            if self.current_state != "hurt":
+                self.handle_weapon_input(attack_input)
+                
+            return
+
+        self.handle_movement(keys, controller)
+        self.handle_actions(keys, mouse_buttons, controller)
+
+    def handle_movement(self, keys, controller):
+        if getattr(self, "knockback_timer", 0) > 0:
+            self.knockback_timer -= 1
+            return  
+    
+        left_input = keys[pg.K_a] or (self.joystick and controller.get("left_x") < -0.5)
+        right_input = keys[pg.K_d] or (self.joystick and controller.get("left_x") > 0.5)
+
+        if getattr(self, "sliding", False):
+            if left_input and not right_input and not self.blocked_horizontally:
+                self.vel_x = -self.speed
+                self.direction = "left"
+
+            elif right_input and not left_input and not self.blocked_horizontally:
+                self.vel_x = self.speed
+                self.direction = "right"
+
+        else:
+            movement_speed = self.speed
+            if self.in_water:
+                movement_speed *= 0.5
+
+            if left_input and right_input:
+                self.vel_x = 0
+
+            elif left_input and not self.blocked_horizontally:
+                self.vel_x = -movement_speed
+                self.direction = "left"
+
+            elif right_input and not self.blocked_horizontally:
+                self.vel_x = movement_speed
+                self.direction = "right"
+
+            else:
+                self.vel_x = 0
+
+    def handle_actions(self, keys, mouse_buttons, controller):
+        jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
+        if self.in_water:
+            if jump_input:
+                self.vel_y = -self.swim_strength
+                
+            down_input = keys[pg.K_s] or (self.joystick and controller.get("left_y") > 0.5)
+            if down_input:
+                self.vel_y = self.swim_strength
+                
+        elif jump_input and self.coyote_timer > 0:
+            self.jump()
+
+        interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
+        if interact_input and not self.in_map:
+            self.interact_with_entity()
+
+        attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
+        if self.current_state != "hurt":
+            self.handle_weapon_input(attack_input)
+
+        pause_input = keys[pg.K_ESCAPE] or (self.joystick and controller.get("start"))
+        if pause_input:
+            pass
+
+        self.handle_weapon_switching(keys, controller)
+
     def handle_weapon_switching(self, keys, controller):
         key_to_index = {
             pg.K_1: 0, pg.K_2: 1, pg.K_3: 2, pg.K_4: 3, pg.K_5: 4,
@@ -1229,40 +1588,6 @@ class Combat:
         if hasattr(self, "attack_facing_direction"):
             delattr(self, "attack_facing_direction")
 
-    def render_charge_bar(self):
-        if not self.game.game_context.show_indicators:
-            return
-        
-        if not self.charging or self.equipped_weapon not in self.weapon_info:
-            return
-        
-        weapon_data = self.weapon_info[self.equipped_weapon]
-        if weapon_data.get("type") not in ("ranged", "instant_ranged"):
-            return
-        
-        full_ticks = weapon_data.get("full_draw_ticks", 18)
-        charge_percent = min(1.0, self.charge_timer / max(full_ticks, 1))
-        
-        bar_width = 30
-        bar_height = 4
-        filled_width = int(bar_width * charge_percent)
-        
-        bar_x = self.hitbox.centerx - self.game.camera.x - bar_width // 2
-        bar_y = self.hitbox.y - self.game.camera.y - 12
-        
-        pg.draw.rect(self.game.screen, (50, 50, 50, 180), (bar_x, bar_y, bar_width, bar_height))
-        
-        if charge_percent > 0:
-            if charge_percent < 0.6:
-                color = (200, 255, 0)
-                
-            else:
-                color = (0, 255, 0)
-                
-            pg.draw.rect(self.game.screen, color, (bar_x, bar_y, filled_width, bar_height))
-
-
-class Map:
     def handle_map_controls(self, mouse_buttons):
         mouse_pos = pg.mouse.get_pos()
 
@@ -1301,540 +1626,6 @@ class Map:
                     dy = mouse_pos[1] - self.drag_start_pos[1]
                     self.map_offset_x = self.drag_start_offset[0] + dx
                     self.map_offset_y = self.drag_start_offset[1] + dy
-
-    def render_map(self):
-        if not self.in_map:
-            self.game.ui.remove_ui_element("map_bg")
-            self.map_surface = None
-            return
-
-        if not hasattr(self, "map_surface") or self.map_surface is None:
-            self.map_surface = pg.Surface((self.game.screen_width, self.game.screen_height), pg.SRCALPHA)
-        
-        self.map_surface.fill((0, 0, 0, 0))
-        
-        overlay_surface = pg.Surface((self.game.screen_width, self.game.screen_height), pg.SRCALPHA)
-        overlay_surface.fill((0, 0, 0, 150))
-        self.map_surface.blit(overlay_surface, (0, 0))
-        
-        tile_pixel_size = max(1, int(self.map_scale_factor))
-        center_pixel_x = self.game.screen_width // 2 + self.map_offset_x
-        center_pixel_y = self.game.screen_height // 2 + self.map_offset_y
-        
-        visible_margin = 50
-        min_pixel_x = -visible_margin
-        max_pixel_x = self.game.screen_width + visible_margin
-        min_pixel_y = -visible_margin
-        max_pixel_y = self.game.screen_height + visible_margin
-        
-        map_tiles = self.game.map.tiles
-        cached_tiles = getattr(self, "cached_tile_surfaces", {})
-        
-        sorted_tiles = sorted(map_tiles, key=lambda tile: tile.get("layer", 0))
-        
-        for current_tile in sorted_tiles:
-            tile_pixel_x = center_pixel_x + current_tile.get("x", 0) * tile_pixel_size
-            tile_pixel_y = center_pixel_y + current_tile.get("y", 0) * tile_pixel_size
-            
-            if not (min_pixel_x <= tile_pixel_x <= max_pixel_x and min_pixel_y <= tile_pixel_y <= max_pixel_y):
-                continue
-            
-            cache_key = (current_tile.get("tilesheet", 0), current_tile.get("id"), current_tile.get("direction", 0), tile_pixel_size)
-            
-            if cache_key not in cached_tiles:
-                tile_surface = self.get_tile_surface(current_tile, tile_pixel_size)
-                if tile_surface:
-                    cached_tiles[cache_key] = tile_surface
-                    
-                else:
-                    continue
-            
-            tile_surface = cached_tiles[cache_key]
-            
-            tile_rect = tile_surface.get_rect(center=(tile_pixel_x, tile_pixel_y))
-            self.map_surface.blit(tile_surface, tile_rect)
-        
-        map_bg_element = None
-        
-        for element in self.game.ui.ui_elements:
-            if element.get("id") == "map_bg":
-                map_bg_element = element
-                break
-        
-        if map_bg_element:
-            map_bg_element["original_image"] = self.map_surface
-            map_bg_element["image"] = self.map_surface
-            
-        else:
-            map_bg_element = {
-                "id": "map_bg",
-                "original_image": self.map_surface,
-                "image": self.map_surface,
-                "rect": self.map_surface.get_rect(topleft=(0, 0)),
-                "render_order": -10,
-                "alpha": True,
-                "is_button": False
-            }
-            self.game.ui.ui_elements.append(map_bg_element)
-        
-        if len(cached_tiles) > 1000:
-            self.cached_tile_surfaces = {}
-
-    def create_map_tile(self, tile_data, tile_index, element_id, center_pixel_x, center_pixel_y, tile_pixel_size):
-        tile_surface = self.get_tile_surface(tile_data, tile_pixel_size)
-        if not tile_surface:
-            return
-
-        tile_pixel_x = center_pixel_x + tile_data.get("x", 0) * tile_pixel_size
-        tile_pixel_y = center_pixel_y + tile_data.get("y", 0) * tile_pixel_size
-
-        new_tile_element = {
-            "id": element_id,
-            "original_image": tile_surface,
-            "image": tile_surface.copy(),
-            "rect": tile_surface.get_rect(center=(tile_pixel_x, tile_pixel_y)),
-            "render_order": 3 + tile_data.get("layer", 0),
-            "alpha": True,
-            "is_button": False,
-            "centered": True,
-            "x": tile_pixel_x,
-            "y": tile_pixel_y,
-            "width": tile_pixel_size,
-            "height": tile_pixel_size,
-            "direction": tile_data.get("direction", 0),
-            "layer": tile_data.get("layer", 0)
-        }
-
-        self.game.ui.ui_elements.append(new_tile_element)
-
-    def update_map_tile(self, element_data, tile_data, center_pixel_x, center_pixel_y, tile_pixel_size):
-        tile_pixel_x = center_pixel_x + tile_data.get("x", 0) * tile_pixel_size
-        tile_pixel_y = center_pixel_y + tile_data.get("y", 0) * tile_pixel_size
-
-        current_element_width = element_data.get("width")
-        current_element_height = element_data.get("height")
-        current_element_direction = element_data.get("direction", 0)
-        tile_direction = tile_data.get("direction", 0)
-
-        if (element_data.get("x") != tile_pixel_x or
-                element_data.get("y") != tile_pixel_y or
-                current_element_width != tile_pixel_size or
-                current_element_height != tile_pixel_size or
-                current_element_direction != tile_direction):
-
-            tile_surface = self.get_tile_surface(tile_data, tile_pixel_size)
-            if tile_surface:
-                element_data["original_image"] = tile_surface
-                element_data["image"] = tile_surface.copy()
-
-            element_data["x"] = tile_pixel_x
-            element_data["y"] = tile_pixel_y
-            element_data["width"] = tile_pixel_size
-            element_data["height"] = tile_pixel_size
-            element_data["direction"] = tile_direction
-            element_data["layer"] = tile_data.get("layer", 0)
-            element_data["rect"] = element_data["original_image"].get_rect(center=(tile_pixel_x, tile_pixel_y))
-
-    def get_tile_surface(self, tile_data, tile_pixel_size):
-        sheet_index = tile_data.get("tilesheet", 0)
-        if sheet_index >= len(self.game.map.all_tile_surfaces):
-            return None
-
-        tilesheet = self.game.map.all_tile_surfaces[sheet_index]
-        tile_id = tile_data.get("id")
-        if tile_id is None or tile_id >= len(tilesheet["surfaces"]):
-            return None
-
-        tile_image = tilesheet["surfaces"][tile_id]
-        tile_direction = tile_data.get("direction", 0)
-
-        if tile_direction:
-            tile_image = pg.transform.rotate(tile_image, tile_direction)
-
-        if tile_image.get_size() != (tile_pixel_size, tile_pixel_size):
-            tile_image = pg.transform.scale(tile_image, (tile_pixel_size, tile_pixel_size))
-        
-        return tile_image
-
-
-class Player(Inventory,
-             PickupTags,
-             Health,
-             Dialogue,
-             Physics,
-             Animation,
-             Combat,
-             Map):
-    def __init__(self, game):
-        self.game = game
-        
-        self.enable_cam_mouse = False
-        
-        self.smoke_images = { # Ik this is super specific but i dont want to write an image manager
-            1: pg.image.load("assets/sprites/particles/smoke1.png").convert_alpha(),
-            2: pg.image.load("assets/sprites/particles/smoke2.png").convert_alpha(),
-        }
-                   
-    def load_settings(self):
-        cfg = load_json(os.path.join("assets", "settings", "player_config.json"))
-
-        self.x = self.game.game_context.player_spawn_x
-        self.y = self.game.game_context.player_spawn_y
-        self.vel_x = 0
-        self.vel_y = 0
-        self.speed = cfg["movement"]["speed"] # 5
-        self.dash_speed = cfg["movement"]["dash_speed"] # 100
-        self.weight = cfg["movement"]["weight"] # 1
-        self.jump_strength = cfg["movement"]["jump_strength"] # 10
-        self.friction = cfg["movement"]["friction"]
-
-        self.game.camera.load_settings(self.x, self.y)
-
-        self.scale_factor = self.game.game_context.scale
-        self.hitbox_width = cfg["hitbox"]["width_units"] * self.scale_factor
-        self.hitbox_height = cfg["hitbox"]["height_units"] * self.scale_factor
-        self.hitbox = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
-        self.interact_radius = pg.Rect(self.x, self.y, self.hitbox_width, self.hitbox_height)
-        self.blocked_horizontally = False
-
-        self.attack_timeout = cfg["combat"]["attack_timeout"]
-        self.attack_sequence = 1
-        self.attack_timer = 0
-        self.current_attack_projectile = None
-
-        self.max_inventory_slots = cfg["inventory"]["max_slots"]
-        self.rendered_inventory_ui_elements = []
-        self.items_per_row = cfg["inventory"]["items_per_row"]
-        self.item_spacing = cfg["inventory"]["item_spacing"]
-        self.selected_slot = None
-        self.inventory_changed = False
-        self.inventory_cooldown = 0
-        self.inventory = {}
-
-        self.max_health = cfg["health"]["max_health"]
-        self.current_health = self.max_health
-        self.health_per_row = cfg["health"]["health_per_row"]
-        self.health_spacing = cfg["health"]["health_spacing"]
-        self.invincibility_duration = cfg["health"]["invincibility_duration"]
-        self.last_damage_time = -self.invincibility_duration * 2
-
-        self.pickup_tags = []
-        self.max_tags = cfg["inventory"]["max_tags"]
-
-        self.last_step_time = 0
-        self.step_interval = cfg["footsteps"]["step_interval"]
-        self.actual_horizontal_movement = False
-
-        self.in_dialogue = False
-        self.dialogue_index = 0
-        self.dialogue_with = None
-
-        self.in_map = False
-        self.map_scale_factor = cfg["map"]["scale_factor"]
-        self.map_offset_x = 0
-        self.map_offset_y = 0
-        self.map_dragging = False
-
-        self.fall_time = 0
-        self.max_fall_time = cfg["movement"]["max_fall_time"]
-
-        self.coyote_time = cfg["movement"]["coyote_time"]
-        self.coyote_timer = 0
-
-        self.in_water = False
-        self.last_in_water = False
-        self.swim_strength = cfg["movement"].get("swim_strength", 4)
-        self.water_drag = cfg["movement"].get("water_drag", 0.95)
-        self.water_gravity_mult = cfg["movement"].get("water_gravity_mult", 0.3)
-        self.water_max_speed = cfg["movement"].get("water_max_speed", 3)
-
-        self.last_volume = None
-
-        self.current_state = "idle"
-        self.direction = "right"
-        self.current_frame = 0
-        self.animation_timer = 0
-        self.weapon_info = load_json(os.path.join("assets", "settings", "weapon_data.json"))
-        self.weapon_inventory = [] # temporary, will be replaced with actual inventory system
-        self.max_weapon_inventory_slots = cfg["combat"]["max_weapon_inventory_slots"]
-        self.equipped_weapon = ""
-        self.loaded_weapons = set()
-        self.state_frames = cfg["animation"]["states"]
-        self.frames = {state: [] for state in self.state_frames}
-
-        raw_sounds = cfg["sounds"]
-        self.sounds = {}
-
-        for key, entries in raw_sounds.items():
-            if isinstance(entries, list):
-                self.sounds[key] = [{"sound": pg.mixer.Sound(e["path"]), "volume": e["volume"]} for e in entries]
-                
-            else:
-                self.sounds[key] = {k: {"sound": pg.mixer.Sound(e["path"]), "volume": e["volume"]} for k, e in entries.items()}
-
-        self.charging = False
-        self.charge_timer = 0
-        self.charge_sound_played = False
-        self.proj_image_cache = {}
-
-        self.attacking = False
-        self.on_ground = False
-        self.in_inventory = False
-        self.just_closed_dialogue = False
-
-        random.seed(self.game.game_context.seed)
-
-        self.item_info = load_json(os.path.join("assets", "settings", "entities_config.json"))
-
-        self.load_frames()
-
-    def update_state(self):
-        if self.last_volume != self.game.game_context.volume:
-            self.last_volume = self.game.game_context.volume
-            for sound_group in self.sounds.values():
-                if isinstance(sound_group, list):
-                    for sound_dict in sound_group:
-                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
-                        
-                elif isinstance(sound_group, dict):
-                    for sound_dict in sound_group.values():
-                        sound_dict["sound"].set_volume(self.game.game_context.volume / 10 * sound_dict["volume"])
-
-        self.current_health = math.floor(self.current_health * 2) / 2
-        self.current_health = min(self.current_health, self.max_health)
-
-        self.x += self.vel_x
-        self.y += self.vel_y
-
-        self.attack_timer += 1
-
-        if self.current_health < 0:
-            self.current_health = 0
-                
-        if not self.equipped_weapon in self.weapon_inventory:
-            self.equipped_weapon = ""
-
-        if self.vel_y >= self.game.game_context.max_fall_speed:
-            self.vel_y = self.game.game_context.max_fall_speed
-
-        if self.attack_timer > self.attack_timeout:
-            self.attack_sequence = 1
-
-        if self.current_state in {"death"} or getattr(self, "sliding", False):
-            if self.friction <= 0 and self.on_ground:
-                self.friction = 0.3
-
-            self.vel_x -= self.friction * (1 if self.vel_x > 0 else -1 if self.vel_x < 0 else 0)
-
-            if abs(self.vel_x) < 0.5:
-                self.vel_x = 0
-
-        if self.actual_horizontal_movement and not self.current_state in {"death"}:
-            if self.on_ground and not self.in_water:
-                if self.game.game_context.current_time - self.last_step_time > self.step_interval:
-                    walking_sound = random.choice(self.sounds["walking"])
-                    walking_sound["sound"].play()
-                    self.last_step_time = self.game.game_context.current_time
-
-                    flip_offset = 14 if self.direction == "right" else 0
-
-                    for amount in range(5):
-                        base_vel_x = random.uniform(0, 0.5)
-                        if self.direction == "right":
-                            vel_x = -base_vel_x
-
-                        elif self.direction == "left":
-                            vel_x = base_vel_x
-
-                        else:
-                            vel_x = random.uniform(-0.5, 0.5)
-
-                        vel_y = random.uniform(-0.5, -0.1)
-                        radius = random.randint(2, 4)
-
-                        smoke_img = self.smoke_images[random.choice([1, 2])]
-
-                        self.game.particles.generate(
-                            pos=(self.x + self.hitbox_width / 2 - flip_offset + random.uniform(-10, 10), self.y + self.hitbox_height / 2 + random.uniform(0, 5)),
-                            velocity=(vel_x, vel_y),
-                            color=(255, 255, 255),
-                            radius=radius,
-                            lifespan=30,
-                            fade=True,
-                            image=smoke_img,
-                            image_size=(radius*2, radius*2)
-                        )
-
-            if self.in_water and self.actual_horizontal_movement:
-                swim_interval = self.step_interval * 1.5
-                if self.game.game_context.current_time - self.last_step_time > swim_interval:
-                    swim_sounds = self.sounds.get("swimming", self.sounds.get("swim", []))
-                    if swim_sounds:
-                        random.choice(swim_sounds)["sound"].play()
-                        
-                    self.last_step_time = self.game.game_context.current_time
-
-                    for amount in range(4):
-                        offset_x = random.uniform(-self.hitbox_width/2, self.hitbox_width/2)
-                        offset_y = random.uniform(-self.hitbox_height/2, self.hitbox_height/2)
-                        vel_x = random.uniform(-0.8, 0.8)
-                        vel_y = random.uniform(-1.0, -0.1)
-                        self.game.particles.generate(
-                            pos=(self.x + offset_x, self.y + offset_y),
-                            velocity=(vel_x, vel_y),
-                            color=(100, 180, 255),
-                            radius=random.randint(2, 3),
-                            lifespan=15,
-                            fade=True
-                        )
-
-    def handle_controls(self):
-        keys = pg.key.get_pressed()
-        mouse_buttons = pg.mouse.get_pressed()
-        self.joystick = self.game.game_context.joystick
-
-        controller = {}
-        if self.joystick:
-            controller = {
-                "left_x": self.joystick.get_axis(0) if abs(self.joystick.get_axis(0)) > 0.1 else 0,
-                "left_y": self.joystick.get_axis(1) if abs(self.joystick.get_axis(1)) > 0.1 else 0,
-                "A": self.joystick.get_button(0),
-                "B": self.joystick.get_button(1),
-                "X": self.joystick.get_button(2),
-                "Y": self.joystick.get_button(3),
-                "LB": self.joystick.get_button(4),
-                "RB": self.joystick.get_button(5),
-                "back": self.joystick.get_button(6),
-                "start": self.joystick.get_button(7)
-            }
-
-            if self.joystick.get_numhats() > 0:
-                controller["dpad"] = self.joystick.get_hat(0)
-                
-            else:
-                controller["dpad"] = (0, 0)
-
-        if self.current_state == "death":
-            return
-
-        if hasattr(self, "knockback_timer") and self.knockback_timer > 0:
-            self.knockback_timer -= 1
-            
-            if self.in_inventory:
-                self.handle_inventory_controls(keys, controller, in_knockback=True)
-                
-            else:
-                self.handle_normal_controls(keys, mouse_buttons, controller, in_knockback=True)
-                
-        else:
-            if self.in_inventory:
-                self.handle_inventory_controls(keys, controller, in_knockback=False)
-                
-            else:
-                self.handle_normal_controls(keys, mouse_buttons, controller, in_knockback=False)
-
-        if self.in_map:
-            self.handle_map_controls(mouse_buttons)
-
-        self.handle_events(controller)
-
-    def handle_inventory_controls(self, keys, controller, in_knockback=False):
-        if not in_knockback:
-            if not getattr(self, "sliding", False):
-                self.vel_x = 0
-                #self.vel_y = 0
-
-        if keys[pg.K_q] or (self.joystick and controller.get("X")):
-            self.drop_item()
-
-        if keys[pg.K_e] or (self.joystick and controller.get("A")):
-            self.consume_item()
-        
-    def handle_normal_controls(self, keys, mouse_buttons, controller, in_knockback=False):
-        if self.in_dialogue:
-            self.vel_x = 0
-            return
-
-        if in_knockback:
-            jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
-            if jump_input and self.coyote_timer > 0:
-                self.jump()
-            
-            interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
-            if interact_input and not self.in_map:
-                self.interact_with_entity()
-            
-            attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
-            if self.current_state != "hurt":
-                self.handle_weapon_input(attack_input)
-                
-            return
-
-        self.handle_movement(keys, controller)
-        self.handle_actions(keys, mouse_buttons, controller)
-
-    def handle_movement(self, keys, controller):
-        if getattr(self, "knockback_timer", 0) > 0:
-            self.knockback_timer -= 1
-            return  
-    
-        left_input = keys[pg.K_a] or (self.joystick and controller.get("left_x") < -0.5)
-        right_input = keys[pg.K_d] or (self.joystick and controller.get("left_x") > 0.5)
-
-        if getattr(self, "sliding", False):
-            if left_input and not right_input and not self.blocked_horizontally:
-                self.vel_x = -self.speed
-                self.direction = "left"
-
-            elif right_input and not left_input and not self.blocked_horizontally:
-                self.vel_x = self.speed
-                self.direction = "right"
-
-        else:
-            movement_speed = self.speed
-            if self.in_water:
-                movement_speed *= 0.5
-
-            if left_input and right_input:
-                self.vel_x = 0
-
-            elif left_input and not self.blocked_horizontally:
-                self.vel_x = -movement_speed
-                self.direction = "left"
-
-            elif right_input and not self.blocked_horizontally:
-                self.vel_x = movement_speed
-                self.direction = "right"
-
-            else:
-                self.vel_x = 0
-
-    def handle_actions(self, keys, mouse_buttons, controller):
-        jump_input = keys[pg.K_w] or (self.joystick and controller.get("A"))
-        if self.in_water:
-            if jump_input:
-                self.vel_y = -self.swim_strength
-                
-            down_input = keys[pg.K_s] or (self.joystick and controller.get("left_y") > 0.5)
-            if down_input:
-                self.vel_y = self.swim_strength
-                
-        elif jump_input and self.coyote_timer > 0:
-            self.jump()
-
-        interact_input = keys[pg.K_e] or (self.joystick and controller.get("Y"))
-        if interact_input and not self.in_map:
-            self.interact_with_entity()
-
-        attack_input = keys[pg.K_SPACE] or (self.joystick and controller.get("B"))
-        if self.current_state != "hurt":
-            self.handle_weapon_input(attack_input)
-
-        pause_input = keys[pg.K_ESCAPE] or (self.joystick and controller.get("start"))
-        if pause_input:
-            pass
-
-        self.handle_weapon_switching(keys, controller)
 
     def handle_events(self, controller):
         for event in self.game.events:
@@ -1994,6 +1785,38 @@ class Player(Inventory,
             dash_sound = random.choice(self.sounds["dash"])
             dash_sound["sound"].play()
 
+    def render_charge_bar(self):
+        if not self.game.game_context.show_indicators:
+            return
+        
+        if not self.charging or self.equipped_weapon not in self.weapon_info:
+            return
+        
+        weapon_data = self.weapon_info[self.equipped_weapon]
+        if weapon_data.get("type") not in ("ranged", "instant_ranged"):
+            return
+        
+        full_ticks = weapon_data.get("full_draw_ticks", 18)
+        charge_percent = min(1.0, self.charge_timer / max(full_ticks, 1))
+        
+        bar_width = 30
+        bar_height = 4
+        filled_width = int(bar_width * charge_percent)
+        
+        bar_x = self.hitbox.centerx - self.game.camera.x - bar_width // 2
+        bar_y = self.hitbox.y - self.game.camera.y - 12
+        
+        pg.draw.rect(self.game.screen, (50, 50, 50, 180), (bar_x, bar_y, bar_width, bar_height))
+        
+        if charge_percent > 0:
+            if charge_percent < 0.6:
+                color = (200, 255, 0)
+                
+            else:
+                color = (0, 255, 0)
+                
+            pg.draw.rect(self.game.screen, color, (bar_x, bar_y, filled_width, bar_height))
+
     def render(self):
         self.flip_offset = {"left": 1.4, "right": 0}
         self.foot_alignment = 3
@@ -2055,6 +1878,160 @@ class Player(Inventory,
             hitbox_surface,
             (self.hitbox.x - self.game.camera.x, self.hitbox.y - self.game.camera.y)
         )
+    
+    def render_map(self):
+        if not self.in_map:
+            self.game.ui.remove_ui_element("map_bg")
+            self.map_surface = None
+            return
+
+        if not hasattr(self, "map_surface") or self.map_surface is None:
+            self.map_surface = pg.Surface((self.game.screen_width, self.game.screen_height), pg.SRCALPHA)
+        
+        self.map_surface.fill((0, 0, 0, 0))
+        
+        overlay_surface = pg.Surface((self.game.screen_width, self.game.screen_height), pg.SRCALPHA)
+        overlay_surface.fill((0, 0, 0, 150))
+        self.map_surface.blit(overlay_surface, (0, 0))
+        
+        tile_pixel_size = max(1, int(self.map_scale_factor))
+        center_pixel_x = self.game.screen_width // 2 + self.map_offset_x
+        center_pixel_y = self.game.screen_height // 2 + self.map_offset_y
+        
+        visible_margin = 50
+        min_pixel_x = -visible_margin
+        max_pixel_x = self.game.screen_width + visible_margin
+        min_pixel_y = -visible_margin
+        max_pixel_y = self.game.screen_height + visible_margin
+        
+        map_tiles = self.game.map.tiles
+        cached_tiles = getattr(self, "cached_tile_surfaces", {})
+        
+        sorted_tiles = sorted(map_tiles, key=lambda tile: tile.get("layer", 0))
+        
+        for current_tile in sorted_tiles:
+            tile_pixel_x = center_pixel_x + current_tile.get("x", 0) * tile_pixel_size
+            tile_pixel_y = center_pixel_y + current_tile.get("y", 0) * tile_pixel_size
+            
+            if not (min_pixel_x <= tile_pixel_x <= max_pixel_x and min_pixel_y <= tile_pixel_y <= max_pixel_y):
+                continue
+            
+            cache_key = (current_tile.get("tilesheet", 0), current_tile.get("id"), current_tile.get("direction", 0), tile_pixel_size)
+            
+            if cache_key not in cached_tiles:
+                tile_surface = self.get_tile_surface(current_tile, tile_pixel_size)
+                if tile_surface:
+                    cached_tiles[cache_key] = tile_surface
+                    
+                else:
+                    continue
+            
+            tile_surface = cached_tiles[cache_key]
+            
+            tile_rect = tile_surface.get_rect(center=(tile_pixel_x, tile_pixel_y))
+            self.map_surface.blit(tile_surface, tile_rect)
+        
+        map_bg_element = None
+        
+        for element in self.game.ui.ui_elements:
+            if element.get("id") == "map_bg":
+                map_bg_element = element
+                break
+        
+        if map_bg_element:
+            map_bg_element["original_image"] = self.map_surface
+            map_bg_element["image"] = self.map_surface
+            
+        else:
+            map_bg_element = {
+                "id": "map_bg",
+                "original_image": self.map_surface,
+                "image": self.map_surface,
+                "rect": self.map_surface.get_rect(topleft=(0, 0)),
+                "render_order": -10,
+                "alpha": True,
+                "is_button": False
+            }
+            self.game.ui.ui_elements.append(map_bg_element)
+        
+        if len(cached_tiles) > 1000:
+            self.cached_tile_surfaces = {}
+
+    def create_map_tile(self, tile_data, tile_index, element_id, center_pixel_x, center_pixel_y, tile_pixel_size):
+        tile_surface = self.get_tile_surface(tile_data, tile_pixel_size)
+        if not tile_surface:
+            return
+
+        tile_pixel_x = center_pixel_x + tile_data.get("x", 0) * tile_pixel_size
+        tile_pixel_y = center_pixel_y + tile_data.get("y", 0) * tile_pixel_size
+
+        new_tile_element = {
+            "id": element_id,
+            "original_image": tile_surface,
+            "image": tile_surface.copy(),
+            "rect": tile_surface.get_rect(center=(tile_pixel_x, tile_pixel_y)),
+            "render_order": 3 + tile_data.get("layer", 0),
+            "alpha": True,
+            "is_button": False,
+            "centered": True,
+            "x": tile_pixel_x,
+            "y": tile_pixel_y,
+            "width": tile_pixel_size,
+            "height": tile_pixel_size,
+            "direction": tile_data.get("direction", 0),
+            "layer": tile_data.get("layer", 0)
+        }
+
+        self.game.ui.ui_elements.append(new_tile_element)
+
+    def update_map_tile(self, element_data, tile_data, center_pixel_x, center_pixel_y, tile_pixel_size):
+        tile_pixel_x = center_pixel_x + tile_data.get("x", 0) * tile_pixel_size
+        tile_pixel_y = center_pixel_y + tile_data.get("y", 0) * tile_pixel_size
+
+        current_element_width = element_data.get("width")
+        current_element_height = element_data.get("height")
+        current_element_direction = element_data.get("direction", 0)
+        tile_direction = tile_data.get("direction", 0)
+
+        if (element_data.get("x") != tile_pixel_x or
+                element_data.get("y") != tile_pixel_y or
+                current_element_width != tile_pixel_size or
+                current_element_height != tile_pixel_size or
+                current_element_direction != tile_direction):
+
+            tile_surface = self.get_tile_surface(tile_data, tile_pixel_size)
+            if tile_surface:
+                element_data["original_image"] = tile_surface
+                element_data["image"] = tile_surface.copy()
+
+            element_data["x"] = tile_pixel_x
+            element_data["y"] = tile_pixel_y
+            element_data["width"] = tile_pixel_size
+            element_data["height"] = tile_pixel_size
+            element_data["direction"] = tile_direction
+            element_data["layer"] = tile_data.get("layer", 0)
+            element_data["rect"] = element_data["original_image"].get_rect(center=(tile_pixel_x, tile_pixel_y))
+
+    def get_tile_surface(self, tile_data, tile_pixel_size):
+        sheet_index = tile_data.get("tilesheet", 0)
+        if sheet_index >= len(self.game.map.all_tile_surfaces):
+            return None
+
+        tilesheet = self.game.map.all_tile_surfaces[sheet_index]
+        tile_id = tile_data.get("id")
+        if tile_id is None or tile_id >= len(tilesheet["surfaces"]):
+            return None
+
+        tile_image = tilesheet["surfaces"][tile_id]
+        tile_direction = tile_data.get("direction", 0)
+
+        if tile_direction:
+            tile_image = pg.transform.rotate(tile_image, tile_direction)
+
+        if tile_image.get_size() != (tile_pixel_size, tile_pixel_size):
+            tile_image = pg.transform.scale(tile_image, (tile_pixel_size, tile_pixel_size))
+        
+        return tile_image
 
     def handle_free_cam(self):
         self.game.camera.handle_free_cam()
